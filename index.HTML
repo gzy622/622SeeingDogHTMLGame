@@ -320,27 +320,7 @@
 }
 </style>
 
-    <link rel="preload" href="SDHG_dog_standby_2.webm" as="video" type="video/webm">
-    <link rel="preload" href="SDHG_dog_attention_mov.webm" as="video" type="video/webm">
-    <link rel="preload" href="SDHG_dog_stop_2.webm" as="video" type="video/webm">
-    <link rel="preload" href="SDHG_dog_wait.webm" as="video" type="video/webm">
-    <link rel="preload" href="SDHG_dog_go_2.webm" as="video" type="video/webm">
-
-    <link rel="preload" href="SDHG_Background10-16.png" as="image">
-    <link rel="preload" href="SDHG_TrafficLight_gray2.png" as="image">
-    <link rel="preload" href="SDHG_TrafficLight_red2.png" as="image">
-    <link rel="preload" href="SDHG_TrafficLight_yellow2.png" as="image">
-    <link rel="preload" href="SDHG_TrafficLight_green2.png" as="image">
-    <link rel="preload" href="SDHG_MicrophoneIcon.png" as="image">
-    <link rel="preload" href="SDHG_YES.png" as="image">
-    <link rel="preload" href="SDHG_TryAgain_2.png" as="image">
-    <link rel="preload" href="SDHG_sound_record_click.mp3" as="audio" type="audio/mpeg">
-    <link rel="preload" href="SDHG_sound_record_complete.mp3" as="audio" type="audio/mpeg">
-    <link rel="preload" href="SDHG_sound_light.mp3" as="audio" type="audio/mpeg">
-    <link rel="preload" href="SDHG_sound_yes.mp3" as="audio" type="audio/mpeg">
-    <link rel="preload" href="SDHG_sound_TryAgain.mp3" as="audio" type="audio/mpeg">
-
-</head>
+    </head>
 <body>
     <div class="game-container" id="gameContainer">
         <div id="trafficLight" class="traffic-light">
@@ -1740,15 +1720,15 @@
             // Display click to start overlay initially
             clickToStartOverlay.style.display = 'flex'; // Ensure it's visible
 
-            // When user clicks the overlay, start loading assets
-            clickToStartOverlay.addEventListener('click', async (event) => {
-                logGameEvent('INFO', 'ClickToStartInitiated', '用户点击了“点击开始”遮罩，开始加载游戏资源。');
+            // Define the click and touchstart handler for the overlay
+            const overlayStartHandler = async (event) => {
+                logGameEvent('INFO', 'ClickToStartInitiated', `用户点击/触摸了“点击开始”遮罩。事件类型: ${event.type}`);
                 event.stopPropagation(); // 阻止事件冒泡
                 event.preventDefault(); // 阻止默认行为
 
                 // 移除所有监听器，避免重复触发
-                clickToStartOverlay.removeEventListener('click', arguments.callee);
-                clickToStartOverlay.removeEventListener('touchstart', arguments.callee);
+                clickToStartOverlay.removeEventListener('click', overlayStartHandler);
+                clickToStartOverlay.removeEventListener('touchstart', overlayStartHandler);
 
                 // Temporarily change text to indicate loading
                 clickToStartOverlay.innerHTML = '<h3>正在加载游戏资源...</h3><p>请稍候</p>';
@@ -1756,25 +1736,11 @@
                 
                 // Start the asset initialization process
                 initializeGameAssets(); 
-            }, { once: true }); // Only listen for one click
+            };
 
-            // 同样为 touchstart 添加监听器，确保移动设备上的首次点击有效
-            clickToStartOverlay.addEventListener('touchstart', async (event) => {
-                logGameEvent('INFO', 'TouchToStartInitiated', '用户触摸了“点击开始”遮罩，开始加载游戏资源。');
-                event.stopPropagation(); // 阻止事件冒泡
-                event.preventDefault(); // 阻止默认行为
-
-                // 移除所有监听器，避免重复触发
-                clickToStartOverlay.removeEventListener('click', arguments.callee);
-                clickToStartOverlay.removeEventListener('touchstart', arguments.callee);
-
-                // Temporarily change text to indicate loading
-                clickToStartOverlay.innerHTML = '<h3>正在加载游戏资源...</h3><p>请稍候</p>';
-                clickToStartOverlay.style.cursor = 'wait'; // Change cursor to indicate loading
-                
-                // Start the asset initialization process
-                initializeGameAssets(); 
-            }, { once: true, passive: false }); // 使用 passive: false 确保 preventDefault 有效
+            // Attach the click and touchstart listeners
+            clickToStartOverlay.addEventListener('click', overlayStartHandler, { once: true });
+            clickToStartOverlay.addEventListener('touchstart', overlayStartHandler, { once: true, passive: false });
         };
     </script>
 </body>
