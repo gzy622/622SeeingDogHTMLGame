@@ -24,7 +24,7 @@
         justify-content: space-between; /* Distribute space between items */
         align-items: center;   /* Center content horizontally */
         position: relative;
-        background-image: url('SDHG_Background10-16.png');
+        background-image: url('SDHG_Background10-16.png'); /* 修改为相对路径 */
         background-size: cover; /* 确保背景覆盖整个屏幕，无黑边 */
         background-position: center;
         background-repeat: no-repeat; /* 确保不重复 */
@@ -106,8 +106,9 @@
         border-radius: 50%;
         border: none;
         cursor: pointer;
-        transition: box-shadow 0.3s ease-in-out; /* Only box-shadow transition */
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        /* 以下是去除阴影的核心修改 */
+        box-shadow: none !important; /* 强制移除所有阴影 */
+        transition: none !important; /* 移除阴影过渡效果 */
         background: transparent;
         color: white;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
@@ -116,18 +117,19 @@
         align-items: center;
     }
 
+    /* 移除 hover 和 active 状态的阴影 */
     .record-button:hover:not(:disabled) {
-        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        box-shadow: none !important;
     }
 
     .record-button:active:not(:disabled) {
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        box-shadow: none !important;
     }
 
     .record-button:disabled {
         background: transparent;
         cursor: not-allowed;
-        box-shadow: none;
+        box-shadow: none !important; /* 确保 disabled 也没有阴影 */
         opacity: 0.5; /* Reduced opacity for a more visibly disabled state */
         filter: grayscale(100%); /* Add grayscale filter to the image */
         pointer-events: none; /* Prevent any pointer interactions */
@@ -140,13 +142,13 @@
     /* 新增样式：表示正在停止录制 */
     .record-button.stopping {
         background-color: #f39c12; /* 橙色 */
-        box-shadow: 0 0 10px rgba(243, 156, 18, 0.7);
+        box-shadow: 0 0 10px rgba(243, 156, 18, 0.7); /* 可以保留这个闪烁效果 */
         cursor: not-allowed;
     }
 
     @keyframes record-flash-button {
-        from { box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        to { box-shadow: 0 0 25px 5px rgba(255,215,0,0.7); }
+        from { box-shadow: none; } /* 修改为 none */
+        to { box-shadow: 0 0 25px 5px rgba(255,215,0,0.7); } /* 保留这个闪烁阴影，因为这是录制状态的视觉反馈 */
     }
 
     .record-button img {
@@ -298,7 +300,7 @@
         max-width: none;
         max-height: none;
         box-sizing: border-box;
-        box-shadow: none; /* 去掉阴影，避免边框错位 */
+        box-shadow: none !important; /* 强制移除阴影 */
     }
     .record-button img {
         width: 95%;  /* 更大图标，填满按钮 */
@@ -453,6 +455,7 @@
         let isRecording = false;
         let recognitionSuccess = false; // Flag to indicate if onresult successfully triggered
         let feedbackDisplayedForCurrentRecognition = false; // NEW: Flag to prevent duplicate feedback display
+        let micAccessGranted = false; // 跟踪麦克风权限是否已授予
 
         let resetGameTimeout = null;
         let quickResetHandler = null; // Handler for quick reset click on overlay
@@ -553,6 +556,11 @@
             messageBox.style.display = 'block';
             messageBox.onclick = () => {
                 messageBox.style.display = 'none';
+                // 确保在消息框关闭后，如果按钮是 disabled 状态，尝试重新启用它
+                if (recordButton.disabled && currentGameState !== GAME_STATE.PROCESSING_FEEDBACK) {
+                     recordButton.disabled = false;
+                     recordButton.classList.remove('recording', 'stopping');
+                }
             };
             logGameEvent('INFO', 'MessageBoxDisplayed', `显示消息框: ${title}`);
         }
@@ -641,8 +649,7 @@
                 ASSETS.trafficLight.yellow,
                 ASSETS.trafficLight.green,
                 'SDHG_MicrophoneIcon.png',
-                // Background image is handled by CSS, no need to explicitly preload here
-                // 'SDHG_Background10-16.png'
+                'SDHG_Background10-16.png' // 确保背景图也预加载
             ];
             logGameEvent('DEBUG', 'ImagesToPreloadCount', `Found ${imagesToPreload.length} images to preload.`);
 
@@ -711,8 +718,6 @@
 
                         const onCanPlayThrough = () => {
                             logGameEvent('INFO', 'VideoLoadSuccess', `视频加载成功: ${sourceData.src}`);
-                            // 此处曾存在将视频元素从 DOM 中移除的代码行 (document.body.removeChild(video);)。
-                            // 该行已被永久移除，以解决之前重复出现的问题，并确保视频预加载的稳定性。
                             cleanup();
                             resolve();
                         };
@@ -835,9 +840,11 @@
         function attachQuickResetListener() {
             if (quickResetHandler) {
                 overlayElement.removeEventListener('click', quickResetHandler);
+                overlayElement.removeEventListener('touchstart', quickResetHandler); // 移除 touchstart
             }
             quickResetHandler = handleOverlayClick; // Assign the specific overlay handler
             overlayElement.addEventListener('click', quickResetHandler);
+            overlayElement.addEventListener('touchstart', quickResetHandler); // 添加 touchstart
             logGameEvent('DEBUG', 'QuickResetListenerAttached', '快速重置监听器已附加到透明遮罩。');
         }
 
@@ -847,6 +854,7 @@
         function detachQuickResetListener() {
             if (quickResetHandler) {
                 overlayElement.removeEventListener('click', quickResetHandler);
+                overlayElement.removeEventListener('touchstart', quickResetHandler); // 移除 touchstart
                 quickResetHandler = null;
                 logGameEvent('DEBUG', 'QuickResetListenerDetached', '快速重置监听器已从透明遮罩分离。');
             }
@@ -905,6 +913,15 @@
                 }).catch(error => {
                     logGameEvent('ERROR', 'VideoPlayError', `播放视频 ${effectiveAction} 失败。: ${error.message || (error.code ? `Code: ${error.code}, Name: ${error.name}` : JSON.stringify(error))}`, { error: error });
                     console.error(`播放视频 ${effectiveAction} 失败的 Promise 拒绝:`, error);
+                    // 在移动设备上，autoplay 失败是很常见的，不应阻塞游戏
+                    // 尝试在用户交互后播放，或者至少不让游戏卡住
+                    // 如果播放失败，确保回到待机状态并尝试重新启用按钮
+                    if (currentGameState !== GAME_STATE.IDLE && currentGameState !== GAME_STATE.DOG_ACTION) {
+                        currentGameState = GAME_STATE.IDLE;
+                        playDogVideo('standby', true);
+                        recordButton.disabled = false;
+                        displayMessageBox('视频播放失败', '无法自动播放视频，请点击屏幕继续。');
+                    }
                 });
             };
 
@@ -935,12 +952,10 @@
             if (onEndedCallback && !loopVideo) {
                 const newEndedListener = () => {
                     logGameEvent('DEBUG', 'VideoEnded', `视频 ${effectiveAction} 播放结束。`);
-                    // NEW LOG: Confirm currentDogAction before callback for attention video
                     if (effectiveAction === 'attention') {
                         logGameEvent('DEBUG', 'BeforeAttentionEndedCallback', `在 attention 视频结束回调内，currentDogAction (预期为 null): ${currentDogAction}`);
                     }
                     onEndedCallback();
-                    // NEW LOG: Confirm currentDogAction after callback for attention video
                     if (effectiveAction === 'attention') {
                         logGameEvent('DEBUG', 'AfterAttentionEndedCallback', `在 attention 视频结束回调后，currentDogAction (预期已设置): ${currentDogAction}`);
                     }
@@ -961,6 +976,9 @@
         function initSpeechRecognition() {
             if (!('webkitSpeechRecognition' in window)) {
                 logGameEvent('WARN', 'SpeechAPIUnsupported', "Web Speech API 不受此浏览器支持。请使用 Chrome。");
+                displayMessageBox('浏览器不支持', '您的浏览器不支持语音识别功能，请使用最新版 Chrome 或其他兼容浏览器。');
+                micAccessGranted = false; // 明确设置权限未授予
+                recordButton.disabled = true; // 彻底禁用录音按钮
                 return;
             }
 
@@ -987,7 +1005,6 @@
                 recordButton.disabled = false; // Re-enable button on successful result
                 const transcript = event.results?.[0]?.[0]?.transcript?.toLowerCase();
                 logGameEvent('INFO', 'SpeechRecognized', `识别到的语音: "${transcript}"`, { transcript: transcript, confidence: event.results?.[0]?.[0]?.confidence });
-                // Removed playSound('recordCompleteSound'); to prevent conflict with feedback sounds
                 logGameEvent('DEBUG', 'BeforeHandleSpeech', `调用 handleOverallSpeech 前: currentGameState=${currentGameState}`);
                 handleOverallSpeech(transcript);
             };
@@ -1002,7 +1019,14 @@
                         feedbackDisplayedForCurrentRecognition = true; // 设置标志以防止后续重复调用
                         // 对于实际的语音识别错误（如 'no-speech'），记录为 ERROR
                         logGameEvent('ERROR', 'SpeechError', `语音识别错误: ${event.error}`, { error: event.error });
-                        displayMessageBox('语音识别失败', '未能识别您的语音，请清晰地再说一遍。'); // Use message box instead of feedback image for mic errors
+                        let errorMessage = '未能识别您的语音，请清晰地再说一遍。';
+                        if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+                            errorMessage = '麦克风权限被拒绝，请在浏览器设置中允许访问。';
+                            micAccessGranted = false; // 权限被拒绝，更新状态
+                        } else if (event.error === 'no-speech') {
+                            errorMessage = '没有听到声音，请确保麦克风已连接并清晰地说话。';
+                        }
+                        displayMessageBox('语音识别失败', errorMessage); // Use message box instead of feedback image for mic errors
                         recordButton.disabled = false; // 重新启用按钮以供重试
                         // 根据当前游戏状态回滚
                         if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
@@ -1057,14 +1081,16 @@
          * @param {string} type 'lightColor' or 'dogFeedback'
          */
         function startRecording(type) {
-            logGameEvent('INFO', 'StartRecordingCall', `调用 startRecording。类型: ${type}, 当前状态: ${currentGameState}, isRecording: ${isRecording}`);
+            logGameEvent('INFO', 'StartRecordingCall', `调用 startRecording。类型: ${type}, 当前状态: ${currentGameState}, isRecording: ${isRecording}, micAccessGranted: ${micAccessGranted}`);
+
+            if (!micAccessGranted) {
+                logGameEvent('WARN', 'MicNotGranted', '麦克风权限未授予，无法开始录音。尝试请求权限。');
+                displayMessageBox('需要麦克风权限', '请点击“开始游戏”按钮以授予麦克风权限并加载资源。');
+                return;
+            }
+
             if (recognition && !isRecording) {
                 const prevState = currentGameState; // Store state before changing
-
-                // 立即禁用按钮并添加处理中的样式
-                recordButton.disabled = true;
-                recordButton.classList.add('stopping'); // Indicate stopping/processing state
-                recordButton.classList.remove('recording'); // Ensure recording class is off for now
 
                 if (type === 'lightColor' && currentGameState === GAME_STATE.IDLE) {
                     currentGameState = GAME_STATE.LISTENING_LIGHT_COLOR;
@@ -1074,8 +1100,7 @@
                     logGameEvent('WARN', 'InvalidStateForRecording', `无法在当前状态下开始录音: ${currentGameState}`);
                     // 如果状态不正确，恢复按钮状态并退出
                     recordButton.disabled = false;
-                    recordButton.classList.remove('recording');
-                    recordButton.classList.remove('stopping'); // Remove stopping class if invalid state
+                    recordButton.classList.remove('recording', 'stopping');
                     return;
                 }
 
@@ -1083,11 +1108,13 @@
                     recognition.start();
                     playSound('recordStartSound'); // Play sound when recording starts
                     logGameEvent('INFO', 'RecordingAttempted', `尝试启动录音，等待 onstart 回调。`);
+                    // 按钮禁用和样式管理移到 onstart
                 } catch (e) {
                     logGameEvent('ERROR', 'RecordingStartError', `启动语音识别失败: ${e.message}`, { error: e.message });
-                    recordButton.disabled = false; // Re-enable if synchronous error
-                    recordButton.classList.remove('recording'); // 移除录制样式
-                    recordButton.classList.remove('stopping'); // Remove stopping class on error
+                    // 如果同步错误，立即恢复按钮
+                    recordButton.disabled = false;
+                    recordButton.classList.remove('recording', 'stopping');
+                    displayMessageBox('录音启动失败', '无法启动录音，请确保麦克风可用。');
                     // Revert state if starting recognition failed
                     if (prevState === GAME_STATE.IDLE) {
                         currentGameState = GAME_STATE.IDLE;
@@ -1105,10 +1132,9 @@
                 }
             } else {
                 logGameEvent('WARN', 'StartRecordingBlocked', `startRecording 被阻止。recognition: ${!!recognition}, isRecording: ${isRecording}`);
-                // If blocked, ensure button is not stuck disabled or in wrong state
+                // 如果阻止，确保按钮没有卡在禁用或错误状态
                 recordButton.disabled = false;
-                recordButton.classList.remove('recording');
-                recordButton.classList.remove('stopping');
+                recordButton.classList.remove('recording', 'stopping');
             }
         }
 
@@ -1422,6 +1448,7 @@
                 logGameEvent('WARN', 'ResetVideoAutoplayFailed', `重置后视频自动播放失败: ${error.message || (error.code ? `Code: ${error.code}, Name: ${error.name}` : JSON.stringify(error))}.`, { error: error });
                 // If autoplay fails here, it means the user hasn't interacted yet or browser policy is strict.
                 // The game will just continue without video/audio until user interacts.
+                displayMessageBox('视频播放提示', '游戏已重置，但视频可能需要您的再次点击才能播放。');
             });
 
             recordButton.disabled = false;
@@ -1575,30 +1602,43 @@
         resetScoreButton.addEventListener('click', handleResetScore); // New event listener
 
         // ==========================================================
-        // 核心修改点：录制按钮点击事件
+        // 核心修改点：录制按钮点击事件（同时监听 click 和 touchstart）
         // ==========================================================
-        recordButton.addEventListener('click', (event) => { // Added event parameter
-            logGameEvent('INFO', 'RecordButtonClick', `录音按钮点击。当前状态: ${currentGameState}, isRecording: ${isRecording}`); // Added isRecording to log
+        const recordButtonHandler = (event) => {
+            logGameEvent('INFO', 'RecordButtonClickOrTouch', `录音按钮点击/触摸。类型: ${event.type}, 当前状态: ${currentGameState}, isRecording: ${isRecording}`);
             event.stopPropagation(); // Stop event bubbling to prevent quick reset
+            event.preventDefault(); // Prevent default touch behavior like scrolling
+
+            if (!micAccessGranted) {
+                displayMessageBox('需要麦克风权限', '请点击“开始游戏”按钮以授予麦克风权限并加载资源。');
+                return;
+            }
+
+            // 如果按钮是禁用状态，说明它还在处理中或不应被点击
+            if (recordButton.disabled && !isRecording) { // 增加 !isRecording 条件，因为 onstart 才会禁用
+                logGameEvent('WARN', 'RecordButtonDisabledClick', '尝试点击禁用状态的录音按钮。');
+                return;
+            }
+
             if (isRecording) { // 如果当前正在录制，再次点击则停止录制
-                logGameEvent('INFO', 'RecordButtonClick', '已在录制中，停止录制。'); // Added log
-                stopRecording(); // 调用 stopRecording()
+                logGameEvent('INFO', 'RecordButtonClick', '已在录制中，停止录制。');
+                stopRecording();
             } else { // 如果当前不在录制，则开始录制
                 if (currentGameState === GAME_STATE.IDLE) {
-                    logGameEvent('INFO', 'RecordButtonClick', '状态为 IDLE，开始录制红绿灯颜色。'); // Added log
+                    logGameEvent('INFO', 'RecordButtonClick', '状态为 IDLE，开始录制红绿灯颜色。');
                     startRecording('lightColor');
                 } else if (currentGameState === GAME_STATE.DOG_ACTION) {
-                    logGameEvent('INFO', 'RecordButtonClick', '状态为 DOG_ACTION，开始录制导盲犬反馈。'); // Added log
+                    logGameEvent('INFO', 'RecordButtonClick', '状态为 DOG_ACTION，开始录制导盲犬反馈。');
                     startRecording('dogFeedback');
                 } else {
-                    logGameEvent('WARN', 'RecordButtonClickInvalidState', `在无效状态下点击录音按钮: ${currentGameState}。`); // Added log
-                    // Ensure button is re-enabled if it was disabled by a previous click attempting to start recording in an invalid state
-                    recordButton.disabled = false;
-                    recordButton.classList.remove('recording');
-                    recordButton.classList.remove('stopping');
+                    logGameEvent('WARN', 'RecordButtonClickInvalidState', `在无效状态下点击录音按钮: ${currentGameState}。`);
+                    // 在这里不需要重新启用按钮，因为在 startRecording 内部会处理错误回滚和按钮启用
                 }
             }
-        });
+        };
+
+        recordButton.addEventListener('click', recordButtonHandler);
+        recordButton.addEventListener('touchstart', recordButtonHandler, { passive: false }); // 使用 passive: false 确保 preventDefault 有效
 
         // Helper function to hide the click to start overlay
         function hideClickToStartOverlay() {
@@ -1637,6 +1677,7 @@
                     logGameEvent('INFO', 'MicAccessRequest', '请求麦克风权限...');
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     logGameEvent('INFO', 'MicAccessGranted', '麦克风权限已授予。');
+                    micAccessGranted = true; // 麦克风权限已授予
                     stream.getTracks().forEach(track => track.stop()); // Stop the temporary stream
                     initSpeechRecognition();
 
@@ -1671,6 +1712,8 @@
 
                 } catch (err) {
                     clearTimeout(loadingTimeout); // Clear timeout on error
+                    micAccessGranted = false; // 权限未授予
+                    recordButton.disabled = true; // 禁用按钮
                     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                         logGameEvent('ERROR', 'MicAccessDenied', `麦克风权限被拒绝: ${err.message}`, { error: err.message });
                         displayMessageBox('麦克风权限被拒绝！', '需要麦克风权限才能进行语音互动。请允许浏览器访问麦克风并刷新页面。');
@@ -1684,6 +1727,8 @@
                 clearTimeout(loadingTimeout); // Clear timeout as no mic support
                 logGameEvent('ERROR', 'GetUserMediaUnsupported', '您的浏览器不支持麦克风功能。');
                 displayMessageBox('浏览器不支持！', '您的浏览器不支持麦克风功能。请升级到最新版浏览器。');
+                micAccessGranted = false; // 明确设置权限未授予
+                recordButton.disabled = true; // 彻底禁用录音按钮
                 hideClickToStartOverlay(); // Ensure overlay is hidden
             }
         }
@@ -1696,8 +1741,15 @@
             clickToStartOverlay.style.display = 'flex'; // Ensure it's visible
 
             // When user clicks the overlay, start loading assets
-            clickToStartOverlay.addEventListener('click', async () => {
+            clickToStartOverlay.addEventListener('click', async (event) => {
                 logGameEvent('INFO', 'ClickToStartInitiated', '用户点击了“点击开始”遮罩，开始加载游戏资源。');
+                event.stopPropagation(); // 阻止事件冒泡
+                event.preventDefault(); // 阻止默认行为
+
+                // 移除所有监听器，避免重复触发
+                clickToStartOverlay.removeEventListener('click', arguments.callee);
+                clickToStartOverlay.removeEventListener('touchstart', arguments.callee);
+
                 // Temporarily change text to indicate loading
                 clickToStartOverlay.innerHTML = '<h3>正在加载游戏资源...</h3><p>请稍候</p>';
                 clickToStartOverlay.style.cursor = 'wait'; // Change cursor to indicate loading
@@ -1705,6 +1757,24 @@
                 // Start the asset initialization process
                 initializeGameAssets(); 
             }, { once: true }); // Only listen for one click
+
+            // 同样为 touchstart 添加监听器，确保移动设备上的首次点击有效
+            clickToStartOverlay.addEventListener('touchstart', async (event) => {
+                logGameEvent('INFO', 'TouchToStartInitiated', '用户触摸了“点击开始”遮罩，开始加载游戏资源。');
+                event.stopPropagation(); // 阻止事件冒泡
+                event.preventDefault(); // 阻止默认行为
+
+                // 移除所有监听器，避免重复触发
+                clickToStartOverlay.removeEventListener('click', arguments.callee);
+                clickToStartOverlay.removeEventListener('touchstart', arguments.callee);
+
+                // Temporarily change text to indicate loading
+                clickToStartOverlay.innerHTML = '<h3>正在加载游戏资源...</h3><p>请稍候</p>';
+                clickToStartOverlay.style.cursor = 'wait'; // Change cursor to indicate loading
+                
+                // Start the asset initialization process
+                initializeGameAssets(); 
+            }, { once: true, passive: false }); // 使用 passive: false 确保 preventDefault 有效
         };
     </script>
 </body>
