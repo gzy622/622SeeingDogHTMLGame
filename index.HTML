@@ -972,9 +972,9 @@
                 recognitionSuccess = false; // Reset flag at start
                 feedbackDisplayedForCurrentRecognition = false; // NEW: Reset feedback flag
                 logGameEvent('INFO', 'SpeechStarted', '语音识别已启动。');
-                recordButton.classList.add('recording'); // Add recording class here
+                // recordButton.classList.add('recording'); // This is now done in startRecording
                 recordButton.classList.remove('stopping'); // Remove stopping class once actual recording starts
-                recordButton.disabled = true; // Still disabled during recording
+                // recordButton.disabled = true; // This is now done in startRecording
             };
 
             recognition.onresult = (event) => {
@@ -1107,14 +1107,17 @@
                     return;
                 }
 
+                // *** CRITICAL CHANGE: Disable button immediately and add recording class ***
+                recordButton.disabled = true; // Disable button immediately on click
+                recordButton.classList.add('recording'); // Add recording class immediately
+
                 try {
                     recognition.start();
                     playSound('recordStartSound'); // Play sound when recording starts
                     logGameEvent('INFO', 'RecordingAttempted', `尝试启动录音，等待 onstart 回调。`);
-                    // 按钮禁用和样式管理移到 onstart
                 } catch (e) {
                     logGameEvent('ERROR', 'RecordingStartError', `启动语音识别失败: ${e.message}`, { error: e.message });
-                    // 如果同步错误，立即恢复按钮
+                    // If synchronous error, immediately revert button and state
                     recordButton.disabled = false;
                     recordButton.classList.remove('recording', 'stopping');
                     displayMessageBox('录音启动失败', '无法启动录音，请确保麦克风可用。');
@@ -1135,7 +1138,7 @@
                 }
             } else {
                 logGameEvent('WARN', 'StartRecordingBlocked', `startRecording 被阻止。recognition: ${!!recognition}, isRecording: ${isRecording}`);
-                // 如果阻止，确保按钮没有卡在禁用或错误状态
+                // If blocked, ensure button is not stuck in disabled or error state
                 recordButton.disabled = false;
                 recordButton.classList.remove('recording', 'stopping');
             }
