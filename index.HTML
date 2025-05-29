@@ -995,19 +995,39 @@
                 recordButton.classList.remove('stopping'); // Ensure stopping class is removed
                 // 延迟错误处理，给 onresult 机会
                 setTimeout(() => {
-                    if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) { // 仅在 onresult 未触发且反馈未显示时处理
+                    // 仅在 onresult 未触发且反馈未显示时处理
+                    if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) { 
                         feedbackDisplayedForCurrentRecognition = true; // 设置标志以防止后续重复调用
-                        // 对于实际的语音识别错误（如 'no-speech'），记录为 ERROR
                         logGameEvent('ERROR', 'SpeechError', `语音识别错误: ${event.error}`, { error: event.error });
                         let errorMessage = '未能识别您的语音，请清晰地再说一遍。';
-                        if (event.error === 'not-allowed' || event.error === 'permission-denied') {
-                            errorMessage = '麦克风权限被拒绝，请在浏览器设置中允许访问。';
-                            micAccessGranted = false; // 权限被拒绝，更新状态
+                        
+                        // 如果错误与权限、麦克风访问或网络有关，则重置 micAccessGranted
+                        if (event.error === 'not-allowed' || event.error === 'permission-denied' || event.error === 'audio-capture' || event.error === 'network') {
+                            errorMessage = '麦克风或网络连接有问题。请检查权限并刷新页面。';
+                            micAccessGranted = false; // 关键：为这些关键错误重置权限标志
+                            recordButton.disabled = true; // 永久禁用直到刷新/重新授权
                         } else if (event.error === 'no-speech') {
                             errorMessage = '没有听到声音，请确保麦克风已连接并清晰地说话。';
+                            // no-speech 错误不影响 micAccessGranted
+                            recordButton.disabled = false; // 允许重试
+                        } else if (event.error === 'aborted') {
+                            // 如果是手动停止或由于其他中断导致，不重置 micAccessGranted
+                            errorMessage = '语音识别已中断。请重试。';
+                            recordButton.disabled = false; // 允许重试
+                        } else {
+                            // 通用错误，假设权限问题
+                            errorMessage = `语音识别出现未知错误: ${event.error}。请重试。`;
+                            micAccessGranted = false; // 对于未知错误，假设权限问题
+                            recordButton.disabled = true; // 禁用以防止持续失败
                         }
-                        displayMessageBox('语音识别失败', errorMessage); // Use message box instead of feedback image for mic errors
-                        recordButton.disabled = false; // 重新启用按钮以供重试
+
+                        displayMessageBox('语音识别失败', errorMessage); // 使用消息框而不是反馈图片来提示麦克风错误
+                        
+                        // 仅当未被关键错误永久禁用时才重新启用按钮
+                        if (!recordButton.disabled) {
+                            recordButton.disabled = false; // 重新启用按钮以供重试
+                        }
+
                         // 根据当前游戏状态回滚
                         if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
                             currentGameState = GAME_STATE.IDLE;
@@ -1024,7 +1044,10 @@
                             logGameEvent('DEBUG', 'StateRevert', `语音识别错误: 回滚到 IDLE 状态 (fallback)。`);
                         }
                     }
-                    recordButton.disabled = false; // 确保在识别过程结束时始终重新启用按钮
+                    // 最终检查以确保按钮被重新启用，除非被关键错误明确禁用
+                    if (!recordButton.disabled) {
+                        recordButton.disabled = false;
+                    }
                 }, 50); // 50ms 延迟
             };
 
