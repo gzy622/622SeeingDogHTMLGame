@@ -65,6 +65,7 @@
         max-height: 620px; /* 相应调整最大高度 */
         border-radius: 12px;
         object-fit: contain;
+        display: none; /* Initially hidden */
     }
 
     .record-button-container {
@@ -202,40 +203,6 @@
         background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background for modals */
     }
 
-    /* Click to Start Overlay */
-    #clickToStartOverlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.9);
-        color: white;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 10002; /* Higher than other modals */
-        cursor: pointer;
-        font-size: 1.8rem;
-        text-align: center;
-        opacity: 1;
-        transition: opacity 0.5s ease-out;
-    }
-    #clickToStartOverlay.hidden {
-        opacity: 0;
-        pointer-events: none; /* Disable interaction when hidden */
-    }
-    #clickToStartOverlay h3 {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-    }
-    #clickToStartOverlay p {
-        font-size: 1.2rem;
-        opacity: 0.8;
-    }
-
-
     /* Media queries for responsive layout - adjust for portrait */
     @media (max-width: 768px) {
         .game-container {
@@ -272,15 +239,6 @@
         }
         #settingsModal .max-w-md, #producerInfoModal .max-w-sm {
             max-width: 95%; /* Further restrict max-width on mobile */
-        }
-        #clickToStartOverlay {
-            font-size: 1.5rem;
-        }
-        #clickToStartOverlay h3 {
-            font-size: 2rem;
-        }
-        #clickToStartOverlay p {
-            font-size: 1rem;
         }
     }
 
@@ -327,7 +285,7 @@
             <img id="trafficLightImage" src="SDHG_TrafficLight_gray2.png" alt="Traffic Light">
         </div>
 
-        <video id="dogVideo" class="dog-video" autoplay loop muted playsinline preload="auto">
+        <video id="dogVideo" class="dog-video" playsinline preload="auto">
             <source src="SDHG_dog_standby_2.webm" type="video/webm">
             Your browser does not support the video tag.
         </video>
@@ -342,6 +300,10 @@
         <img id="feedbackImage" src="" alt="Feedback" class="feedback-image">
 
         <div id="overlay" class="fixed inset-0 z-9999"></div>
+
+        <div id="startGameOverlay" class="fixed inset-0 flex items-center justify-center z-[10002] bg-black bg-opacity-75 text-white cursor-pointer transition-opacity duration-300">
+            <h3 class="text-4xl font-bold text-center">START</h3>
+        </div>
 
     </div>
 
@@ -381,66 +343,65 @@
         </div>
     </div>
 
-    <div id="clickToStartOverlay">
-        <h3>点击开始游戏</h3>
-        <p>请点击任意位置以加载游戏资源并开始。</p>
-    </div>
-
     <script>
-        // Get DOM elements
+        // ==========================================================
+        // SECTION: DOM Element References
+        // ==========================================================
         const trafficLightElement = document.getElementById('trafficLight');
-        const trafficLightImage = document.getElementById('trafficLightImage'); // Changed to single image element
+        const trafficLightImage = document.getElementById('trafficLightImage');
         const dogVideo = document.getElementById('dogVideo');
         const recordButton = document.getElementById('recordButton');
         const feedbackImage = document.getElementById('feedbackImage');
         const gameContainer = document.getElementById('gameContainer');
-        const overlayElement = document.getElementById('overlay'); // Get the new overlay element
-        const scoreDisplay = document.getElementById('scoreDisplay'); // Get the score display element
-        const clickToStartOverlay = document.getElementById('clickToStartOverlay'); // Get the click to start overlay
+        const overlayElement = document.getElementById('overlay');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const startGameOverlay = document.getElementById('startGameOverlay');
 
         // Settings Modal Elements
         const settingsModal = document.getElementById('settingsModal');
         const closeSettingsButton = document.getElementById('closeSettings');
         const scoreLimitInput = document.getElementById('scoreLimit');
         const producerInfoButton = document.getElementById('producerInfoButton');
-        const resetGameButton = document.getElementById('resetGameButton'); // New element
-        const resetScoreButton = document.getElementById('resetScoreButton'); // New element
-
+        const resetGameButton = document.getElementById('resetGameButton');
+        const resetScoreButton = document.getElementById('resetScoreButton');
 
         // Producer Info Modal Elements
         const producerInfoModal = document.getElementById('producerInfoModal');
         const closeProducerInfoButton = document.getElementById('closeProducerInfo');
 
 
-        // Game state constants - 小学英语教学游戏基本流程
+        // ==========================================================
+        // SECTION: Game State Constants and Variables
+        // ==========================================================
         const GAME_STATE = {
             IDLE: 'idle',
             LISTENING_LIGHT_COLOR: 'listeningLightColor',
             DOG_ATTENTION: 'dogAttention',
-            DOG_ACTION: 'dogAction', // Renamed from DOG_ACTION_DISPLAY for clarity
+            DOG_ACTION: 'dogAction',
             LISTENING_DOG_FEEDBACK: 'listeningDogFeedback',
             PROCESSING_FEEDBACK: 'processingFeedback'
         };
 
-        // Game variables
         let currentGameState = GAME_STATE.IDLE;
         let currentTrafficLightColor = null;
-        let currentDogAction = null; // Ensure it's explicitly null at start
-        let score = 0; // Initialize score
+        let currentDogAction = null;
+        let score = 0;
         let MAX_SCORE = 5; // Maximum score, now configurable (0 for no limit)
-        // Removed console related variables: currentLogLevelFilter, isConsoleExpanded, allLogEntries
 
         // Speech recognition related
         let recognition = null;
         let isRecording = false;
         let recognitionSuccess = false; // Flag to indicate if onresult successfully triggered
-        let feedbackDisplayedForCurrentRecognition = false; // NEW: Flag to prevent duplicate feedback display
-        let micAccessGranted = false; // 跟踪麦克风权限是否已授予
+        let feedbackDisplayedForCurrentRecognition = false; // Flag to prevent duplicate feedback display
+        let micAccessGranted = false; // Track microphone permission status
 
         let resetGameTimeout = null;
         let quickResetHandler = null; // Handler for quick reset click on overlay
 
-        // Animation/video resource paths - 游戏图片和视频素材清单
+
+        // ==========================================================
+        // SECTION: Animation/Video and Audio Resource Paths
+        // ==========================================================
         const ASSETS = {
             dog: {
                 standby: [
@@ -460,10 +421,10 @@
                 ],
             },
             feedback: {
-                goodJob: 'SDHG_YES.png', // Changed to YES image
-                tryAgain: 'SDHG_TryAgain_2.png' // Changed to Try Again 2 image
+                goodJob: 'SDHG_YES.png',
+                tryAgain: 'SDHG_TryAgain_2.png'
             },
-            trafficLight: { // 红绿灯图片资源
+            trafficLight: {
                 gray: 'SDHG_TrafficLight_gray2.png',
                 red: 'SDHG_TrafficLight_red2.png',
                 yellow: 'SDHG_TrafficLight_yellow2.png',
@@ -471,16 +432,20 @@
             },
         };
 
-        // Audio assets - 音频资源清单
         const AUDIO_ASSETS = {
-            recordStartSound: 'SDHG_sound_record_click.mp3', // Changed to record_click.mp3
-            recordCompleteSound: 'SDHG_sound_record_complete.mp3', // Changed to record_complete.mp3
-            trafficLightSound: 'SDHG_sound_light.mp3', // 红绿灯亮起时的提示音
-            yesSound: 'SDHG_sound_yes.mp3', // Changed to sound_yes.mp3
-            tryAgainSound: 'SDHG_sound_TryAgain.mp3', // 出现“Try Again”提示时的提示音
+            recordStartSound: 'SDHG_sound_record_click.mp3',
+            recordCompleteSound: 'SDHG_sound_record_complete.mp3',
+            trafficLightSound: 'SDHG_sound_light.mp3',
+            yesSound: 'SDHG_sound_yes.mp3',
+            tryAgainSound: 'SDHG_sound_TryAgain.mp3',
         };
 
-        let loadedAudio = {}; // 用于存储已加载的Audio对象
+        let loadedAudio = {}; // Object to store loaded Audio objects
+
+
+        // ==========================================================
+        // SECTION: Utility Functions
+        // ==========================================================
 
         /**
          * Unified logging function - 游戏运行日志输出机制说明
@@ -499,7 +464,6 @@
                 message: message
             };
 
-            // Log to console
             const jsonLog = JSON.stringify(logEntry);
             switch (level) {
                 case 'DEBUG':
@@ -536,7 +500,6 @@
             messageBox.style.display = 'block';
             messageBox.onclick = () => {
                 messageBox.style.display = 'none';
-                // 确保在消息框关闭后，如果按钮是 disabled 状态，尝试重新启用它
                 if (recordButton.disabled && currentGameState !== GAME_STATE.PROCESSING_FEEDBACK) {
                      recordButton.disabled = false;
                      recordButton.classList.remove('recording', 'stopping');
@@ -545,12 +508,10 @@
             logGameEvent('INFO', 'MessageBoxDisplayed', `显示消息框: ${title}`);
         }
 
-
         /**
          * Updates the score display.
          */
         function updateScoreDisplay() {
-            // If MAX_SCORE is 0, it means no score limit
             if (MAX_SCORE === 0) {
                 scoreDisplay.textContent = `得分: ${score}`;
                 logGameEvent('INFO', 'ScoreUpdate', `分数已更新 (无上限模式): ${score}`);
@@ -561,78 +522,119 @@
         }
 
         /**
-         * 预加载所有音频文件
-         * @returns {Promise<void>} 当所有音频加载完成时解析
+         * Plays a sound effect.
+         * @param {string} key - The key for the audio asset in AUDIO_ASSETS.
+         * @param {number} [volume=1] - Playback volume (0-1).
+         */
+        function playSound(key, volume = 1) {
+            const audioSource = loadedAudio[key];
+            if (audioSource) {
+                const soundInstance = audioSource.cloneNode();
+                soundInstance.volume = volume;
+                soundInstance.muted = false;
+                soundInstance.play().catch(e => {
+                    logGameEvent('ERROR', 'AudioPlayFailure', `播放音频 ${key} 失败:`, { error: e.message, key: key });
+                });
+                soundInstance.onended = () => {
+                    soundInstance.remove();
+                };
+                logGameEvent('DEBUG', 'AudioPlayed', `播放音效: ${key}`);
+            } else {
+                logGameEvent('WARN', 'AudioNotFound', `尝试播放未加载的音频: ${key}`);
+            }
+        }
+
+        /**
+         * Lights up the traffic light image.
+         * @param {string} color 'red', 'yellow', 'green' or null to turn off.
+         */
+        function lightUpTrafficLight(color) {
+            if (color) {
+                trafficLightImage.src = ASSETS.trafficLight[color];
+                logGameEvent('INFO', 'LightOn', `红绿灯亮起: ${color}`);
+            } else {
+                trafficLightImage.src = ASSETS.trafficLight.gray;
+                logGameEvent('INFO', 'LightOff', `红绿灯熄灭。`);
+            }
+        }
+
+        /**
+         * Gets the correct guide dog action based on traffic light color.
+         * @param {string} lightColor
+         * @returns {string} 'stop', 'wait', or 'go'
+         */
+        function getCorrectActionForLight(lightColor) {
+            if (lightColor === 'red') return 'stop';
+            if (lightColor === 'yellow') return 'wait';
+            if (lightColor === 'green') return 'go';
+            return null;
+        }
+
+
+        // ==========================================================
+        // SECTION: Asset Preloading and Priming
+        // ==========================================================
+
+        /**
+         * Preloads all audio files.
+         * @returns {Promise<void>} Resolves when all audio files are loaded.
          */
         async function preloadAudio() {
             logGameEvent('DEBUG', 'PreloadAudioFunctionCall', 'preloadAudio function entered.');
             const audioKeys = Object.keys(AUDIO_ASSETS);
-            logGameEvent('DEBUG', 'AudioKeysCount', `Found ${audioKeys.length} audio keys: ${audioKeys.join(', ')}`);
-
             const audioPromises = audioKeys.map(key => {
-                logGameEvent('DEBUG', 'CreatingAudioPromise', `Creating promise for audio key: ${key} with URL: ${AUDIO_ASSETS[key]}`);
                 return new Promise((resolve, reject) => {
-                    const audio = document.createElement('audio'); // Create an audio element
+                    const audio = document.createElement('audio');
                     audio.preload = 'auto';
                     audio.volume = 0.8;
-                    audio.muted = true; // Mute during preload to satisfy autoplay policies
-                    audio.style.display = 'none'; // Keep it hidden
-                    document.body.appendChild(audio); // Append to DOM to ensure loading starts
+                    audio.muted = true;
+                    audio.style.display = 'none';
+                    document.body.appendChild(audio);
 
                     const onLoaded = () => {
-                        loadedAudio[key] = audio; // Store the actual audio element
+                        loadedAudio[key] = audio;
                         logGameEvent('INFO', 'AudioLoadSuccess', `音频加载成功: ${key}`);
-                        // DO NOT remove from DOM here. Keep it for priming and later playback.
                         resolve();
                     };
-
                     const onError = (e) => {
                         logGameEvent('ERROR', 'AudioLoadFailure', `音频加载失败: ${key}`, { error: e.message || e, event: e, url: AUDIO_ASSETS[key] });
-                        document.body.removeChild(audio); // Remove from DOM even on error
+                        document.body.removeChild(audio);
                         reject(new Error(`Failed to load audio: ${key}`));
                     };
 
                     audio.addEventListener('canplaythrough', onLoaded, { once: true });
                     audio.addEventListener('error', onError, { once: true });
-
-                    audio.src = AUDIO_ASSETS[key]; // Set src after listeners
-                    audio.load(); // Explicitly tell it to load
-
-                    logGameEvent('DEBUG', 'AudioLoadInitiated', `Audio load initiated for ${key}. Current readyState: ${audio.readyState}`);
+                    audio.src = AUDIO_ASSETS[key];
+                    audio.load();
                 });
             });
-
-            logGameEvent('DEBUG', 'AudioPromisesCount', `Created ${audioPromises.length} audio promises. Awaiting all.`);
 
             try {
                 await Promise.all(audioPromises);
                 logGameEvent('INFO', 'AllAudioLoaded', '所有音频文件已成功预加载。');
             } catch (error) {
                 logGameEvent('ERROR', 'PartialAudioLoadFailure', '部分音频文件预加载失败:', { error: error.message });
-                // 可以选择在这里显示错误信息给用户
-                throw error; // Re-throw to propagate to main loading error handler
+                throw error;
             }
         }
 
         /**
-         * 预加载所有图片文件
-         * @returns {Promise<void>} 当所有图片加载完成时解析
+         * Preloads all image files.
+         * @returns {Promise<void>} Resolves when all image files are loaded.
          */
         async function preloadImages() {
             logGameEvent('DEBUG', 'PreloadImagesFunctionCall', 'preloadImages function entered.');
             const imagePromises = [];
             const imagesToPreload = [
-                ASSETS.feedback.goodJob, // Changed to YES image
-                ASSETS.feedback.tryAgain, // Changed to Try Again 2 image
+                ASSETS.feedback.goodJob,
+                ASSETS.feedback.tryAgain,
                 ASSETS.trafficLight.gray,
                 ASSETS.trafficLight.red,
                 ASSETS.trafficLight.yellow,
                 ASSETS.trafficLight.green,
                 'SDHG_MicrophoneIcon.png',
-                'SDHG_Background10-16.png' // 确保背景图也预加载
+                'SDHG_Background10-16.png'
             ];
-            logGameEvent('DEBUG', 'ImagesToPreloadCount', `Found ${imagesToPreload.length} images to preload.`);
-
 
             for (const src of imagesToPreload) {
                 imagePromises.push(new Promise((resolve, reject) => {
@@ -654,32 +656,28 @@
                 logGameEvent('INFO', 'AllImagesLoaded', '所有图片文件已成功预加载。');
             } catch (error) {
                 logGameEvent('ERROR', 'PartialImageLoadFailure', '部分图片文件预加载失败:', { error: error.message });
-                throw error; // Re-throw to propagate to main loading error handler
+                throw error;
             }
         }
 
         /**
-         * 预加载所有视频文件
-         * @returns {Promise<void>} 当所有视频加载完成时解析
+         * Preloads all video files.
+         * @returns {Promise<void>} Resolves when all video files are loaded.
          */
         async function preloadVideos() {
             logGameEvent('DEBUG', 'PreloadVideosFunctionCall', 'preloadVideos function entered.');
             const videoPromises = [];
-            const videoActions = Object.keys(ASSETS.dog); // ['standby', 'attention', 'stop', 'wait', 'go']
-            logGameEvent('DEBUG', 'VideoActionsCount', `Found ${videoActions.length} video actions: ${videoActions.join(', ')}`);
-
-            const VIDEO_LOAD_TIMEOUT_MS = 15000; // 15 seconds timeout for each video
+            const videoActions = Object.keys(ASSETS.dog);
+            const VIDEO_LOAD_TIMEOUT_MS = 15000;
 
             for (const action of videoActions) {
                 const videoSources = ASSETS.dog[action];
                 for (const sourceData of videoSources) {
                     const videoLoadPromise = new Promise((resolve, reject) => {
                         const video = document.createElement('video');
-                        video.muted = true; // Ensure video is muted during preloading
-                        video.playsInline = true; // Required for autoplay on some mobile browsers
-                        video.preload = 'auto'; // Hint to browser to load full video
-
-                        // Append to DOM (hidden) to ensure browser starts loading
+                        video.muted = true;
+                        video.playsInline = true;
+                        video.preload = 'auto';
                         video.style.display = 'none';
                         document.body.appendChild(video);
 
@@ -701,7 +699,6 @@
                             cleanup();
                             resolve();
                         };
-
                         const onError = (e) => {
                             const errorDetails = e.target.error ? `Code: ${e.target.error.code}, Message: ${e.target.error.message || JSON.stringify(e.target.error)}` : e.message || '未知错误';
                             logGameEvent('ERROR', 'VideoLoadFailure', `视频加载失败: ${sourceData.src}。错误: ${errorDetails}`, { error: errorDetails, url: sourceData.src });
@@ -711,18 +708,15 @@
 
                         video.addEventListener('canplaythrough', onCanPlayThrough, { once: true });
                         video.addEventListener('error', onError, { once: true });
-
-                        video.load(); // Start loading
+                        video.load();
                     });
 
-                    // Add a timeout for each video loading promise
                     const timeoutPromise = new Promise((_, reject) => {
                         setTimeout(() => {
                             logGameEvent('WARN', 'VideoLoadTimeout', `视频加载超时: ${sourceData.src}`, { url: sourceData.src, timeout: VIDEO_LOAD_TIMEOUT_MS });
                             reject(new Error(`Video load timed out for ${sourceData.src}`));
                         }, VIDEO_LOAD_TIMEOUT_MS);
                     });
-
                     videoPromises.push(Promise.race([videoLoadPromise, timeoutPromise]));
                 }
             }
@@ -732,113 +726,63 @@
                 logGameEvent('INFO', 'AllVideosLoaded', '所有视频文件已成功预加载。');
             } catch (error) {
                 logGameEvent('ERROR', 'PartialVideoLoadFailure', '部分视频文件预加载失败或超时:', { error: error.message });
-                // 可以选择在这里显示错误信息给用户，或者让主加载函数处理
-                throw error; // Re-throw to propagate to main loading error handler
+                throw error;
             }
         }
 
         /**
-         * 播放音效
-         * @param {string} key - AUDIO_ASSETS 中定义的音效键名
-         * @param {number} [volume=1] - 播放音量 (0-1)
+         * Primes all audio and video assets to force browser decoding and caching.
          */
-        function playSound(key, volume = 1) {
-            const audioSource = loadedAudio[key];
-            if (audioSource) {
-                // 克隆 Audio 对象，避免冲突
-                const soundInstance = audioSource.cloneNode();
-                soundInstance.volume = volume;
-                soundInstance.muted = false; // Explicitly unmute the cloned instance
-                soundInstance.play().catch(e => {
-                    logGameEvent('ERROR', 'AudioPlayFailure', `播放音频 ${key} 失败:`, { error: e.message, key: key });
-                });
+        async function primeAssets() {
+            logGameEvent('INFO', 'PrimingAssets', '开始预热所有音频和视频资产...');
 
-                soundInstance.onended = () => {
-                    soundInstance.remove();
-                };
-                logGameEvent('DEBUG', 'AudioPlayed', `播放音效: ${key}`);
-            } else {
-                logGameEvent('WARN', 'AudioNotFound', `尝试播放未加载的音频: ${key}`);
-            }
-        }
-
-        /**
-         * Handles click events on the overlay for quick reset or dismissing Try Again.
-         * @param {Event} event - The click event object.
-         */
-        function handleOverlayClick(event) {
-            // Detach listener immediately to prevent multiple triggers or wrong state handling
-            detachQuickResetListener();
-
-            // Clear any pending game logic timeout from handleOverallSpeech
-            clearTimeout(resetGameTimeout);
-
-            // Start fade-out animation for feedback image and overlay
-            feedbackImage.classList.remove('is-visible'); // Trigger fade-out
-            overlayElement.classList.remove('is-visible'); // Trigger fade-out for overlay
-            logGameEvent('INFO', 'UI_FeedbackImageFadeOutStarted', `反馈图片和透明遮罩开始渐出。`);
-
-            // Listen for the end of the fade-out transition on the overlay
-            overlayElement.addEventListener('transitionend', function handler() {
-                // Check if opacity is effectively 0 and element is hidden
-                if (window.getComputedStyle(overlayElement).opacity === '0') {
-                    feedbackImage.style.display = 'none';
-                    overlayElement.style.display = 'none';
-                    overlayElement.classList.remove('try-again-overlay', 'good-job-overlay'); // Clear all overlay classes
-                    logGameEvent('INFO', 'UI_FeedbackImageAndOverlayHidden', `反馈图片和透明遮罩已隐藏。`);
-
-                    // Now perform the action based on the image source
-                    if (feedbackImage.src.includes(ASSETS.feedback.goodJob)) { // Check for YES image
-                        logGameEvent('INFO', 'OverlayClickAction', '点击透明遮罩: 触发 YES 后的快速前进。');
-                        // If MAX_SCORE is 0 (no limit) or max score reached
-                        if (MAX_SCORE === 0 || score === MAX_SCORE) {
-                            logGameEvent('INFO', 'GameCompletedQuick', '已达到最高分或无上限模式。点击遮罩立即完全重置。');
-                            resetFullGame(); // Full reset if max score reached or no limit
-                        } else {
-                            logGameEvent('INFO', 'RoundCompletedQuick', '正确反馈。点击遮罩立即开始新一轮。');
-                            startNewRound(); // Start new round if not max score
+            const audioPrimingPromises = [];
+            for (const key in loadedAudio) {
+                if (loadedAudio.hasOwnProperty(key)) {
+                    const audio = loadedAudio[key];
+                    audioPrimingPromises.push(new Promise(async (resolve) => {
+                        try {
+                            audio.muted = true;
+                            await audio.play();
+                            audio.pause();
+                            audio.currentTime = 0;
+                            audio.muted = false;
+                            logGameEvent('DEBUG', 'AudioPrimed', `音频 ${key} 已预热。`);
+                        } catch (e) {
+                            logGameEvent('WARN', 'AudioPrimingFailed', `音频 ${key} 预热失败 (可能由于自动播放策略或用户未互动): ${e.message}`);
+                        } finally {
+                            resolve();
                         }
-                    } else if (feedbackImage.src.includes(ASSETS.feedback.tryAgain)) {
-                        logGameEvent('INFO', 'OverlayClickAction', '点击透明遮罩: 隐藏 Try Again 提示。');
-                        recordButton.disabled = false; // Re-enable record button
-                        logGameEvent('DEBUG', 'TryAgainOverlayClick', `尝试播放当前导盲犬动作: ${currentDogAction}`); // Added log for debugging
-                        playDogVideo(currentDogAction, true); // Ensure dog action continues playing
-                        currentGameState = GAME_STATE.DOG_ACTION; // Revert state to allow another feedback attempt
-                        logGameEvent('INFO', 'TryAgainDismissed', 'Try Again 提示已消失，游戏状态回滚到 DOG_ACTION。');
-                    } else {
-                        logGameEvent('WARN', 'OverlayClickUnexpected', '点击透明遮罩: 意外情况，执行新一轮。');
-                        startNewRound(); // Default to start new round to preserve score
-                    }
-                    overlayElement.removeEventListener('transitionend', handler); // Remove itself
+                    }));
                 }
-            }, { once: true });
+            }
+            await Promise.all(audioPrimingPromises);
+
+            const videoPrimingPromises = [];
+            videoPrimingPromises.push(new Promise(async (resolve) => {
+                try {
+                    dogVideo.muted = true;
+                    dogVideo.currentTime = 0;
+                    await dogVideo.play();
+                    dogVideo.pause();
+                    dogVideo.currentTime = 0;
+                    dogVideo.muted = false;
+                    logGameEvent('DEBUG', 'MainDogVideoPrimed', `主导盲犬视频已预热。`);
+                } catch (e) {
+                    logGameEvent('WARN', 'MainDogVideoPrimingFailed', `主导盲犬视频预热失败: ${e.message}`);
+                } finally {
+                    resolve();
+                }
+            }));
+            await Promise.all(videoPrimingPromises);
+
+            logGameEvent('INFO', 'PrimingAssetsComplete', '所有音频和视频资产预热完成。');
         }
 
-        /**
-         * Attaches a click listener to the overlay for quick reset/dismissal.
-         */
-        function attachQuickResetListener() {
-            if (quickResetHandler) {
-                overlayElement.removeEventListener('click', quickResetHandler);
-                overlayElement.removeEventListener('touchstart', quickResetHandler); // 移除 touchstart
-            }
-            quickResetHandler = handleOverlayClick; // Assign the specific overlay handler
-            overlayElement.addEventListener('click', quickResetHandler);
-            overlayElement.addEventListener('touchstart', quickResetHandler); // 添加 touchstart
-            logGameEvent('DEBUG', 'QuickResetListenerAttached', '快速重置监听器已附加到透明遮罩。');
-        }
 
-        /**
-         * Removes the quick reset click listener from the overlay.
-         */
-        function detachQuickResetListener() {
-            if (quickResetHandler) {
-                overlayElement.removeEventListener('click', quickResetHandler);
-                overlayElement.removeEventListener('touchstart', quickResetHandler); // 移除 touchstart
-                quickResetHandler = null;
-                logGameEvent('DEBUG', 'QuickResetListenerDetached', '快速重置监听器已从透明遮罩分离。');
-            }
-        }
+        // ==========================================================
+        // SECTION: Video Playback Logic
+        // ==========================================================
 
         /**
          * Plays a dog action video.
@@ -871,10 +815,12 @@
                 }
             }
 
+            // Clear existing sources
             while (dogVideo.firstChild) {
                 dogVideo.removeChild(dogVideo.firstChild);
             }
 
+            // Add new sources
             videoSources.forEach(sourceData => {
                 const sourceElement = document.createElement('source');
                 sourceElement.src = sourceData.src;
@@ -890,15 +836,13 @@
                 logGameEvent('DEBUG', 'VideoPlayCall', `调用 dogVideo.play() for action: ${effectiveAction}`);
                 dogVideo.play().then(() => {
                     logGameEvent('DEBUG', 'VideoPlaySuccess', `视频 ${effectiveAction} 播放成功。`);
+                    dogVideo.style.display = 'block'; // Ensure video is visible when playing
                 }).catch(error => {
                     logGameEvent('ERROR', 'VideoPlayError', `播放视频 ${effectiveAction} 失败。: ${error.message || (error.code ? `Code: ${error.code}, Name: ${error.name}` : JSON.stringify(error))}`, { error: error });
                     console.error(`播放视频 ${effectiveAction} 失败的 Promise 拒绝:`, error);
-                    // 在移动设备上，autoplay 失败是很常见的，不应阻塞游戏
-                    // 尝试在用户交互后播放，或者至少不让游戏卡住
-                    // 如果播放失败，确保回到待机状态并尝试重新启用按钮
+                    dogVideo.style.display = 'none'; // Hide video on play failure
                     if (currentGameState !== GAME_STATE.IDLE && currentGameState !== GAME_STATE.DOG_ACTION) {
                         currentGameState = GAME_STATE.IDLE;
-                        playDogVideo('standby', true);
                         recordButton.disabled = false;
                         displayMessageBox('视频播放失败', '无法自动播放视频，请点击屏幕继续。');
                     }
@@ -950,15 +894,20 @@
             }
         }
 
+
+        // ==========================================================
+        // SECTION: Speech Recognition Functions
+        // ==========================================================
+
         /**
-         * Initialize speech recognition object
+         * Initializes the Speech Recognition object and its event handlers.
          */
         function initSpeechRecognition() {
             if (!('webkitSpeechRecognition' in window)) {
                 logGameEvent('WARN', 'SpeechAPIUnsupported', "Web Speech API 不受此浏览器支持。请使用 Chrome。");
                 displayMessageBox('浏览器不支持', '您的浏览器不支持语音识别功能，请使用最新版 Chrome 或其他兼容浏览器。');
-                micAccessGranted = false; // 明确设置权限未授予
-                recordButton.disabled = true; // 彻底禁用录音按钮
+                micAccessGranted = false;
+                recordButton.disabled = true;
                 return;
             }
 
@@ -969,20 +918,18 @@
 
             recognition.onstart = () => {
                 isRecording = true;
-                recognitionSuccess = false; // Reset flag at start
-                feedbackDisplayedForCurrentRecognition = false; // NEW: Reset feedback flag
+                recognitionSuccess = false;
+                feedbackDisplayedForCurrentRecognition = false;
                 logGameEvent('INFO', 'SpeechStarted', '语音识别已启动。');
-                // recordButton.classList.add('recording'); // This is now done in startRecording
-                recordButton.classList.remove('stopping'); // Remove stopping class once actual recording starts
-                // recordButton.disabled = true; // This is now done in startRecording
+                recordButton.classList.remove('stopping');
             };
 
             recognition.onresult = (event) => {
                 isRecording = false;
-                recognitionSuccess = true; // Speech successfully recognized
+                recognitionSuccess = true;
                 recordButton.classList.remove('recording');
-                recordButton.classList.remove('stopping'); // Ensure stopping class is removed
-                recordButton.disabled = false; // Re-enable button on successful result
+                recordButton.classList.remove('stopping');
+                recordButton.disabled = false;
                 const transcript = event.results?.[0]?.[0]?.transcript?.toLowerCase();
                 logGameEvent('INFO', 'SpeechRecognized', `识别到的语音: "${transcript}"`, { transcript: transcript, confidence: event.results?.[0]?.[0]?.confidence });
                 logGameEvent('DEBUG', 'BeforeHandleSpeech', `调用 handleOverallSpeech 前: currentGameState=${currentGameState}`);
@@ -992,44 +939,35 @@
             recognition.onerror = (event) => {
                 isRecording = false;
                 recordButton.classList.remove('recording');
-                recordButton.classList.remove('stopping'); // Ensure stopping class is removed
-                // 延迟错误处理，给 onresult 机会
-                // 延迟时间增加到 200ms
+                recordButton.classList.remove('stopping');
                 setTimeout(() => {
-                    // 仅在 onresult 未触发且反馈未显示时处理
-                    if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) { 
-                        feedbackDisplayedForCurrentRecognition = true; // 设置标志以防止后续重复调用
+                    if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) {
+                        feedbackDisplayedForCurrentRecognition = true;
                         logGameEvent('ERROR', 'SpeechError', `语音识别错误: ${event.error}`, { error: event.error });
                         let errorMessage = '未能识别您的语音，请清晰地再说一遍。';
                         
-                        // 如果错误与权限、麦克风访问或网络有关，则重置 micAccessGranted
                         if (event.error === 'not-allowed' || event.error === 'permission-denied' || event.error === 'audio-capture' || event.error === 'network') {
                             errorMessage = '麦克风或网络连接有问题。请检查权限并刷新页面。';
-                            micAccessGranted = false; // 关键：为这些关键错误重置权限标志
-                            recordButton.disabled = true; // 永久禁用直到刷新/重新授权
+                            micAccessGranted = false;
+                            recordButton.disabled = true;
                         } else if (event.error === 'no-speech') {
                             errorMessage = '没有听到声音，请确保麦克风已连接并清晰地说话。';
-                            // no-speech 错误不影响 micAccessGranted
-                            recordButton.disabled = false; // 允许重试
+                            recordButton.disabled = false;
                         } else if (event.error === 'aborted') {
-                            // 如果是手动停止或由于其他中断导致，不重置 micAccessGranted
                             errorMessage = '语音识别已中断。请重试。';
-                            recordButton.disabled = false; // 允许重试
+                            recordButton.disabled = false;
                         } else {
-                            // 通用错误，假设权限问题
                             errorMessage = `语音识别出现未知错误: ${event.error}。请重试。`;
-                            micAccessGranted = false; // 对于未知错误，假设权限问题
-                            recordButton.disabled = true; // 禁用以防止持续失败
+                            micAccessGranted = false;
+                            recordButton.disabled = true;
                         }
 
-                        displayMessageBox('语音识别失败', errorMessage); // 使用消息框而不是反馈图片来提示麦克风错误
+                        displayMessageBox('语音识别失败', errorMessage);
                         
-                        // 仅当未被关键错误永久禁用时才重新启用按钮
                         if (!recordButton.disabled) {
-                            recordButton.disabled = false; // 重新启用按钮以供重试
+                            recordButton.disabled = false;
                         }
 
-                        // 根据当前游戏状态回滚
                         if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
                             currentGameState = GAME_STATE.IDLE;
                             playDogVideo('standby', true);
@@ -1039,33 +977,27 @@
                             playDogVideo(currentDogAction, true);
                             logGameEvent('DEBUG', 'StateRevert', `语音识别错误: 回滚到 DOG_ACTION 状态。`);
                         } else {
-                            // 意外状态的备用方案
                             currentGameState = GAME_STATE.IDLE;
                             playDogVideo('standby', true);
                             logGameEvent('DEBUG', 'StateRevert', `语音识别错误: 回滚到 IDLE 状态 (fallback)。`);
                         }
                     }
-                    // 最终检查以确保按钮被重新启用，除非被关键错误明确禁用
                     if (!recordButton.disabled) {
                         recordButton.disabled = false;
                     }
-                }, 200); // 200ms 延迟
+                }, 200);
             };
 
             recognition.onend = () => {
                 isRecording = false;
                 recordButton.classList.remove('recording');
-                recordButton.classList.remove('stopping'); // Ensure stopping class is removed
-                // 延迟结束处理，给 onresult 机会
-                // 延迟时间增加到 200ms
+                recordButton.classList.remove('stopping');
                 setTimeout(() => {
-                    if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) { // 仅在 onresult 未触发且反馈未显示时处理
-                        feedbackDisplayedForCurrentRecognition = true; // 设置标志以防止后续重复调用
-                        // 对于语音识别结束但没有结果的情况（如用户未说话），记录为 WARN
+                    if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) {
+                        feedbackDisplayedForCurrentRecognition = true;
                         logGameEvent('WARN', 'SpeechNoResult', '语音识别结束但无结果。');
-                        displayMessageBox('没有听到声音', '请确保麦克风已连接并清晰地说话。'); // Use message box for no speech
-                        recordButton.disabled = false; // 重新启用按钮以供重试
-                        // 根据当前游戏状态回滚
+                        displayMessageBox('没有听到声音', '请确保麦克风已连接并清晰地说话。');
+                        recordButton.disabled = false;
                         if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
                             currentGameState = GAME_STATE.IDLE;
                             playDogVideo('standby', true);
@@ -1076,26 +1008,25 @@
                             logGameEvent('DEBUG', 'StateRevert', `语音识别无结果: 回滚到 DOG_ACTION 状态。`);
                         }
                     }
-                    recordButton.disabled = false; // 确保在识别过程结束时始终重新启用按钮
-                }, 200); // 200ms 延迟
+                    recordButton.disabled = false;
+                }, 200);
             };
         }
 
         /**
-         * Start voice recording
+         * Starts voice recording based on the current game state.
          * @param {string} type 'lightColor' or 'dogFeedback'
          */
         function startRecording(type) {
             logGameEvent('INFO', 'StartRecordingCall', `调用 startRecording。类型: ${type}, 当前状态: ${currentGameState}, isRecording: ${isRecording}, micAccessGranted: ${micAccessGranted}`);
 
             if (!micAccessGranted) {
-                logGameEvent('WARN', 'MicNotGranted', '麦克风权限未授予，无法开始录音。尝试请求权限。');
-                displayMessageBox('需要麦克风权限', '请点击“开始游戏”按钮以授予麦克风权限并加载资源。');
+                displayMessageBox('需要麦克风权限', '请允许浏览器访问麦克风。');
                 return;
             }
 
             if (recognition && !isRecording) {
-                const prevState = currentGameState; // Store state before changing
+                const prevState = currentGameState;
 
                 if (type === 'lightColor' && currentGameState === GAME_STATE.IDLE) {
                     currentGameState = GAME_STATE.LISTENING_LIGHT_COLOR;
@@ -1103,89 +1034,83 @@
                     currentGameState = GAME_STATE.LISTENING_DOG_FEEDBACK;
                 } else {
                     logGameEvent('WARN', 'InvalidStateForRecording', `无法在当前状态下开始录音: ${currentGameState}`);
-                    // 如果状态不正确，恢复按钮状态并退出
                     recordButton.disabled = false;
                     recordButton.classList.remove('recording', 'stopping');
                     return;
                 }
 
-                // *** CRITICAL CHANGE: Disable button immediately and add recording class ***
-                recordButton.disabled = true; // Disable button immediately on click
-                recordButton.classList.add('recording'); // Add recording class immediately
+                recordButton.disabled = true;
+                recordButton.classList.add('recording');
 
                 try {
                     recognition.start();
-                    playSound('recordStartSound'); // Play sound when recording starts
+                    playSound('recordStartSound');
                     logGameEvent('INFO', 'RecordingAttempted', `尝试启动录音，等待 onstart 回调。`);
                 } catch (e) {
                     logGameEvent('ERROR', 'RecordingStartError', `启动语音识别失败: ${e.message}`, { error: e.message });
-                    // If synchronous error, immediately revert button and state
                     recordButton.disabled = false;
                     recordButton.classList.remove('recording', 'stopping');
                     displayMessageBox('录音启动失败', '无法启动录音，请确保麦克风可用。');
-                    // Revert state if starting recognition failed
                     if (prevState === GAME_STATE.IDLE) {
                         currentGameState = GAME_STATE.IDLE;
                         playDogVideo('standby', true);
-                        logGameEvent('DEBUG', 'StateRevert', `启动识别失败: 回滚到 IDLE 状态。`);
                     } else if (prevState === GAME_STATE.DOG_ACTION) {
                         currentGameState = GAME_STATE.DOG_ACTION;
                         playDogVideo(currentDogAction, true);
-                        logGameEvent('DEBUG', 'StateRevert', `启动识别失败: 回滚到 DOG_ACTION 状态。`);
                     } else {
-                        currentGameState = GAME_STATE.IDLE; // Fallback
+                        currentGameState = GAME_STATE.IDLE;
                         playDogVideo('standby', true);
-                        logGameEvent('DEBUG', 'StateRevert', `启动识别失败: 回滚到 IDLE 状态 (fallback)。`);
                     }
                 }
             } else {
                 logGameEvent('WARN', 'StartRecordingBlocked', `startRecording 被阻止。recognition: ${!!recognition}, isRecording: ${isRecording}`);
-                // If blocked, ensure button is not stuck in disabled or error state
                 recordButton.disabled = false;
                 recordButton.classList.remove('recording', 'stopping');
             }
         }
 
         /**
-         * Stop voice recording
+         * Stops voice recording.
          */
         function stopRecording() {
             if (recognition && isRecording) {
                 logGameEvent('INFO', 'RecordingManualStop', '手动点击按钮结束录音。');
                 recognition.stop();
                 recordButton.classList.remove('recording');
-                recordButton.classList.add('stopping'); // 添加 stopping 样式 
-                recordButton.disabled = true; // 立即禁用按钮，等待识别结果
+                recordButton.classList.add('stopping');
+                recordButton.disabled = true;
             }
         }
 
+
+        // ==========================================================
+        // SECTION: Game Logic Functions
+        // ==========================================================
+
         /**
-         * Handle all speech commands based on current game state - 小学英语教学游戏基本流程
-         * @param {string} transcript
+         * Handles all speech commands based on the current game state.
+         * @param {string} transcript - The recognized speech transcript.
          */
         function handleOverallSpeech(transcript) {
             recordButton.classList.remove('recording');
-            recordButton.classList.remove('stopping'); // 确保移除 stopping 样式
+            recordButton.classList.remove('stopping');
             logGameEvent('INFO', 'HandleSpeechCall', `处理语音指令。当前状态: ${currentGameState}, 文本: "${transcript}"`);
 
-            // Initial check for empty/short transcript (treat as incorrect feedback)
             if (!transcript || transcript.trim().length < 2) {
                 logGameEvent('WARN', 'EmptyTranscript', "语音文本为空或过短。视为不正确反馈。");
-                displayFeedback(false, () => { // Pass callback to re-enable button and revert state
+                displayFeedback(false, () => {
                     recordButton.disabled = false;
                     currentGameState = (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) ? GAME_STATE.IDLE : GAME_STATE.DOG_ACTION;
                     playDogVideo(currentGameState === GAME_STATE.IDLE ? 'standby' : currentDogAction, true);
                     logGameEvent('INFO', 'EmptyTranscriptFeedbackHidden', '空/短文本反馈已隐藏，按钮已启用，状态已回滚。');
                 });
-                playSound('tryAgainSound'); // Play tryAgainSound
-                recordButton.disabled = true; // Disable button while feedback is visible
-                feedbackDisplayedForCurrentRecognition = true; // Set flag to prevent double feedback
-
-                // Do NOT revert state here immediately, let displayFeedback's callback handle it
+                playSound('tryAgainSound');
+                recordButton.disabled = true;
+                feedbackDisplayedForCurrentRecognition = true;
                 return;
             }
 
-            let isCorrectFeedback = false; // Default to false
+            let isCorrectFeedback = false;
 
             if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
                 const hasLook = transcript.includes('look');
@@ -1209,197 +1134,148 @@
                 if (detectedColor) {
                     currentTrafficLightColor = detectedColor;
                     lightUpTrafficLight(currentTrafficLightColor);
-                    playSound('recordCompleteSound'); // 播放“录制完成”提示音 (仅在红绿灯颜色正确时)
-                    // Removed playSound('trafficLightSound'); as per user request
+                    playSound('recordCompleteSound');
 
-                    recordButton.disabled = true; // Disable button immediately after correct light color detected
-                    playDogVideo('attention', false, () => { // Attention plays once
+                    recordButton.disabled = true;
+                    playDogVideo('attention', false, () => {
                         const actions = ['stop', 'wait', 'go'];
                         currentDogAction = actions?.[Math.floor(Math.random() * actions.length)];
-                        logGameEvent('DEBUG', 'DogActionSetAfterAttention', `导盲犬动作已在 attention 视频结束后设置: ${currentDogAction}`); // NEW LOG
+                        logGameEvent('DEBUG', 'DogActionSetAfterAttention', `导盲犬动作已在 attention 视频结束后设置: ${currentDogAction}`);
 
-                        // *** NEW DEFENSIVE CHECK: Proactively handle if currentDogAction is still null ***
                         if (currentDogAction === null) {
                             logGameEvent('ERROR', 'DogActionNotSetAfterAttention', '严重错误: attention 视频结束后 currentDogAction 未能正确设置。强制重置游戏。');
                             displayMessageBox('游戏错误', '游戏状态异常，导盲犬动作未定义。游戏将重置。');
                             resetFullGame();
-                            return; // Exit callback to prevent further issues
+                            return;
                         }
-                        // *** END NEW DEFENSIVE CHECK ***
 
-                        playDogVideo(currentDogAction, true); // Dog's action (stop/wait/go) loops
-                        currentGameState = GAME_STATE.DOG_ACTION; // Ready for dog feedback
-                        recordButton.disabled = false; // Enable record button for dog feedback
+                        playDogVideo(currentDogAction, true);
+                        currentGameState = GAME_STATE.DOG_ACTION;
+                        recordButton.disabled = false;
                         logGameEvent('INFO', 'LightColorCorrect', `灯光颜色正确: 转换为 DOG_ACTION 状态。`, { color: detectedColor, dogAction: currentDogAction });
                     });
-                    currentGameState = GAME_STATE.DOG_ATTENTION; // Intermediate state during attention video
+                    currentGameState = GAME_STATE.DOG_ATTENTION;
                 } else {
-                    // Incorrect light color command
-                    displayFeedback(false, () => { // Pass callback to re-enable button and revert state
+                    displayFeedback(false, () => {
                         recordButton.disabled = false;
                         currentGameState = GAME_STATE.IDLE;
                         playDogVideo('standby', true);
                         logGameEvent('INFO', 'LightColorIncorrectFeedbackHidden', '灯光颜色不正确反馈已隐藏，按钮已启用，状态已回滚到 IDLE。');
                     });
-                    playSound('tryAgainSound'); // Play tryAgainSound
-                    recordButton.disabled = true; // Disable button while feedback is visible
-                    // Do NOT revert state here immediately, let displayFeedback's callback handle it
+                    playSound('tryAgainSound');
+                    recordButton.disabled = true;
                     logGameEvent('WARN', 'LightColorIncorrect', `灯光颜色不正确: 显示 Try Again 提示。`, { transcript: transcript });
                 }
             } else if (currentGameState === GAME_STATE.LISTENING_DOG_FEEDBACK) {
-                // NEW: Add a guard for currentDogAction being null
                 if (currentDogAction === null) {
                     logGameEvent('ERROR', 'DogActionMissing', '在 LISTENING_DOG_FEEDBACK 状态下 currentDogAction 为 null。这不应该发生。重置游戏。');
                     displayMessageBox('游戏错误', '导盲犬动作丢失，游戏将重置。');
-                    resetFullGame(); // Force a full reset
-                    return; // Exit function
+                    resetFullGame();
+                    return;
                 }
 
-                currentGameState = GAME_STATE.PROCESSING_FEEDBACK; // Temporarily set to processing
+                currentGameState = GAME_STATE.PROCESSING_FEEDBACK;
 
                 const correctActionForLight = getCorrectActionForLight(currentTrafficLightColor);
                 const dogActionWasCorrect = (currentDogAction === correctActionForLight);
 
-                // Check for specific spoken action if it's a command to correct the dog
                 let spokenGuideAction = null;
                 if (transcript.includes('stop')) spokenGuideAction = 'stop';
                 else if (transcript.includes('wait')) spokenGuideAction = 'wait';
                 else if (transcript.includes('go')) spokenGuideAction = 'go';
 
-                const spokeReward = transcript.includes('reward') || transcript.includes('good job') || transcript.includes('yes'); // Added 'yes'
+                const spokeReward = transcript.includes('reward') || transcript.includes('good job') || transcript.includes('yes');
 
                 logGameEvent('DEBUG', 'DogFeedbackDetails', `导盲犬反馈判断: correctActionForLight=${correctActionForLight}, dogActionWasCorrect=${dogActionWasCorrect}, spokenGuideAction=${spokenGuideAction}, spokeReward=${spokeReward}`);
-                logGameEvent('DEBUG', 'CurrentDogActionBeforeFeedback', `当前导盲犬动作 (处理反馈前): ${currentDogAction}`); // Added log for debugging
+                logGameEvent('DEBUG', 'CurrentDogActionBeforeFeedback', `当前导盲犬动作 (处理反馈前): ${currentDogAction}`);
 
-                if (spokeReward) { // User said "reward", "good job" or "yes"
+                if (spokeReward) {
                     if (dogActionWasCorrect) {
-                        isCorrectFeedback = true; // Correct: Dog action correct, student rewards
+                        isCorrectFeedback = true;
                     } else {
-                        isCorrectFeedback = false; // Incorrect: Dog action incorrect, student rewards (should guide)
+                        isCorrectFeedback = false;
                     }
-                } else if (spokenGuideAction) { // User spoke a command like "stop", "wait", "go"
+                } else if (spokenGuideAction) {
                     if (!dogActionWasCorrect && spokenGuideAction === correctActionForLight) {
-                        isCorrectFeedback = true; // Correct: Dog action incorrect, student guides correctly
+                        isCorrectFeedback = true;
                     } else {
-                        isCorrectFeedback = false; // Incorrect: Dog action correct but student guides (should reward), or dog action incorrect and student guides incorrectly
+                        isCorrectFeedback = false;
                     }
                 } else {
-                    // Any other unrecognized command in this state
                     isCorrectFeedback = false;
                 }
                 logGameEvent('INFO', 'FeedbackResult', `导盲犬反馈结果: ${isCorrectFeedback ? '正确' : '不正确'}`, { correct: isCorrectFeedback, transcript: transcript });
 
                 if (isCorrectFeedback) {
-                    // playSound('recordCompleteSound'); // <--- 移除此行，因为用户要求只在红绿灯相关时播放此音效
-                    playSound('yesSound'); // Play feedback sound (goodJobSound is now yesSound)
-                    // Increment score if correct feedback
+                    playSound('yesSound');
                     score++;
                     updateScoreDisplay();
 
-                    // If MAX_SCORE is 0 (no limit) or max score reached
                     if (MAX_SCORE === 0 || score === MAX_SCORE) {
                         logGameEvent('INFO', 'GameCompleted', '恭喜！已达到最高分或无上限模式。游戏将完全重置。');
-                        logGameEvent('DEBUG', 'BeforeDisplayFeedbackCorrectDog', `调用 displayFeedback (正确导盲犬反馈)。当前导盲犬动作: ${currentDogAction}`); // NEW LOG
-                        displayFeedback(true, resetFullGame); // Pass resetFullGame as callback
+                        logGameEvent('DEBUG', 'BeforeDisplayFeedbackCorrectDog', `调用 displayFeedback (正确导盲犬反馈)。当前导盲犬动作: ${currentDogAction}`);
+                        displayFeedback(true, resetFullGame);
                     } else {
                         logGameEvent('INFO', 'RoundCompleted', '正确反馈。游戏将开始新一轮。');
-                        logGameEvent('DEBUG', 'BeforeDisplayFeedbackCorrectDog', `调用 displayFeedback (正确导盲犬反馈)。当前导盲犬动作: ${currentDogAction}`); // NEW LOG
-                        displayFeedback(true, startNewRound); // Pass startNewRound as callback
+                        logGameEvent('DEBUG', 'BeforeDisplayFeedbackCorrectDog', `调用 displayFeedback (正确导盲犬反馈)。当前导盲犬动作: ${currentDogAction}`);
+                        displayFeedback(true, startNewRound);
                     }
-                    // Clear any pending timeout from previous logic (if any)
                     clearTimeout(resetGameTimeout);
                 } else {
-                    // If feedback is incorrect: dog remains in current action, allow retry
                     const onTryAgainHidden = () => {
-                        recordButton.disabled = false; // Re-enable button
-                        currentGameState = GAME_STATE.DOG_ACTION; // Revert state
-                        logGameEvent('DEBUG', 'OnTryAgainHiddenCallback', `执行 Try Again 隐藏回调。当前导盲犬动作: ${currentDogAction}`); // NEW LOG
-                        playDogVideo(currentDogAction, true); // Ensure video continues playing
+                        recordButton.disabled = false;
+                        currentGameState = GAME_STATE.DOG_ACTION;
+                        logGameEvent('DEBUG', 'OnTryAgainHiddenCallback', `执行 Try Again 隐藏回调。当前导盲犬动作: ${currentDogAction}`);
+                        playDogVideo(currentDogAction, true);
                         logGameEvent('INFO', 'TryAgainFeedbackHidden', 'Try Again 提示已完全隐藏，按钮已启用，状态已回滚到 DOG_ACTION。');
                     };
 
                     logGameEvent('INFO', 'IncorrectFeedbackRetry', "不正确反馈。显示 Try Again 提示。");
-                    logGameEvent('DEBUG', 'BeforeDisplayFeedbackIncorrectDog', `调用 displayFeedback (不正确导盲犬反馈)。当前导盲犬动作: ${currentDogAction}`); // NEW LOG
-                    displayFeedback(false, onTryAgainHidden); // Pass callback for when it's hidden
-                    playSound('tryAgainSound'); // Play tryAgainSound
-                    recordButton.disabled = true; // Disable button while feedback is visible
-                    clearTimeout(resetGameTimeout); // Ensure any pending reset is cleared
+                    logGameEvent('DEBUG', 'BeforeDisplayFeedbackIncorrectDog', `调用 displayFeedback (不正确导盲犬反馈)。当前导盲犬动作: ${currentDogAction}`);
+                    displayFeedback(false, onTryAgainHidden);
+                    playSound('tryAgainSound');
+                    recordButton.disabled = true;
+                    clearTimeout(resetGameTimeout);
                 }
             }
-            // This block handles cases where the state is not IDLE, LISTENING_LIGHT_COLOR, or LISTENING_DOG_FEEDBACK,
-            // or if startRecording was called in an unexpected state.
             else {
                 logGameEvent('WARN', 'UnexpectedSpeechState', `在意外状态下识别到语音或无效的初始命令: ${currentGameState}。游戏将在反馈消失后重置。`);
-                logGameEvent('DEBUG', 'BeforeDisplayFeedbackUnexpectedState', `调用 displayFeedback (意外状态)。当前导盲犬动作: ${currentDogAction}`); // NEW LOG
-                displayFeedback(false, resetFullGame); // Full reset for unexpected errors
-                playSound('tryAgainSound'); // Play try again sound for unexpected state
-                recordButton.disabled = true; // Disable button while feedback is visible
-                playDogVideo('standby', true); // Fallback to standby for unexpected errors
-                clearTimeout(resetGameTimeout); // Clear any pending reset
+                logGameEvent('DEBUG', 'BeforeDisplayFeedbackUnexpectedState', `调用 displayFeedback (意外状态)。当前导盲犬动作: ${currentDogAction}`);
+                displayFeedback(false, resetFullGame);
+                playSound('tryAgainSound');
+                recordButton.disabled = true;
+                playDogVideo('standby', true);
+                clearTimeout(resetGameTimeout);
             }
         }
 
         /**
-         * Get the correct guide dog action based on traffic light color
-         * @param {string} lightColor
-         * @returns {string} 'stop', 'wait', or 'go'
-         */
-        function getCorrectActionForLight(lightColor) {
-            if (lightColor === 'red') return 'stop';
-            if (lightColor === 'yellow') return 'wait';
-            if (lightColor === 'green') return 'go';
-            return null;
-        }
-
-        /**
-         * Light up the traffic light
-         * @param {string} color 'red', 'yellow', 'green' or null to turn off
-         */
-        function lightUpTrafficLight(color) {
-            if (color) {
-                trafficLightImage.src = ASSETS.trafficLight[color]; // Use single image element
-                logGameEvent('INFO', 'LightOn', `红绿灯亮起: ${color}`);
-            } else {
-                trafficLightImage.src = ASSETS.trafficLight.gray; // Set to gray base image
-                logGameEvent('INFO', 'LightOff', `红绿灯熄灭。`);
-            }
-        }
-
-        /**
-         * Display feedback image and overlay.
-         * @param {boolean} isCorrect - true for Good Job (now YES), false for Try Again
+         * Displays feedback image and overlay.
+         * @param {boolean} isCorrect - true for Good Job (now YES), false for Try Again.
          * @param {function} [onHiddenCallback=null] - Callback to execute after the feedback image is fully hidden.
          */
         function displayFeedback(isCorrect, onHiddenCallback = null) {
-            recordButton.disabled = true; // Disable button immediately when feedback is shown
+            recordButton.disabled = true;
             feedbackImage.src = ASSETS.feedback[isCorrect ? 'goodJob' : 'tryAgain'];
             
-            // Ensure elements are visible before applying fade-in
             feedbackImage.style.display = 'block';
             overlayElement.style.display = 'block';
             logGameEvent('INFO', 'UI_ElementsSetToBlock', `反馈图片和透明遮罩已设置为 display: block。`);
 
             overlayElement.classList.remove('good-job-overlay', 'try-again-overlay');
 
-            // Temporary variable to hold the fade-in transition listener
             let fadeInHandler = null;
 
-            // Step 1: Attach listener for the *fade-in* transition completion
             fadeInHandler = function() {
                 logGameEvent('INFO', 'UI_FeedbackImageAndOverlayFadeInCompleted', `反馈图片和透明遮罩渐入完成。`);
-                overlayElement.removeEventListener('transitionend', fadeInHandler); // Remove itself
+                overlayElement.removeEventListener('transitionend', fadeInHandler);
 
-                // Step 2: Set a timeout to trigger the fade-out after 2.5 seconds
                 setTimeout(() => {
-                    // Trigger fade-out
                     feedbackImage.classList.remove('is-visible');
                     overlayElement.classList.remove('is-visible');
                     logGameEvent('INFO', 'UI_FeedbackImageAndOverlayFadeOutStarted', `反馈图片和透明遮罩开始渐出。`);
 
-                    // Step 3: Attach listener for the *fade-out* transition completion
                     overlayElement.addEventListener('transitionend', function fadeOutHandler() {
-                        // Ensure this handler only runs for the opacity transition completing to 0
-                        // Check if opacity is effectively 0 and element is hidden
                         if (window.getComputedStyle(overlayElement).opacity === '0') {
                             feedbackImage.style.display = 'none';
                             overlayElement.style.display = 'none';
@@ -1409,53 +1285,46 @@
                                 logGameEvent('INFO', 'FeedbackHiddenCallback', `执行反馈隐藏回调函数。`);
                                 onHiddenCallback();
                             }
-                            overlayElement.removeEventListener('transitionend', fadeOutHandler); // Remove itself
+                            overlayElement.removeEventListener('transitionend', fadeOutHandler);
                         }
-                    }, { once: true }); // Use { once: true } to automatically remove the listener after it fires once
-                }, 2500); // 2.5 seconds delay before fade-out starts
+                    }, { once: true });
+                }, 2500);
             };
 
-            // Attach the fade-in listener before triggering fade-in
-            // Use requestAnimationFrame to ensure the `is-visible` class is applied after the DOM is ready for transition
             requestAnimationFrame(() => {
-                overlayElement.addEventListener('transitionend', fadeInHandler, { once: true }); // Ensure this listener is only attached once for the fade-in
+                overlayElement.addEventListener('transitionend', fadeInHandler, { once: true });
                 feedbackImage.classList.add('is-visible');
                 overlayElement.classList.add('is-visible');
                 logGameEvent('INFO', 'UI_FeedbackImageAndOverlayFadeInStarted', `反馈图片和透明遮罩开始渐入。`);
             });
 
-            // Attach overlay click listener when feedback is displayed
             attachQuickResetListener();
         }
 
         /**
-         * Reset game to initial state, including score. This is a full game reset.
+         * Resets the game to its initial state, including score. This is a full game reset.
          */
         function resetFullGame() {
-            logGameEvent('INFO', 'ResetFullGame', "进入 resetFullGame()。游戏将完全重置，包括分数。"); // Added log
+            logGameEvent('INFO', 'ResetFullGame', "进入 resetFullGame()。游戏将完全重置，包括分数。");
             currentGameState = GAME_STATE.IDLE;
             currentTrafficLightColor = null;
-            currentDogAction = null; // Reset dog action on full game reset
-            score = 0; // Reset score on full game reset
-            updateScoreDisplay(); // Update score display
-            lightUpTrafficLight(null); // Turn off active light, show gray base
+            currentDogAction = null;
+            score = 0;
+            updateScoreDisplay();
+            lightUpTrafficLight(null);
             
-            // *** 关键修改：仅当视频未播放或未处于待机状态时才重新加载和播放 ***
             const standbyVideoSrc = ASSETS.dog.standby[0].src;
             if (dogVideo.currentSrc !== standbyVideoSrc || dogVideo.paused) {
-                playDogVideo('standby', true); // Play standby video first
+                playDogVideo('standby', true);
                 logGameEvent('DEBUG', 'VideoReset', '已播放待机视频作为重置的一部分。');
             } else {
                 logGameEvent('DEBUG', 'VideoAlreadyStandby', '待机视频已在播放，跳过重新加载。');
             }
 
-            // Ensure video is playing after reset, handling autoplay policy if needed
             dogVideo.play().then(() => {
                 logGameEvent('INFO', 'ResetVideoAutoplaySuccess', '重置后视频自动播放成功。');
             }).catch(error => {
                 logGameEvent('WARN', 'ResetVideoAutoplayFailed', `重置后视频自动播放失败: ${error.message || (error.code ? `Code: ${error.code}, Name: ${error.name}` : JSON.stringify(error))}.`, { error: error });
-                // If autoplay fails here, it means the user hasn't interacted yet or browser policy is strict.
-                // The game will just continue without video/audio until user interacts.
                 displayMessageBox('视频播放提示', '游戏已重置，但视频可能需要您的再次点击才能播放。');
             });
 
@@ -1468,91 +1337,32 @@
          * Prepares the game for a new round, without resetting the score.
          */
         function startNewRound() {
-            logGameEvent('INFO', 'StartNewRound', "进入 startNewRound()。游戏将开始新一轮。"); // Added log
+            logGameEvent('INFO', 'StartNewRound', "进入 startNewRound()。游戏将开始新一轮。");
             currentGameState = GAME_STATE.IDLE;
             currentTrafficLightColor = null;
-            currentDogAction = null; // Clear previous dog action for new round
-            lightUpTrafficLight(null); // Turn off active light, show gray base
+            currentDogAction = null;
+            lightUpTrafficLight(null);
             
-            // *** NEW: Apply the same video check here as in resetFullGame ***
             const standbyVideoSrc = ASSETS.dog.standby[0].src;
             if (dogVideo.currentSrc !== standbyVideoSrc || dogVideo.paused) {
-                playDogVideo('standby', true); // Dog goes to standby
+                playDogVideo('standby', true);
                 logGameEvent('DEBUG', 'VideoReset', '已播放待机视频作为新一轮的一部分。');
             } else {
                 logGameEvent('DEBUG', 'VideoAlreadyStandby', '待机视频已在播放，跳过重新加载 (新一轮)。');
             }
             
-            // No longer hide feedback image/overlay here, as displayFeedback handles it via callback
             recordButton.disabled = false;
-            clearTimeout(resetGameTimeout); // Clear any pending timeout
-            detachQuickResetListener(); // Detach listener as overlay is hidden
+            clearTimeout(resetGameTimeout);
+            detachQuickResetListener();
         }
 
-        /**
-         * 预热所有音频和视频资产，强制浏览器解码和缓存。
-         */
-        async function primeAssets() {
-            logGameEvent('INFO', 'PrimingAssets', '开始预热所有音频和视频资产...');
 
-            // 1. 预热音频
-            const audioPrimingPromises = [];
-            for (const key in loadedAudio) {
-                if (loadedAudio.hasOwnProperty(key)) {
-                    const audio = loadedAudio[key];
-                    audioPrimingPromises.push(new Promise(async (resolve) => {
-                        try {
-                            audio.muted = true; // 预热时静音
-                            await audio.play();
-                            audio.pause();
-                            audio.currentTime = 0;
-                            audio.muted = false; // 预热后恢复非静音状态，以便实际播放
-                            logGameEvent('DEBUG', 'AudioPrimed', `音频 ${key} 已预热。`);
-                        } catch (e) {
-                            logGameEvent('WARN', 'AudioPrimingFailed', `音频 ${key} 预热失败 (可能由于自动播放策略或用户未互动): ${e.message}`);
-                        } finally {
-                            resolve(); // 无论成功或失败，都解决 Promise，不阻塞后续预热
-                        }
-                    }));
-                }
-            }
-            await Promise.all(audioPrimingPromises);
+        // ==========================================================
+        // SECTION: Modal and Settings Functions
+        // ==========================================================
 
-            // 2. 预热视频
-            const videoPrimingPromises = [];
-            // For the main dogVideo, we can prime it directly
-            videoPrimingPromises.push(new Promise(async (resolve) => {
-                try {
-                    dogVideo.muted = true; // Ensure main video is muted during priming
-                    dogVideo.currentTime = 0; // Reset video to start
-                    await dogVideo.play();
-                    dogVideo.pause();
-                    dogVideo.currentTime = 0;
-                    dogVideo.muted = false; // Unmute after priming
-                    logGameEvent('DEBUG', 'MainDogVideoPrimed', `主导盲犬视频已预热。`);
-                } catch (e) {
-                    logGameEvent('WARN', 'MainDogVideoPrimingFailed', `主导盲犬视频预热失败: ${e.message}`);
-                } finally {
-                    resolve();
-                }
-            }));
-
-            // For other video assets (if any, although currently only dogVideo is used directly)
-            // The preloadVideos function already creates temporary elements and removes them.
-            // If we want to prime *all* dog action videos, we need to load them into temporary elements again.
-            // However, since playDogVideo dynamically loads sources, priming all of them might be overkill
-            // and the main dogVideo priming is more critical.
-            // For now, let's just prime the main dogVideo and rely on playDogVideo's loading for others.
-
-            await Promise.all(videoPrimingPromises);
-
-            logGameEvent('INFO', 'PrimingAssetsComplete', '所有音频和视频资产预热完成。');
-        }
-
-        // --- Settings Modal Functions ---
         function openSettingsModal() {
             settingsModal.classList.remove('hidden');
-            // Update settings UI with current values
             scoreLimitInput.value = MAX_SCORE;
             logGameEvent('INFO', 'SettingsOpened', '设置界面已打开。');
         }
@@ -1564,32 +1374,30 @@
 
         function updateScoreLimit() {
             let newLimit = parseInt(scoreLimitInput.value, 10);
-            if (isNaN(newLimit) || newLimit < 0) { // Allow 0 for no limit
-                newLimit = 0; // Default to 0 if invalid or negative
+            if (isNaN(newLimit) || newLimit < 0) {
+                newLimit = 0;
             } else if (newLimit > 10) {
-                newLimit = 10; // Cap at 10
+                newLimit = 10;
             }
-            scoreLimitInput.value = newLimit; // Update input field to corrected value
+            scoreLimitInput.value = newLimit;
             MAX_SCORE = newLimit;
-            localStorage.setItem('maxScore', MAX_SCORE); // Save setting
-            updateScoreDisplay(); // Update score display with new max score
+            localStorage.setItem('maxScore', MAX_SCORE);
+            updateScoreDisplay();
             logGameEvent('INFO', 'ScoreLimitChanged', `计分上限已设置为: ${MAX_SCORE}。`);
         }
 
         function handleResetGame() {
             logGameEvent('INFO', 'ResetGameButtonClicked', '用户点击了“重置游戏”按钮。');
             resetFullGame();
-            closeSettingsModal(); // Close settings after reset
+            closeSettingsModal();
         }
 
         function handleResetScore() {
             logGameEvent('INFO', 'ResetScoreButtonClicked', '用户点击了“重置计分”按钮。');
             score = 0;
             updateScoreDisplay();
-            // Do not close settings modal here, as user might want to adjust other settings
         }
 
-        // --- Producer Info Modal Functions ---
         function openProducerInfoModal() {
             producerInfoModal.classList.remove('hidden');
             logGameEvent('INFO', 'ProducerInfoOpened', '制作者信息界面已打开。');
@@ -1600,39 +1408,38 @@
             logGameEvent('INFO', 'ProducerInfoClosed', '制作者信息界面已关闭。');
         }
 
-        // --- Event Listeners ---
+
+        // ==========================================================
+        // SECTION: Event Listeners
+        // ==========================================================
+
         scoreDisplay.addEventListener('click', openSettingsModal);
         closeSettingsButton.addEventListener('click', closeSettingsModal);
         scoreLimitInput.addEventListener('input', updateScoreLimit);
         producerInfoButton.addEventListener('click', openProducerInfoModal);
-        closeProducerInfoButton.addEventListener('click', closeProducerInfoModal); // Fixed this listener
-        resetGameButton.addEventListener('click', handleResetGame); // New event listener
-        resetScoreButton.addEventListener('click', handleResetScore); // New event listener
+        closeProducerInfoButton.addEventListener('click', closeProducerInfoModal);
+        resetGameButton.addEventListener('click', handleResetGame);
+        resetScoreButton.addEventListener('click', handleResetScore);
 
-        // ==========================================================
-        // 核心修改点：录制按钮点击事件（同时监听 click 和 touchstart）
-        // ==========================================================
         const recordButtonHandler = (event) => {
             logGameEvent('INFO', 'RecordButtonClickOrTouch', `录音按钮点击/触摸。类型: ${event.type}, 当前状态: ${currentGameState}, isRecording: ${isRecording}`);
-            event.stopPropagation(); // Stop event bubbling to prevent quick reset
-            event.preventDefault(); // Prevent default touch behavior like scrolling
+            event.stopPropagation();
+            event.preventDefault();
 
             if (!micAccessGranted) {
-                displayMessageBox('需要麦克风权限', '请点击“开始游戏”按钮以授予麦克风权限并加载资源。');
+                displayMessageBox('需要麦克风权限', '请允许浏览器访问麦克风。');
                 return;
             }
 
-            // 如果按钮是禁用状态，说明它还在处理中或不应被点击
-            // 增加 !isRecording 条件，因为 onstart 才会禁用，避免在识别开始瞬间被误判为“禁用中”
-            if (recordButton.disabled && !isRecording) { 
+            if (recordButton.disabled && !isRecording) {
                 logGameEvent('WARN', 'RecordButtonDisabledClick', '尝试点击禁用状态的录音按钮。');
                 return;
             }
 
-            if (isRecording) { // 如果当前正在录制，再次点击则停止录制
+            if (isRecording) {
                 logGameEvent('INFO', 'RecordButtonClick', '已在录制中，停止录制。');
                 stopRecording();
-            } else { // 如果当前不在录制，则开始录制
+            } else {
                 if (currentGameState === GAME_STATE.IDLE) {
                     logGameEvent('INFO', 'RecordButtonClick', '状态为 IDLE，开始录制红绿灯颜色。');
                     startRecording('lightColor');
@@ -1641,59 +1448,152 @@
                     startRecording('dogFeedback');
                 } else {
                     logGameEvent('WARN', 'RecordButtonClickInvalidState', `在无效状态下点击录音按钮: ${currentGameState}。`);
-                    // 在这里不需要重新启用按钮，因为在 startRecording 内部会处理错误回滚和按钮启用
                 }
             }
         };
 
         recordButton.addEventListener('click', recordButtonHandler);
-        recordButton.addEventListener('touchstart', recordButtonHandler, { passive: false }); // 使用 passive: false 确保 preventDefault 有效
+        recordButton.addEventListener('touchstart', recordButtonHandler, { passive: false });
 
-        // Helper function to hide the click to start overlay
-        function hideClickToStartOverlay() {
-            clickToStartOverlay.classList.add('hidden'); // Start fade out
-            clickToStartOverlay.addEventListener('transitionend', function handler() {
-                clickToStartOverlay.remove();
-                clickToStartOverlay.removeEventListener('transitionend', handler);
-                logGameEvent('INFO', 'ClickToStartOverlayHidden', '“点击开始”遮罩已隐藏并移除。');
-                resetFullGame(); // Start the game after assets are ready
+        /**
+         * Attaches a click listener to the overlay for quick reset/dismissal.
+         */
+        function attachQuickResetListener() {
+            if (quickResetHandler) {
+                overlayElement.removeEventListener('click', quickResetHandler);
+                overlayElement.removeEventListener('touchstart', quickResetHandler);
+            }
+            quickResetHandler = handleOverlayClick;
+            overlayElement.addEventListener('click', quickResetHandler);
+            overlayElement.addEventListener('touchstart', quickResetHandler);
+            logGameEvent('DEBUG', 'QuickResetListenerAttached', '快速重置监听器已附加到透明遮罩。');
+        }
+
+        /**
+         * Removes the quick reset click listener from the overlay.
+         */
+        function detachQuickResetListener() {
+            if (quickResetHandler) {
+                overlayElement.removeEventListener('click', quickResetHandler);
+                overlayElement.removeEventListener('touchstart', quickResetHandler);
+                quickResetHandler = null;
+                logGameEvent('DEBUG', 'QuickResetListenerDetached', '快速重置监听器已从透明遮罩分离。');
+            }
+        }
+
+        /**
+         * Handles click events on the overlay for quick reset or dismissing Try Again.
+         * @param {Event} event - The click event object.
+         */
+        function handleOverlayClick(event) {
+            detachQuickResetListener();
+            clearTimeout(resetGameTimeout);
+
+            feedbackImage.classList.remove('is-visible');
+            overlayElement.classList.remove('is-visible');
+            logGameEvent('INFO', 'UI_FeedbackImageFadeOutStarted', `反馈图片和透明遮罩开始渐出。`);
+
+            overlayElement.addEventListener('transitionend', function handler() {
+                if (window.getComputedStyle(overlayElement).opacity === '0') {
+                    feedbackImage.style.display = 'none';
+                    overlayElement.style.display = 'none';
+                    overlayElement.classList.remove('try-again-overlay', 'good-job-overlay');
+                    logGameEvent('INFO', 'UI_FeedbackImageAndOverlayHidden', `反馈图片和透明遮罩已隐藏。`);
+
+                    if (feedbackImage.src.includes(ASSETS.feedback.goodJob)) {
+                        logGameEvent('INFO', 'OverlayClickAction', '点击透明遮罩: 触发 YES 后的快速前进。');
+                        if (MAX_SCORE === 0 || score === MAX_SCORE) {
+                            logGameEvent('INFO', 'GameCompletedQuick', '已达到最高分或无上限模式。点击遮罩立即完全重置。');
+                            resetFullGame();
+                        } else {
+                            logGameEvent('INFO', 'RoundCompletedQuick', '正确反馈。点击遮罩立即开始新一轮。');
+                            startNewRound();
+                        }
+                    } else if (feedbackImage.src.includes(ASSETS.feedback.tryAgain)) {
+                        logGameEvent('INFO', 'OverlayClickAction', '点击透明遮罩: 隐藏 Try Again 提示。');
+                        recordButton.disabled = false;
+                        logGameEvent('DEBUG', 'TryAgainOverlayClick', `尝试播放当前导盲犬动作: ${currentDogAction}`);
+                        playDogVideo(currentDogAction, true);
+                        currentGameState = GAME_STATE.DOG_ACTION;
+                        logGameEvent('INFO', 'TryAgainDismissed', 'Try Again 提示已消失，游戏状态回滚到 DOG_ACTION。');
+                    } else {
+                        logGameEvent('WARN', 'OverlayClickUnexpected', '点击透明遮罩: 意外情况，执行新一轮。');
+                        startNewRound();
+                    }
+                    overlayElement.removeEventListener('transitionend', handler);
+                }
             }, { once: true });
         }
 
-        // Initial setup function, now called after user interaction
+
+        // ==========================================================
+        // SECTION: Game Initialization and Start
+        // ==========================================================
+
+        /**
+         * Handles the start game action when the user clicks the overlay.
+         * It hides the overlay, initializes game assets, plays the standby video, and then resets the game.
+         * @param {Event} event - The click or touchstart event object.
+         */
+        async function startGameHandler(event) {
+            logGameEvent('INFO', 'StartGameInitiated', `用户点击/触摸了“点击开始游戏”遮罩。事件类型: ${event.type}`);
+            event.stopPropagation();
+            event.preventDefault();
+
+            // Hide the start game overlay
+            startGameOverlay.style.opacity = '0';
+            startGameOverlay.addEventListener('transitionend', function handler() {
+                startGameOverlay.style.display = 'none';
+                startGameOverlay.removeEventListener('transitionend', handler);
+                logGameEvent('INFO', 'StartGameOverlayHidden', '“点击开始游戏”遮罩已隐藏。');
+            }, { once: true });
+
+            // Initialize game assets (including mic access)
+            await initializeGameAssets();
+
+            // After assets are loaded and mic access is handled, play the standby video
+            playDogVideo('standby', true);
+            logGameEvent('INFO', 'InitialStandbyVideoPlayed', '初始待机视频已播放。');
+
+            // Finally, reset the game to its initial state, ready for interaction
+            resetFullGame();
+        }
+
+        /**
+         * Initializes game assets, including loading settings, preloading media,
+         * priming assets, and requesting microphone access.
+         */
         async function initializeGameAssets() {
             logGameEvent('INFO', 'InitializeGameAssets', '开始初始化游戏资源...');
+            
             // Load settings from localStorage
             const savedMaxScore = localStorage.getItem('maxScore');
             if (savedMaxScore !== null) {
                 MAX_SCORE = parseInt(savedMaxScore, 10);
-                if (isNaN(MAX_SCORE) || MAX_SCORE < 0 || MAX_SCORE > 10) { // Allow 0
-                    MAX_SCORE = 5; // Default if invalid
+                if (isNaN(MAX_SCORE) || MAX_SCORE < 0 || MAX_SCORE > 10) {
+                    MAX_SCORE = 5;
                 }
             }
-            scoreLimitInput.value = MAX_SCORE; // Update UI
+            scoreLimitInput.value = MAX_SCORE;
 
-            // Add a timeout for the entire loading process (60 seconds)
             const loadingTimeout = setTimeout(() => {
                 logGameEvent('ERROR', 'LoadingTimeout', '游戏资源加载超时。请检查网络连接或尝试刷新页面。');
                 displayMessageBox('加载超时', '游戏资源加载时间过长。请检查您的网络连接或尝试刷新页面。');
-                // Ensure the overlay is hidden even on timeout
-                hideClickToStartOverlay(); // This will remove the overlay
-            }, 60000); // 60 seconds timeout
+            }, 60000);
 
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 try {
                     logGameEvent('INFO', 'MicAccessRequest', '请求麦克风权限...');
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     logGameEvent('INFO', 'MicAccessGranted', '麦克风权限已授予。');
-                    micAccessGranted = true; // 麦克风权限已授予
-                    stream.getTracks().forEach(track => track.stop()); // Stop the temporary stream
+                    micAccessGranted = true;
+                    stream.getTracks().forEach(track => track.stop());
                     initSpeechRecognition();
 
                     logGameEvent('INFO', 'AssetPreloading - Images', '开始按顺序预加载所有游戏图片...');
                     await preloadImages();
                     logGameEvent('INFO', 'AssetPreloading - Videos', '开始按顺序预加载所有游戏视频...');
-                    await preloadVideos(); // 视频预加载
+                    await preloadVideos();
                     logGameEvent('INFO', 'AssetPreloading - Audio', '开始按顺序预加载所有游戏音频...');
                     await preloadAudio();
 
@@ -1702,27 +1602,13 @@
                     logGameEvent('INFO', 'AssetPriming', '开始预热所有游戏资产...');
                     await primeAssets();
                     logGameEvent('INFO', 'AssetPrimingComplete', '所有游戏资产预热完成。');
-
-                    // *** 关键修改：在遮罩消失前开始播放待机视频 ***
-                    playDogVideo('standby', true); // Set up standby video
-
-                    logGameEvent('INFO', 'InitialVideoAutoplayAttempt', '尝试初始待机视频自动播放...');
-                    dogVideo.play().then(() => {
-                        logGameEvent('INFO', 'InitialVideoAutoplaySuccess', '初始待机视频自动播放成功。');
-                        clearTimeout(loadingTimeout); // Clear timeout on success
-                        hideClickToStartOverlay();
-                    }).catch(error => {
-                        logGameEvent('WARN', 'InitialVideoAutoplayFailed', `初始待机视频自动播放失败: ${error.message || (error.code ? `Code: ${error.code}, Name: ${error.name}` : JSON.stringify(error))}.`, { error: error });
-                        // If autoplay fails, update overlay message and keep it visible for user interaction
-                        clickToStartOverlay.innerHTML = '<h3>点击任意位置开始游戏</h3><p>视频和音频可能需要用户互动才能播放。</p><p class="text-sm mt-2 opacity-75">（点击此处继续）</p>';
-                        clickToStartOverlay.style.cursor = 'pointer';
-                        clearTimeout(loadingTimeout); // Clear timeout as we are now waiting for user click
-                    });
+                    
+                    clearTimeout(loadingTimeout);
 
                 } catch (err) {
-                    clearTimeout(loadingTimeout); // Clear timeout on error
-                    micAccessGranted = false; // 权限未授予
-                    recordButton.disabled = true; // 禁用按钮
+                    clearTimeout(loadingTimeout);
+                    micAccessGranted = false;
+                    recordButton.disabled = true;
                     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                         logGameEvent('ERROR', 'MicAccessDenied', `麦克风权限被拒绝: ${err.message}`, { error: err.message });
                         displayMessageBox('麦克风权限被拒绝！', '需要麦克风权限才能进行语音互动。请允许浏览器访问麦克风并刷新页面。');
@@ -1730,46 +1616,26 @@
                         logGameEvent('ERROR', 'AssetLoadingFailed', `游戏资源加载失败: ${err.message}`, { error: err.message });
                         displayMessageBox('加载失败', `游戏资源加载失败: ${err.message}。请检查网络连接或尝试刷新页面。`);
                     }
-                    hideClickToStartOverlay(); // Ensure overlay is hidden on any error
                 }
             } else {
-                clearTimeout(loadingTimeout); // Clear timeout as no mic support
+                clearTimeout(loadingTimeout);
                 logGameEvent('ERROR', 'GetUserMediaUnsupported', '您的浏览器不支持麦克风功能。');
                 displayMessageBox('浏览器不支持！', '您的浏览器不支持麦克风功能。请升级到最新版浏览器。');
-                micAccessGranted = false; // 明确设置权限未授予
-                recordButton.disabled = true; // 彻底禁用录音按钮
-                hideClickToStartOverlay(); // Ensure overlay is hidden
+                micAccessGranted = false;
+                recordButton.disabled = true;
             }
         }
 
-
-        // Initialize game after page loads
+        // Initial setup on window load
         window.onload = () => {
             logGameEvent('INFO', 'WindowLoaded', '窗口加载完成。');
-            // Display click to start overlay initially
-            clickToStartOverlay.style.display = 'flex'; // Ensure it's visible
+            // Display the start game overlay initially
+            startGameOverlay.style.display = 'flex';
+            startGameOverlay.style.opacity = '1';
 
-            // Define the click and touchstart handler for the overlay
-            const overlayStartHandler = async (event) => {
-                logGameEvent('INFO', 'ClickToStartInitiated', `用户点击/触摸了“点击开始”遮罩。事件类型: ${event.type}`);
-                event.stopPropagation(); // 阻止事件冒泡
-                event.preventDefault(); // 阻止默认行为
-
-                // 移除所有监听器，避免重复触发
-                clickToStartOverlay.removeEventListener('click', overlayStartHandler);
-                clickToStartOverlay.removeEventListener('touchstart', overlayStartHandler);
-
-                // Temporarily change text to indicate loading
-                clickToStartOverlay.innerHTML = '<h3>正在加载游戏资源...</h3><p>请稍候</p>';
-                clickToStartOverlay.style.cursor = 'wait'; // Change cursor to indicate loading
-                
-                // Start the asset initialization process
-                initializeGameAssets(); 
-            };
-
-            // Attach the click and touchstart listeners
-            clickToStartOverlay.addEventListener('click', overlayStartHandler, { once: true });
-            clickToStartOverlay.addEventListener('touchstart', overlayStartHandler, { once: true, passive: false });
+            // Attach the click and touchstart listeners to the start game overlay
+            startGameOverlay.addEventListener('click', startGameHandler, { once: true });
+            startGameOverlay.addEventListener('touchstart', startGameHandler, { once: true, passive: false });
         };
     </script>
 </body>
