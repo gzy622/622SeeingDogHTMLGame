@@ -95,6 +95,7 @@
     </div>
 
     <script>
+        // 将主要逻辑包裹在 DOMContentLoaded 中，但初始化的调用放在 window.onload
         document.addEventListener('DOMContentLoaded', () => {
             // 在这里填写你的讯飞开放平台 APPID, API_KEY, API_SECRET
             const APPID = '61653c47';
@@ -147,7 +148,7 @@
                 const signatureOrigin = `host: ${hostUrl}\ndate: ${date}\n${requestLine}`;
 
                 // 再次检查 CryptoJS 是否已加载，以防万一
-                if (typeof CryptoJS === 'undefined' || typeof CryptoJS.HmacSHA256 === 'undefined') {
+                if (typeof CryptoJS === 'undefined' || typeof CryptoJS.HmacSHA256 === 'undefined' || typeof CryptoJS.enc.Base64 === 'undefined') {
                     console.error("CryptoJS 未加载或不完整。请检查 CryptoJS CDN 链接或本地文件路径。");
                     showMessage("加密库加载失败，无法进行鉴权。请检查网络或CDN链接。", "error");
                     return null;
@@ -314,10 +315,12 @@
                     }
                 }
             });
+        }); // DOMContentLoaded 结束
 
-            // 页面加载完成后，首先尝试获取麦克风权限并初始化 RecorderManager
+        // 页面所有资源加载完成后，再初始化 RecorderManager 和麦克风权限检查
+        window.onload = () => {
             initializeRecorder();
-        });
+        };
     </script>
 </body>
 </html>
