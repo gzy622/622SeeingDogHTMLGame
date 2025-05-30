@@ -68,7 +68,7 @@
         }
 
         /* 状态和结果显示区域 */
-        .status-section, .results-section {
+        .status-section, .results-section, .log-section {
             margin-top: 25px;
             padding: 20px;
             background-color: #e8f5e9; /* 淡绿色背景 */
@@ -77,7 +77,7 @@
             text-align: left;
         }
 
-        .status-section h2, .results-section h2 {
+        .status-section h2, .results-section h2, .log-section h2 {
             color: #2e7d32;
             margin-top: 0;
             margin-bottom: 15px;
@@ -91,8 +91,8 @@
         }
 
         #recognition-results {
-            white-space: pre-wrap; /* 保留空白符和换行符 */
-            word-break: break-word; /* 允许单词在长文本中换行 */
+            white-space: pre-wrap; /* Preserve whitespace and newlines */
+            word-break: break-word; /* Allow words to break in long text */
             min-height: 80px;
             background-color: #f9f9f9;
             padding: 15px;
@@ -100,21 +100,48 @@
             border: 1px solid #eee;
             font-size: 1.1em;
             color: #555;
-            overflow-y: auto; /* 允许内容过多时滚动 */
+            overflow-y: auto; /* Allow scrolling if content overflows */
             max-height: 200px;
         }
 
+        #log-output {
+            white-space: pre-wrap;
+            word-break: break-word;
+            min-height: 100px;
+            max-height: 300px; /* Limit log height */
+            background-color: #f0f0f0; /* Slightly darker background for logs */
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 0.9em; /* Smaller font for logs */
+            color: #444;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace; /* Monospace font for logs */
+        }
+
         .error {
-            color: #d32f2f; /* 红色 */
+            color: #d32f2f; /* Red */
             font-weight: bold;
         }
 
         .success {
-            color: #388e3c; /* 绿色 */
+            color: #388e3c; /* Green */
             font-weight: bold;
         }
 
-        /* 小屏幕适配 */
+        .log-error {
+            color: #d32f2f;
+        }
+
+        .log-warn {
+            color: #f57f17; /* Orange */
+        }
+
+        .log-info {
+            color: #1976d2; /* Blue */
+        }
+
+        /* Small screen adaptation */
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
@@ -151,52 +178,131 @@
         <pre id="recognition-results">暂无识别结果。</pre>
     </div>
 
+    <div class="container log-section">
+        <h2>调试日志</h2>
+        <pre id="log-output">日志将显示在此处...</pre>
+        <button id="clearLogButton">清空日志</button>
+    </div>
+
     <script>
-        // 核心功能模块
+        // Core functionality module
         const SpeechRecognitionModule = (function() {
-            // 私有变量
+            // Private variables
             let recognition = null;
             let isRecognizing = false;
             let finalTranscript = '';
 
-            // 获取DOM元素
+            // Get DOM elements
             const statusMessageElement = document.getElementById('status-message');
             const recognitionResultsElement = document.getElementById('recognition-results');
             const startRecognitionButton = document.getElementById('startRecognitionButton');
             const stopRecognitionButton = document.getElementById('stopRecognitionButton');
             const requestPermissionButton = document.getElementById('requestPermissionButton');
+            const logOutputElement = document.getElementById('log-output'); // New: Log output element
+            const clearLogButton = document.getElementById('clearLogButton'); // New: Clear log button
+
+            /**
+             * @module Logger
+             * @description Handles logging messages to the webpage and console.
+             */
+            const Logger = (function() {
+                /**
+                 * Appends a log message to the log output area on the webpage.
+                 * @param {string} message The message to log.
+                 * @param {string} type The type of log (info, warn, error).
+                 */
+                function logToPage(message, type = 'info') {
+                    const timestamp = new Date().toLocaleTimeString();
+                    const logEntry = document.createElement('div');
+                    logEntry.textContent = `[${timestamp}] ${message}`;
+                    logEntry.className = `log-${type}`; // Apply specific class for styling
+
+                    // Prepend new log entries to keep the latest at the top
+                    if (logOutputElement.firstChild) {
+                        logOutputElement.insertBefore(logEntry, logOutputElement.firstChild);
+                    } else {
+                        logOutputElement.appendChild(logEntry);
+                    }
+
+                    // Keep only the last N log entries to prevent excessive memory usage
+                    const maxLogEntries = 100;
+                    while (logOutputElement.children.length > maxLogEntries) {
+                        logOutputElement.removeChild(logOutputElement.lastChild);
+                    }
+
+                    // Also log to console for robust debugging
+                    if (type === 'error') {
+                        console.error(message);
+                    } else if (type === 'warn') {
+                        console.warn(message);
+                    } else {
+                        console.log(message);
+                    }
+                }
+
+                /**
+                 * Clears all messages from the log output area.
+                 */
+                function clearLogs() {
+                    logOutputElement.innerHTML = '日志已清空。';
+                    console.log('[Logger] Logs cleared from page.');
+                }
+
+                return {
+                    info: (msg) => logToPage(msg, 'info'),
+                    warn: (msg) => logToPage(msg, 'warn'),
+                    error: (msg, errorObj = null) => {
+                        let fullMsg = msg;
+                        if (errorObj) {
+                            fullMsg += ` Error: ${errorObj.name || 'UnknownError'} - ${errorObj.message || 'No message'}`;
+                            // If error object has a stack, include it
+                            if (errorObj.stack) {
+                                fullMsg += `\nStack: ${errorObj.stack}`;
+                            }
+                        }
+                        logToPage(fullMsg, 'error');
+                    },
+                    clear: clearLogs
+                };
+            })();
 
             /**
              * @module Permissions
-             * @description 处理麦克风权限请求和检查
+             * @description Handles microphone permission requests and checks.
              */
             const Permissions = (function() {
                 /**
-                 * 请求麦克风权限
-                 * @returns {Promise<boolean>} 如果成功获取权限返回 true，否则返回 false
+                 * Requests microphone permission.
+                 * @returns {Promise<boolean>} Returns true if permission is successfully obtained, false otherwise.
                  */
                 async function requestMicrophonePermission() {
+                    Logger.info('[Permissions] Attempting to request microphone permission...');
                     statusMessageElement.textContent = '正在请求麦克风权限...';
                     try {
-                        // 使用 navigator.mediaDevices.getUserMedia 请求麦克风权限
+                        // Use navigator.mediaDevices.getUserMedia to request microphone permission
                         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        // 权限获取成功后，停止流以释放麦克风
+                        // After successfully getting permission, stop the stream to release the microphone
                         stream.getTracks().forEach(track => track.stop());
+                        Logger.info('[Permissions] Microphone permission granted successfully.');
                         statusMessageElement.textContent = '麦克风权限已授予。您可以开始语音识别了。';
-                        statusMessageElement.className = 'success'; // 添加成功样式
-                        startRecognitionButton.disabled = false; // 启用开始识别按钮
+                        statusMessageElement.className = 'success'; // Add success style
+                        startRecognitionButton.disabled = false; // Enable start recognition button
                         return true;
                     } catch (error) {
-                        console.error('获取麦克风权限失败:', error);
+                        Logger.error('[Permissions] Failed to get microphone permission:', error);
                         let errorMessage = '获取麦克风权限失败。请检查您的设备设置，确保浏览器有权访问麦克风。';
                         if (error.name === 'NotAllowedError') {
                             errorMessage = '用户拒绝了麦克风权限请求或权限已被禁用。';
                         } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
                             errorMessage = '未找到麦克风设备。';
+                        } else if (error.name === 'AbortError') {
+                            errorMessage = '权限请求被中止。';
+                        } else if (error.name === 'SecurityError') {
+                            errorMessage = '安全错误：可能需要在HTTPS环境下运行。';
                         }
                         statusMessageElement.textContent = errorMessage;
-                        statusMessageElement.className = 'error'; // 添加错误样式
-                        startRecognitionButton.disabled = true; // 禁用开始识别按钮
+                        statusMessageElement.className = 'error'; // Add error style
+                        startRecognitionButton.disabled = true; // Disable start recognition button
                         return false;
                     }
                 }
@@ -208,15 +314,17 @@
 
             /**
              * @module SpeechRecognition
-             * @description 处理语音识别的核心逻辑
+             * @description Handles the core logic of speech recognition.
              */
             const SpeechRecognition = (function() {
                 /**
-                 * 初始化语音识别对象
+                 * Initializes the speech recognition object.
                  */
                 function initializeRecognition() {
-                    // 检查浏览器是否支持 Web Speech API
+                    Logger.info('[SpeechRecognition] Initializing speech recognition...');
+                    // Check if the browser supports Web Speech API
                     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                        Logger.error('[SpeechRecognition] Browser does not support Web Speech API.');
                         statusMessageElement.textContent = '抱歉，您的浏览器不支持语音识别功能。请尝试使用支持Web Speech API的最新版Chrome浏览器。';
                         statusMessageElement.className = 'error';
                         startRecognitionButton.disabled = true;
@@ -224,50 +332,62 @@
                         return;
                     }
 
-                    // 优先使用webkitSpeechRecognition（Chrome等）
+                    // Prioritize webkitSpeechRecognition (Chrome, etc.)
                     recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                    Logger.info('[SpeechRecognition] SpeechRecognition object created.');
 
-                    // 设置语音识别的属性
-                    recognition.continuous = true; // 持续识别，直到调用 stop()
-                    recognition.interimResults = true; // 返回临时结果，可以实时显示用户正在说什么
-                    recognition.lang = 'zh-CN'; // 设置识别语言为中文（中国）
+                    // Set speech recognition properties
+                    recognition.continuous = true; // Continuous recognition until stop() is called
+                    recognition.interimResults = true; // Return interim results for real-time display
+                    recognition.lang = 'zh-CN'; // Set recognition language to Chinese (China)
+                    Logger.info('[SpeechRecognition] Recognition properties set: continuous=true, interimResults=true, lang=zh-CN.');
 
-                    // 事件监听器
+                    // Event listeners
                     recognition.onstart = function() {
                         isRecognizing = true;
+                        Logger.info('[SpeechRecognition] Event: onstart - Recognition started.');
                         statusMessageElement.textContent = '语音识别已启动，请开始讲话...';
-                        statusMessageElement.className = ''; // 清除样式
+                        statusMessageElement.className = ''; // Clear style
                         startRecognitionButton.disabled = true;
                         stopRecognitionButton.disabled = false;
-                        finalTranscript = ''; // 重置最终识别结果
+                        finalTranscript = ''; // Reset final recognition result
                         recognitionResultsElement.textContent = '正在倾听...';
                     };
 
                     recognition.onresult = function(event) {
                         let interimTranscript = '';
-                        // 遍历所有识别结果
+                        Logger.info('[SpeechRecognition] Event: onresult - Received recognition result.');
+                        // Iterate through all recognition results
                         for (let i = event.resultIndex; i < event.results.length; ++i) {
                             const transcript = event.results[i][0].transcript;
                             if (event.results[i].isFinal) {
-                                finalTranscript += transcript; // 最终结果累加
+                                finalTranscript += transcript; // Accumulate final results
+                                Logger.info(`[SpeechRecognition] Final result part: "${transcript}"`);
                             } else {
-                                interimTranscript += transcript; // 临时结果
+                                interimTranscript += transcript; // Interim result
+                                Logger.info(`[SpeechRecognition] Interim result part: "${transcript}"`);
                             }
                         }
-                        // 显示临时和最终结果
+                        // Display interim and final results
                         recognitionResultsElement.textContent = `最终结果: ${finalTranscript}\n临时结果: ${interimTranscript}`;
                     };
 
                     recognition.onerror = function(event) {
                         isRecognizing = false;
-                        console.error('语音识别错误:', event.error);
+                        Logger.error('[SpeechRecognition] Event: onerror - Speech recognition error occurred!', event.error);
                         let errorMessage = `语音识别错误：${event.error}`;
                         if (event.error === 'not-allowed') {
-                            errorMessage = '语音识别被拒绝。请确保已授权麦克风权限。';
+                            errorMessage = '语音识别被拒绝。请确保已授权麦克风权限，且未被其他应用占用。';
                         } else if (event.error === 'no-speech') {
                             errorMessage = '未检测到语音。请确保麦克风正常工作并重新尝试。';
                         } else if (event.error === 'network') {
                             errorMessage = '网络错误，请检查您的网络连接。';
+                        } else if (event.error === 'aborted') {
+                            errorMessage = '语音识别被中止。';
+                        } else if (event.error === 'audio-capture') {
+                            errorMessage = '无法捕获音频。请检查麦克风连接或驱动。';
+                        } else if (event.error === 'service-not-allowed') {
+                            errorMessage = '语音识别服务不允许。可能需要HTTPS。';
                         }
                         statusMessageElement.textContent = errorMessage;
                         statusMessageElement.className = 'error';
@@ -277,46 +397,73 @@
 
                     recognition.onend = function() {
                         isRecognizing = false;
+                        Logger.info('[SpeechRecognition] Event: onend - Recognition ended.');
                         statusMessageElement.textContent = '语音识别已停止。';
                         statusMessageElement.className = '';
                         startRecognitionButton.disabled = false;
                         stopRecognitionButton.disabled = true;
-                        // 如果有最终结果，确保显示
+                        // If there are final results, ensure they are displayed
                         if (finalTranscript) {
                             recognitionResultsElement.textContent = `最终识别结果:\n${finalTranscript}`;
                         } else {
                             recognitionResultsElement.textContent = '暂无识别结果。';
                         }
                     };
+
+                    recognition.onspeechstart = function() {
+                        Logger.info('[SpeechRecognition] Event: onspeechstart - Speech detected.');
+                    };
+
+                    recognition.onspeechend = function() {
+                        Logger.info('[SpeechRecognition] Event: onspeechend - Speech ended.');
+                    };
+
+                    recognition.onaudiostart = function() {
+                        Logger.info('[SpeechRecognition] Event: onaudiostart - Audio capture started.');
+                    };
+
+                    recognition.onaudioend = function() {
+                        Logger.info('[SpeechRecognition] Event: onaudioend - Audio capture ended.');
+                    };
                 }
 
                 /**
-                 * 开始语音识别
+                 * Starts speech recognition.
                  */
                 function startRecognition() {
+                    Logger.info('[SpeechRecognition] Attempting to start recognition...');
                     if (!recognition) {
-                        initializeRecognition(); // 如果尚未初始化，则初始化
+                        initializeRecognition(); // If not yet initialized, initialize it
                     }
                     if (recognition && !isRecognizing) {
                         try {
                             recognition.start();
+                            Logger.info('[SpeechRecognition] recognition.start() called successfully.');
                         } catch (e) {
-                            console.error('启动语音识别失败:', e);
+                            Logger.error('[SpeechRecognition] Failed to call recognition.start():', e);
                             statusMessageElement.textContent = '启动语音识别失败。可能已经启动或权限问题。';
                             statusMessageElement.className = 'error';
                         }
                     } else if (isRecognizing) {
+                        Logger.warn('[SpeechRecognition] Recognition is already in progress.');
                         statusMessageElement.textContent = '语音识别正在进行中...';
+                    } else {
+                        Logger.error('[SpeechRecognition] Recognition object is null or undefined.');
+                        statusMessageElement.textContent = '语音识别对象未准备好。';
+                        statusMessageElement.className = 'error';
                     }
                 }
 
                 /**
-                 * 停止语音识别
+                 * Stops speech recognition.
                  */
                 function stopRecognition() {
+                    Logger.info('[SpeechRecognition] Attempting to stop recognition...');
                     if (recognition && isRecognizing) {
                         recognition.stop();
+                        Logger.info('[SpeechRecognition] recognition.stop() called successfully.');
                     } else {
+                        Logger.warn('[SpeechRecognition] Recognition is not active or already stopped.');
                         statusMessageElement.textContent = '语音识别未启动或已停止。';
                     }
                 }
@@ -330,20 +477,22 @@
 
             /**
              * @module EventHandlers
-             * @description 页面事件处理
+             * @description Handles page events.
              */
             const EventHandlers = (function() {
                 /**
-                 * 初始化所有事件监听器
+                 * Initializes all event listeners.
                  */
                 function init() {
+                    Logger.info('[EventHandlers] Initializing all event listeners.');
                     requestPermissionButton.addEventListener('click', Permissions.requestMicrophonePermission);
                     startRecognitionButton.addEventListener('click', SpeechRecognition.startRecognition);
                     stopRecognitionButton.addEventListener('click', SpeechRecognition.stopRecognition);
+                    clearLogButton.addEventListener('click', Logger.clear); // New: Clear log button event
 
-                    // 页面加载完成时初始化语音识别对象
-                    // 这可以在用户点击前预加载，但考虑到权限问题，更倾向于在用户点击“开始”后或在请求权限成功后初始化。
-                    // 这里我们在开始识别前检查是否已初始化，确保流程清晰。
+                    // Initialize recognition object when the page loads, but do not start it.
+                    // This ensures the object is ready when needed.
+                    SpeechRecognition.initializeRecognition();
                 }
 
                 return {
@@ -351,14 +500,14 @@
                 };
             })();
 
-            // 公开接口，暴露给外部调用
+            // Public interface, exposed for external calls
             return {
-                init: EventHandlers.init // 初始化所有事件处理器
+                init: EventHandlers.init // Initialize all event handlers
             };
 
-        })(); // 立即执行函数表达式 (IIFE)
+        })(); // Immediately Invoked Function Expression (IIFE)
 
-        // 页面加载完成后调用初始化函数
+        // Call the initialization function after the page content is loaded
         document.addEventListener('DOMContentLoaded', SpeechRecognitionModule.init);
     </script>
 </body>
