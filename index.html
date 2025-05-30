@@ -2,685 +2,1675 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>安卓麦克风与语音识别测试</title>
-    <style>
-        /*
-         * CSS 样式部分：定义网页的外观和布局。
-         * 这些样式确保网页在不同大小的屏幕（包括安卓触屏设备）上都能良好显示。
-         */
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导盲犬交通指挥小助手 - 语音版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+<style>
+    /* Custom CSS styles - 游戏控件样式信息 */
+    html, body {
+        height: 100%; /* Ensure html and body take full height */
+        margin: 0; /* Remove default body margin */
+    }
+    body {
+        font-family: 'Inter', sans-serif;
+        overflow: hidden; /* Prevent scrolling */
+    }
 
-        /* 全局样式：应用于整个页面的基本设置 */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* 设置字体，提供清晰的文本显示 */
-            margin: 0; /* 移除页面外边距 */
-            padding: 20px; /* 页面内边距，让内容不紧贴边缘 */
-            background-color: #f4f7f6; /* 页面背景色，柔和的灰色 */
-            color: #333; /* 默认文本颜色 */
-            display: flex; /* 使用Flexbox布局，方便内容垂直居中 */
-            flex-direction: column; /* Flexbox方向为列，使内容垂直堆叠 */
-            align-items: center; /* 水平居中Flexbox项目 */
-            min-height: 100vh; /* 最小高度为视口高度，确保内容少时也能撑满屏幕 */
-            box-sizing: border-box; /* 盒模型设置为边框盒，padding和border不增加元素总宽度/高度 */
-        }
+    .game-container {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column; /* Use column layout for main elements */
+        justify-content: space-between; /* Distribute space between items */
+        align-items: center;   /* Center content horizontally */
+        position: relative;
+        background-image: url('SDHG_Background10-16.png'); /* 修改为相对路径 */
+        background-size: cover; /* 确保背景覆盖整个屏幕，无黑边 */
+        background-position: center;
+        background-repeat: no-repeat; /* 确保不重复 */
+        background-color: #f0f0f0; /* 添加一个背景颜色，以填充 contain 模式下可能出现的空白区域 */
+        padding-top: 5vh; /* Add space at the top */
+        padding-bottom: 5vh; /* Add space at the bottom */
+        /* Removed gap as space-between handles distribution */
+    }
 
-        /* 容器样式：用于包裹主要内容的矩形区域 */
-        .container {
-            background-color: #ffffff; /* 容器背景色为白色 */
-            padding: 30px; /* 容器内边距 */
-            border-radius: 12px; /* 圆角边框，使界面更柔和 */
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); /* 阴影效果，增加立体感 */
-            width: 100%; /* 宽度占满父容器 */
-            max-width: 600px; /* 最大宽度限制，防止在大屏幕上过宽 */
-            margin-bottom: 20px; /* 容器底部外边距，与其他容器分隔 */
-            text-align: center; /* 容器内文本居中对齐 */
-        }
+    .traffic-light {
+        height: 20vh; /* 缩小红绿灯高度 */
+        width: calc(2.5 * 20vh); /* 宽度根据2.5:1的比例计算 */
+        max-width: 650px; /* 相应调整最大宽度 */
+        max-height: 260px; /* 相应调整最大高度 */
+        border-radius: 12px;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        position: relative;
+        overflow: hidden;
+    }
 
-        /* 标题样式 */
-        h1 {
-            color: #2c3e50; /* 标题颜色，深蓝色 */
-            margin-bottom: 25px; /* 标题底部外边距 */
-            font-size: 1.8em; /* 标题字体大小 */
-        }
+    .traffic-light img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
 
-        /* 按钮样式 */
-        button {
-            background-color: #4CAF50; /* 按钮背景色，绿色 */
-            color: white; /* 按钮文本颜色 */
-            padding: 12px 25px; /* 按钮内边距，增加点击区域 */
-            border: none; /* 无边框 */
-            border-radius: 8px; /* 圆角按钮 */
-            cursor: pointer; /* 鼠标悬停时显示手型光标 */
-            font-size: 1.1em; /* 按钮字体大小 */
-            transition: background-color 0.3s ease, transform 0.2s ease; /* 过渡效果，使交互更平滑 */
-            margin: 10px; /* 按钮外边距 */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* 按钮阴影 */
-        }
+    .dog-video {
+        height: 50vh; /* 放大导盲犬视频高度 */
+        width: 50vh; /* 保持正方形比例 */
+        min-width: 50vh; /* 确保加载前也占据空间 */
+        min-height: 50vh; /* 确保加载前也占据空间 */
+        max-width: 620px; /* 相应调整最大宽度 */
+        max-height: 620px; /* 相应调整最大高度 */
+        border-radius: 12px;
+        object-fit: contain;
+        display: none; /* Initially hidden */
+    }
 
-        /* 按钮悬停状态 */
-        button:hover {
-            background-color: #45a049; /* 悬停时颜色变深 */
-            transform: translateY(-2px); /* 向上轻微移动，增加交互感 */
-        }
+    .record-button-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative; /* Essential for positioning scoreDisplay absolutely relative to this container */
+        margin-bottom: 2vh; /* Adjust as needed */
+    }
 
-        /* 按钮点击状态 */
-        button:active {
-            background-color: #3e8e41; /* 点击时颜色更深 */
-            transform: translateY(0); /* 恢复原始位置 */
-        }
+    #scoreDisplay {
+        /* Position to the left of the record button */
+        position: absolute;
+        right: 100%; /* Pushes the element to the left of the container's right edge */
+        margin-right: 1rem; /* Space between score and button */
+        color: white;
+        font-size: 2rem; /* Make it clearly visible */
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.6); /* Darker shadow for visibility */
+        white-space: nowrap; /* Prevent text wrapping */
+        cursor: pointer; /* Indicate it's clickable */
+        padding: 0.5rem; /* Add padding for easier clicking */
+        border-radius: 0.5rem;
+        transition: background-color 0.2s ease-in-out;
+    }
 
-        /* 按钮禁用状态 */
-        button:disabled {
-            background-color: #cccccc; /* 禁用时背景色变灰 */
-            cursor: not-allowed; /* 鼠标显示禁止符号 */
-            box-shadow: none; /* 禁用时移除阴影 */
-        }
+    #scoreDisplay:hover {
+        background-color: rgba(255, 255, 255, 0.2); /* Subtle hover effect */
+    }
 
-        /* 状态、结果和日志显示区域的通用样式 */
-        .status-section, .results-section, .log-section, .audio-info-section {
-            margin-top: 25px; /* 顶部外边距 */
-            padding: 20px; /* 内边距 */
-            background-color: #e8f5e9; /* 淡绿色背景 */
-            border-radius: 10px; /* 圆角 */
-            border: 1px solid #d4edda; /* 边框 */
-            text-align: left; /* 文本左对齐 */
-        }
+    .record-button {
+        padding: 0;
+        height: 20vh; /* 缩小录制按钮高度 */
+        width: 20vh; /* 保持圆形比例 */
+        max-width: 210px; /* 相应调整最大宽度 */
+        max-height: 210px; /* 相应调整最大高度 */
+        font-size: 2rem;
+        font-weight: bold;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        /* 以下是去除阴影的核心修改 */
+        box-shadow: none !important; /* 强制移除所有阴影 */
+        transition: none !important; /* 移除阴影过渡效果 */
+        background: transparent;
+        color: white;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-        /* 各个区域的标题样式 */
-        .status-section h2, .results-section h2, .log-section h2, .audio-info-section h2 {
-            color: #2e7d32; /* 标题颜色，深绿色 */
-            margin-top: 0; /* 移除顶部外边距 */
-            margin-bottom: 15px; /* 底部外边距 */
-            font-size: 1.4em; /* 字体大小 */
-        }
+    /* 移除 hover 和 active 状态的阴影 */
+    .record-button:hover:not(:disabled) {
+        box-shadow: none !important;
+    }
 
-        /* 状态消息文本样式 */
-        #status-message {
-            font-size: 1.1em; /* 字体大小 */
-            color: #333; /* 文本颜色 */
-            line-height: 1.6; /* 行高，增加可读性 */
-        }
+    .record-button:active:not(:disabled) {
+        box-shadow: none !important;
+    }
 
-        /* 识别结果/录音信息显示区域样式 */
-        #recognition-results {
-            white-space: pre-wrap; /* 保留空白符和换行符，确保格式正确 */
-            word-break: break-word; /* 允许长单词在必要时换行 */
-            min-height: 80px; /* 最小高度 */
-            background-color: #f9f9f9; /* 背景色 */
-            padding: 15px; /* 内边距 */
-            border-radius: 8px; /* 圆角 */
-            border: 1px solid #eee; /* 边框 */
-            font-size: 1.1em; /* 字体大小 */
-            color: #555; /* 文本颜色 */
-            overflow-y: auto; /* 内容溢出时显示垂直滚动条 */
-            max-height: 200px; /* 最大高度限制 */
-        }
+    .record-button:disabled {
+        background: transparent;
+        cursor: not-allowed;
+        box-shadow: none !important; /* 确保 disabled 也没有阴影 */
+        opacity: 0.5; /* Reduced opacity for a more visibly disabled state */
+        filter: grayscale(100%); /* Add grayscale filter to the image */
+        pointer-events: none; /* Prevent any pointer interactions */
+    }
 
-        /* 日志输出区域样式 */
-        #log-output {
-            white-space: pre-wrap; /* 保留空白符和换行符 */
-            word-break: break-word; /* 允许长单词换行 */
-            min-height: 100px; /* 最小高度 */
-            max-height: 300px; /* 最大高度限制，防止日志过多撑满页面 */
-            background-color: #f0f0f0; /* 略深的背景色，与内容区域区分 */
-            padding: 15px; /* 内边距 */
-            border-radius: 8px; /* 圆角 */
-            border: 1px solid #ddd; /* 边框 */
-            font-size: 0.9em; /* 字体略小，适合显示日志 */
-            color: #444; /* 文本颜色 */
-            overflow-y: auto; /* 内容溢出时显示垂直滚动条 */
-            font-family: 'Courier New', Courier, monospace; /* 等宽字体，方便查看日志 */
-        }
+    .record-button.recording {
+        animation: record-flash-button 0.5s infinite alternate;
+    }
 
-        /* 错误状态文本颜色 */
-        .error {
-            color: #d32f2f; /* 红色 */
-            font-weight: bold; /* 加粗 */
-        }
+    /* 新增样式：表示正在停止录制 */
+    .record-button.stopping {
+        background-color: #f39c12; /* 橙色 */
+        box-shadow: 0 0 10px rgba(243, 156, 18, 0.7); /* 可以保留这个闪烁效果 */
+        cursor: not-allowed;
+    }
 
-        /* 成功状态文本颜色 */
-        .success {
-            color: #388e3c; /* 绿色 */
-            font-weight: bold; /* 加粗 */
-        }
+    @keyframes record-flash-button {
+        from { box-shadow: none; } /* 修改为 none */
+        to { box-shadow: 0 0 25px 5px rgba(255,215,0,0.7); } /* 保留这个闪烁阴影，因为这是录制状态的视觉反馈 */
+    }
 
-        /* 日志中错误信息的颜色 */
-        .log-error {
-            color: #d32f2f;
-        }
+    .record-button img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
 
-        /* 日志中警告信息的颜色 */
-        .log-warn {
-            color: #f57f17; /* 橙色 */
-        }
+    .feedback-image {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 70vw; /* Responsive width */
+        max-width: 500px; /* Max width for desktop */
+        height: auto;
+        z-index: 1000; /* Increased z-index, higher than overlay */
+        display: none; /* Hidden by default */
+        opacity: 0; /* Initial opacity for fade effect */
+        transition: opacity 0.3s ease-in-out; /* Smooth transition for opacity */
+        border-radius: 12px;
+        /* Removed box-shadow as per user request */
+    }
 
-        /* 日志中普通信息的颜色 */
-        .log-info {
-            color: #1976d2; /* 蓝色 */
-        }
+    /* Semi-transparent black overlay */
+    #overlay {
+        position: fixed;
+        top: 0; /* Explicitly set top */
+        left: 0; /* Explicitly set left */
+        width: 100%; /* Explicitly set width */
+        height: 100%; /* Explicitly set height */
+        background-color: rgba(0, 0, 0, 0.5); /* Default semi-transparent black */
+        z-index: 999; /* Lower than feedback-image, higher than game content */
+        display: none; /* Hidden by default */
+        opacity: 0; /* Initial opacity for fade effect */
+        transition: opacity 0.3s ease-in-out, background-color 0.3s ease-in-out; /* Smooth transition for opacity and background color */
+    }
 
-        /* 媒体查询：针对小屏幕设备（如手机）的适配 */
-        @media (max-width: 600px) {
-            .container {
-                padding: 20px; /* 小屏幕下容器内边距减小 */
-            }
-            button {
-                width: 100%; /* 按钮宽度占满父容器 */
-                margin: 8px 0; /* 按钮垂直外边距 */
-            }
-            h1 {
-                font-size: 1.5em; /* 小屏幕下标题字体减小 */
-            }
+    /* New class to trigger overlay visibility and fade-in */
+    #overlay.is-visible {
+        opacity: 1;
+    }
+
+    /* New class to trigger feedback image visibility and fade-in */
+    .is-visible {
+        opacity: 1;
+    }
+
+    /* Settings Modal specific styles */
+    #settingsModal, #producerInfoModal {
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background for modals */
+    }
+
+    /* Media queries for responsive layout - adjust for portrait */
+    @media (max-width: 768px) {
+        .game-container {
+            padding-top: 5vh; /* Consistent padding */
+            padding-bottom: 5vh; /* Consistent padding */
         }
-    </style>
-</head>
+        .traffic-light {
+            height: 20vh; /* 移动端红绿灯高度 */
+            width: calc(2.5 * 20vh); /* 移动端红绿灯宽度 */
+        }
+        .dog-video {
+            height: 50vh; /* 移动端小狗视频高度 */
+            min-height: 50vh; /* 确保加载前也占据空间 */
+            width: 50vh; /* 移动端小狗视频宽度 */
+            min-width: 50vh; /* 确保加载前也占据空间 */
+        }
+        .record-button-container {
+            margin-bottom: 1vh; /* Adjust for mobile */
+        }
+        #scoreDisplay {
+            font-size: 1.5rem; /* Smaller font for mobile */
+            margin-right: 0.5rem; /* Smaller margin for mobile */
+        }
+        .record-button {
+            height: 20vh; /* 移动端录制按钮高度 */
+            width: 20vh; /* 移动端录制按钮宽度 */
+        }
+        .feedback-image {
+            width: 90vw; /* 移动端反馈图片宽度 */
+            max-height: 60vh; /* 限制移动端高度，防止过高 */
+        }
+        #settingsModal .w-11\/12, #producerInfoModal .w-11\/12 {
+            width: 95%; /* Make modals slightly wider on small screens */
+        }
+        #settingsModal .max-w-md, #producerInfoModal .max-w-sm {
+            max-width: 95%; /* Further restrict max-width on mobile */
+        }
+    }
+
+@media (orientation: portrait) and (max-aspect-ratio: 10/16) {
+    .traffic-light {
+        height: 25vh; /* 缩小点，避免太大 */
+        width: calc(2.5 * 25vh);
+        max-width: none;
+        max-height: none;
+        box-sizing: border-box;
+        /* 保持背景图，不加阴影 */
+        box-shadow: none;
+    }
+    .record-button {
+        height: 28vh; /* 更大按钮 */
+        width: 28vh;
+        max-width: none;
+        max-height: none;
+        box-sizing: border-box;
+        box-shadow: none !important; /* 强制移除阴影 */
+    }
+    .record-button img {
+        width: 95%;  /* 更大图标，填满按钮 */
+        height: 95%;
+        max-width: none;
+        max-height: none;
+        object-fit: contain;
+    }
+    .feedback-image {
+        width: 85vw;
+        max-width: 600px;
+        max-height: 70vh;
+        height: auto;
+        box-sizing: border-box;
+        box-shadow: none; /* 也去掉阴影 */
+    }
+}
+</style>
+
+    </head>
 <body>
-    <div class="container">
-        <h1>安卓麦克风与语音识别测试</h1> <p>点击下方按钮，测试您的安卓设备浏览器是否支持麦克风权限和语音识别功能。</p>
-
-        <div class="controls">
-            <button id="requestPermissionButton">请求麦克风权限</button>
-            <button id="startRecognitionAndRecordingButton" disabled>开始语音识别并录音</button>
-            <button id="stopRecognitionAndRecordingButton" disabled>停止语音识别并录音</button>
+    <div class="game-container" id="gameContainer">
+        <div id="trafficLight" class="traffic-light">
+            <img id="trafficLightImage" src="SDHG_TrafficLight_gray2.png" alt="Traffic Light">
         </div>
 
-        <div class="status-section">
-            <h2>当前状态</h2>
-            <p id="status-message">等待操作...</p>
+        <video id="dogVideo" class="dog-video" playsinline preload="auto">
+            <source src="SDHG_dog_standby_2.webm" type="video/webm">
+            Your browser does not support the video tag.
+        </video>
+
+        <div class="record-button-container">
+            <div id="scoreDisplay">0/5</div>
+            <button id="recordButton" class="record-button">
+                <img src="SDHG_MicrophoneIcon.png" alt="Microphone Icon">
+            </button>
+        </div>
+
+        <img id="feedbackImage" src="" alt="Feedback" class="feedback-image">
+
+        <div id="overlay" class="fixed inset-0 z-9999"></div>
+
+        <div id="startGameOverlay" class="fixed inset-0 flex items-center justify-center z-[10002] bg-black bg-opacity-75 text-white cursor-pointer transition-opacity duration-300">
+            <h3 class="text-4xl font-bold text-center">START</h3>
+        </div>
+
+    </div>
+
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-11/12 max-w-md relative">
+            <button id="closeSettings" class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-2xl font-bold">&times;</button>
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">游戏设置</h2>
+
+            <div class="mb-4">
+                <label for="scoreLimit" class="block text-lg font-medium text-gray-700 mb-2">计分上限 (0表示无上限, 1-10表示具体上限):</label>
+                <input type="number" id="scoreLimit" min="0" max="10" value="5"
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            </div>
+
+            <div class="mb-4 flex justify-between space-x-2">
+                <button id="resetGameButton" class="w-1/2 px-3 py-2 text-sm bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75 transition duration-300">
+                    重置游戏
+                </button>
+                <button id="resetScoreButton" class="w-1/2 px-3 py-2 text-sm bg-yellow-500 text-white font-semibold rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-75 transition duration-300">
+                    重置计分
+                </button>
+            </div>
+            
+            <button id="producerInfoButton" class="w-full px-4 py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-300">
+                制作者信息
+            </button>
         </div>
     </div>
 
-    <div class="container results-section">
-        <h2>识别结果</h2>
-        <pre id="recognition-results">暂无识别结果。</pre>
-    </div>
-
-    <div class="container audio-info-section">
-        <h2>录音信息</h2>
-        <pre id="audio-stream-status">等待开始...</pre>
-        <pre id="audio-track-info">麦克风轨道: 未连接</pre>
-    </div>
-
-    <div class="container log-section">
-        <h2>调试日志</h2>
-        <pre id="log-output">日志将显示在此处...</pre>
-        <button id="clearLogButton">清空日志</button>
+    <div id="producerInfoModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[10001] hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-11/12 max-w-sm relative">
+            <button id="closeProducerInfo" class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-2xl font-bold">&times;</button>
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">制作者信息</h2>
+            <p class="text-gray-700">这是一个占位符。制作者信息将在这里显示。</p>
+            <p class="text-gray-600 mt-2 text-sm">版本: 1.0.0</p>
+            <p class="text-gray-600 text-sm">发布日期: 2025年5月</p>
+        </div>
     </div>
 
     <script>
-        /*
-         * JavaScript 核心功能模块：
-         * 整个JavaScript代码被封装在一个“立即执行函数表达式 (IIFE)”中。
-         * 这样做的好处是：
-         * 1. 避免全局变量污染：所有变量都在这个函数内部，不会影响到其他脚本。
-         * 2. 模块化：代码被组织成独立的逻辑块，便于管理和维护。
+        // ==========================================================
+        // SECTION: DOM Element References
+        // ==========================================================
+        const trafficLightElement = document.getElementById('trafficLight');
+        const trafficLightImage = document.getElementById('trafficLightImage');
+        const dogVideo = document.getElementById('dogVideo');
+        const recordButton = document.getElementById('recordButton');
+        const feedbackImage = document.getElementById('feedbackImage');
+        const gameContainer = document.getElementById('gameContainer');
+        const overlayElement = document.getElementById('overlay');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const startGameOverlay = document.getElementById('startGameOverlay');
+
+        // Settings Modal Elements
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettingsButton = document.getElementById('closeSettings');
+        const scoreLimitInput = document.getElementById('scoreLimit');
+        const producerInfoButton = document.getElementById('producerInfoButton');
+        const resetGameButton = document.getElementById('resetGameButton');
+        const resetScoreButton = document.getElementById('resetScoreButton');
+
+        // Producer Info Modal Elements
+        const producerInfoModal = document.getElementById('producerInfoModal');
+        const closeProducerInfoButton = document.getElementById('closeProducerInfo');
+
+
+        // ==========================================================
+        // SECTION: Game State Constants and Variables
+        // ==========================================================
+        const GAME_STATE = {
+            IDLE: 'idle',
+            LISTENING_LIGHT_COLOR: 'listeningLightColor',
+            DOG_ATTENTION: 'dogAttention',
+            DOG_ACTION: 'dogAction',
+            LISTENING_DOG_FEEDBACK: 'listeningDogFeedback',
+            PROCESSING_FEEDBACK: 'processingFeedback'
+        };
+
+        let currentGameState = GAME_STATE.IDLE;
+        let currentTrafficLightColor = null;
+        let currentDogAction = null;
+        let score = 0;
+        let MAX_SCORE = 5; // Maximum score, now configurable (0 for no limit)
+
+        // Speech recognition related
+        let recognition = null;
+        let isRecording = false;
+        let recognitionSuccess = false; // Flag to indicate if onresult successfully triggered
+        let feedbackDisplayedForCurrentRecognition = false; // Flag to prevent duplicate feedback display
+        let micAccessGranted = false; // Track microphone permission status
+
+        let resetGameTimeout = null;
+        let quickResetHandler = null; // Handler for quick reset click on overlay
+
+
+        // ==========================================================
+        // SECTION: Animation/Video and Audio Resource Paths
+        // ==========================================================
+        const ASSETS = {
+            dog: {
+                standby: [
+                    { src: 'SDHG_dog_standby_2.webm', type: 'video/webm' }
+                ],
+                attention: [
+                    { src: 'SDHG_dog_attention_mov.webm', type: 'video/webm' }
+                ],
+                stop: [
+                    { src: 'SDHG_dog_stop_2.webm', type: 'video/webm' }
+                ],
+                wait: [
+                    { src: 'SDHG_dog_wait.webm', type: 'video/webm' }
+                ],
+                go: [
+                    { src: 'SDHG_dog_go_2.webm', type: 'video/webm' }
+                ],
+            },
+            feedback: {
+                goodJob: 'SDHG_YES.png',
+                tryAgain: 'SDHG_TryAgain_2.png'
+            },
+            trafficLight: {
+                gray: 'SDHG_TrafficLight_gray2.png',
+                red: 'SDHG_TrafficLight_red2.png',
+                yellow: 'SDHG_TrafficLight_yellow2.png',
+                green: 'SDHG_TrafficLight_green2.png'
+            },
+        };
+
+        const AUDIO_ASSETS = {
+            recordStartSound: 'SDHG_sound_record_click.mp3',
+            recordCompleteSound: 'SDHG_sound_record_complete.mp3',
+            trafficLightSound: 'SDHG_sound_light.mp3',
+            yesSound: 'SDHG_sound_yes.mp3',
+            tryAgainSound: 'SDHG_sound_TryAgain.mp3',
+        };
+
+        let loadedAudio = {}; // Object to store loaded Audio objects
+
+
+        // ==========================================================
+        // SECTION: Utility Functions
+        // ==========================================================
+
+        /**
+         * Unified logging function - 游戏运行日志输出机制说明
+         * @param {string} level - Log level (e.g., 'DEBUG', 'INFO', 'WARN', 'ERROR')
+         * @param {string} eventType - Event type (e.g., 'GameStart', 'StateChange', 'SpeechRecognized')
+         * @param {string} message - Human-readable log message
+         * @param {object} [details={}] - Additional data for AI parsing
          */
-        const SpeechRecognitionAndRecordingModule = (function() {
-            // 私有变量：这些变量只能在当前模块内部访问和修改。
-            let recognition = null; // 用于存储Web Speech API的语音识别对象
-            let mediaStream = null; // 用于存储从麦克风获取的音频流对象
-            let isRecognizingAndRecording = false; // 标志，表示当前是否正在识别和录音
-            let finalTranscript = ''; // 存储最终的语音识别结果文本
-
-            // 获取DOM元素：提前获取页面上需要操作的HTML元素，避免重复查找。
-            const statusMessageElement = document.getElementById('status-message'); // 用于显示当前操作状态的段落
-            const recognitionResultsElement = document.getElementById('recognition-results'); // 用于显示语音识别结果的pre标签
-            const audioStreamStatusElement = document.getElementById('audio-stream-status'); // 用于显示音频流状态的pre标签
-            const audioTrackInfoElement = document.getElementById('audio-track-info'); // 用于显示音频轨道信息的pre标签
-            // 按钮ID更新，以反映其双重功能（识别和录音）
-            const startRecognitionAndRecordingButton = document.getElementById('startRecognitionAndRecordingButton'); // “开始语音识别并录音”按钮
-            const stopRecognitionAndRecordingButton = document.getElementById('stopRecognitionAndRecordingButton'); // “停止语音识别并录音”按钮
-            const requestPermissionButton = document.getElementById('requestPermissionButton'); // “请求麦克风权限”按钮
-            const logOutputElement = document.getElementById('log-output'); // 日志输出区域
-            const clearLogButton = document.getElementById('clearLogButton'); // 清空日志按钮
-
-            /**
-             * @module Logger
-             * @description 日志模块：负责将调试信息输出到网页和浏览器控制台。
-             * 这样即使没有连接电脑，也能直接在手机上看到运行日志。
-             */
-            const Logger = (function() {
-                /**
-                 * logToPage 函数：将日志消息添加到网页上的日志输出区域。
-                 * @param {string} message 要记录的日志消息。
-                 * @param {string} type 日志类型（'info'：普通信息，'warn'：警告，'error'：错误）。
-                 */
-                function logToPage(message, type = 'info') {
-                    const timestamp = new Date().toLocaleTimeString(); // 获取当前时间，用于日志时间戳
-                    const logEntry = document.createElement('div'); // 创建一个新的div元素来承载日志条目
-                    logEntry.textContent = `[${timestamp}] ${message}`; // 设置日志文本，包含时间戳
-                    logEntry.className = `log-${type}`; // 根据日志类型添加CSS类，用于不同颜色显示
-
-                    // 将新的日志条目添加到日志区域的顶部，让最新日志最先显示。
-                    if (logOutputElement.firstChild) {
-                        logOutputElement.insertBefore(logEntry, logOutputElement.firstChild);
-                    } else {
-                        logOutputElement.appendChild(logEntry);
-                    }
-
-                    // 控制日志条目数量，防止日志过多导致页面卡顿或内存溢出。
-                    const maxLogEntries = 100; // 最多保留100条日志
-                    while (logOutputElement.children.length > maxLogEntries) {
-                        logOutputElement.removeChild(logOutputElement.lastChild); // 移除最旧的日志
-                    }
-
-                    // 同时将日志输出到浏览器控制台，方便更专业的调试。
-                    if (type === 'error') {
-                        console.error(message);
-                    } else if (type === 'warn') {
-                        console.warn(message);
-                    } else {
-                        console.log(message);
-                    }
-                }
-
-                /**
-                 * clearLogs 函数：清空网页上的所有日志。
-                 */
-                function clearLogs() {
-                    logOutputElement.innerHTML = '日志已清空。'; // 清空内容并显示提示
-                    console.log('[Logger] Logs cleared from page.'); // 控制台也记录清空操作
-                }
-
-                // 返回一个包含公共方法的对象，供其他模块调用。
-                return {
-                    info: (msg) => logToPage(msg, 'info'), // 普通信息日志
-                    warn: (msg) => logToPage(msg, 'warn'), // 警告信息日志
-                    // 错误信息日志，可以接收一个错误对象，用于打印更详细的错误信息（如错误名称、消息、堆栈）。
-                    error: (msg, errorDetail = null) => {
-                        let fullMsg = msg;
-                        if (errorDetail) {
-                            if (typeof errorDetail === 'string') {
-                                fullMsg += ` 错误类型: ${errorDetail}`; // 如果是字符串，直接作为错误类型
-                            } else if (errorDetail instanceof Error) {
-                                fullMsg += ` 错误: ${errorDetail.name || '未知错误'} - ${errorDetail.message || '无消息'}`;
-                                if (errorDetail.stack) {
-                                    fullMsg += `\n堆栈: ${errorDetail.stack}`; // 包含错误堆栈
-                                }
-                            } else if (typeof errorDetail === 'object' && 'error' in errorDetail) {
-                                // 专门处理 SpeechRecognitionErrorEvent 这种包含 'error' 属性的对象
-                                fullMsg += ` 错误类型: ${errorDetail.error}`;
-                                if (errorDetail.message) {
-                                    fullMsg += ` 消息: ${errorDetail.message}`;
-                                }
-                            } else {
-                                fullMsg += ` 详情: ${JSON.stringify(errorDetail)}`; // 其他未知类型的错误详情
-                            }
-                        }
-                        logToPage(fullMsg, 'error');
-                    },
-                    clear: clearLogs // 清空日志方法
-                };
-            })();
-
-            /**
-             * @module Permissions
-             * @description 权限模块：处理麦克风权限的请求和检查。
-             */
-            const Permissions = (function() {
-                /**
-                 * requestMicrophonePermission 函数：请求麦克风权限。
-                 * @returns {Promise<boolean>} 返回一个Promise，如果成功获取权限则解析为 true，否则解析为 false。
-                 */
-                async function requestMicrophonePermission() {
-                    Logger.info('[权限] 正在尝试请求麦克风权限...'); // 记录日志
-                    statusMessageElement.textContent = '正在请求麦克风权限...'; // 更新页面状态
-                    try {
-                        // navigator.mediaDevices.getUserMedia 是Web API，用于请求用户访问媒体输入设备（如麦克风、摄像头）。
-                        // { audio: true } 表示我们只需要音频输入。
-                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        // 如果成功获取到流，说明权限已授予。
-                        // 此时，我们立即停止并释放麦克风，因为这个函数只是为了“检查权限”，而不是开始录音。
-                        stream.getTracks().forEach(track => track.stop());
-                        Logger.info('[权限] 麦克风权限已成功授予。'); // 记录成功日志
-                        statusMessageElement.textContent = '麦克风权限已授予。您可以开始语音识别和录音了。'; // 更新页面状态
-                        statusMessageElement.className = 'success'; // 添加成功样式
-                        startRecognitionAndRecordingButton.disabled = false; // 启用“开始语音识别并录音”按钮
-                        return true; // 返回成功
-                    } catch (error) {
-                        // 如果获取权限失败，会捕获到错误。
-                        Logger.error('[权限] 获取麦克风权限失败:', error); // 记录错误日志，包含错误详情
-                        let errorMessage = '获取麦克风权限失败。请检查您的设备设置，确保浏览器有权访问麦克风。';
-                        if (error.name === 'NotAllowedError') {
-                            // NotAllowedError 表示用户拒绝了权限请求，或者权限已被系统禁用。
-                            errorMessage = '用户拒绝了麦克风权限请求或权限已被禁用。';
-                        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-                            // NotNotFoundError/DevicesNotFoundError 表示未找到麦克风设备。
-                            errorMessage = '未找到麦克风设备。';
-                        } else if (error.name === 'AbortError') {
-                            // AbortError 表示权限请求被中止。
-                            errorMessage = '权限请求被中止。';
-                        } else if (error.name === 'SecurityError') {
-                            // SecurityError 表示安全错误，通常是因为页面没有通过HTTPS提供。
-                            errorMessage = '安全错误：可能需要在HTTPS环境下运行。';
-                        }
-                        statusMessageElement.textContent = errorMessage; // 更新页面状态为错误信息
-                        statusMessageElement.className = 'error'; // 添加错误样式
-                        startRecognitionAndRecordingButton.disabled = true; // 禁用“开始语音识别并录音”按钮
-                        return false; // 返回失败
-                    }
-                }
-
-                // 返回公共方法，供外部使用。
-                return {
-                    requestMicrophonePermission
-                };
-            })();
-
-            /**
-             * @module SpeechAndAudioHandler
-             * @description 语音识别与录音处理模块：结合了麦克风音频流的获取和Web Speech API的语音识别功能。
-             */
-            const SpeechAndAudioHandler = (function() {
-                /**
-                 * updateAudioInfo 函数：更新页面上显示的音频流和轨道信息。
-                 */
-                function updateAudioInfo() {
-                    if (mediaStream && mediaStream.active) {
-                        // 如果媒体流存在且处于激活状态
-                        audioStreamStatusElement.textContent = `音频流状态: 激活中 (ID: ${mediaStream.id})`;
-                        const audioTracks = mediaStream.getAudioTracks();
-                        if (audioTracks.length > 0) {
-                            const track = audioTracks[0];
-                            audioTrackInfoElement.textContent = `麦克风轨道: ${track.label} (ID: ${track.id}, 状态: ${track.readyState}, 静音: ${track.muted})`;
-                        } else {
-                            audioTrackInfoElement.textContent = '麦克风轨道: 未找到音频轨道。';
-                        }
-                    } else {
-                        // 如果媒体流不激活或不存在
-                        audioStreamStatusElement.textContent = '音频流状态: 未激活';
-                        audioTrackInfoElement.textContent = '麦克风轨道: 未连接';
-                    }
-                }
-
-                /**
-                 * initializeRecognition 函数：初始化Web Speech API的语音识别对象。
-                 * 这一步在页面加载时就完成，确保识别器对象准备就绪。
-                 */
-                function initializeRecognition() {
-                    Logger.info('[语音识别] 正在初始化语音识别服务...'); // 记录日志
-                    // 检查浏览器是否支持Web Speech API
-                    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                        Logger.error('[语音识别] 抱歉，您的浏览器不支持Web Speech API。'); // 记录错误
-                        statusMessageElement.textContent = '抱歉，您的浏览器不支持语音识别功能。请尝试使用支持Web Speech API的最新版Chrome浏览器。';
-                        statusMessageElement.className = 'error';
-                        startRecognitionAndRecordingButton.disabled = true;
-                        stopRecognitionAndRecordingButton.disabled = true;
-                        return;
-                    }
-
-                    // 优先使用 webkitSpeechRecognition (Chrome等浏览器支持)
-                    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-                    Logger.info('[语音识别] SpeechRecognition 对象已创建。'); // 记录创建成功
-
-                    // 设置语音识别器的属性
-                    recognition.continuous = true; // 持续识别，直到调用 stop()
-                    recognition.interimResults = true; // 返回临时结果，以便实时显示
-                    recognition.lang = 'zh-CN'; // 设置识别语言为中文（中国）
-                    Logger.info('[语音识别] 识别属性已设置: 持续=true, 临时结果=true, 语言=zh-CN。');
-
-                    // 语音识别器事件监听器：这些函数在识别过程的不同阶段被触发
-                    recognition.onstart = function() {
-                        isRecognizingAndRecording = true; // 标志识别正在进行
-                        Logger.info('[语音识别] 事件: onstart - 语音识别已启动。');
-                        statusMessageElement.textContent = '语音识别已启动，请开始讲话...';
-                        statusMessageElement.className = ''; // 清除状态样式
-                        startRecognitionAndRecordingButton.disabled = true; // 禁用开始按钮
-                        stopRecognitionAndRecordingButton.disabled = false; // 启用停止按钮
-                        finalTranscript = ''; // 重置最终识别结果
-                        recognitionResultsElement.textContent = '正在倾听...'; // 显示提示
-                    };
-
-                    recognition.onresult = function(event) {
-                        let interimTranscript = ''; // 临时识别结果
-                        Logger.info('[语音识别] 事件: onresult - 收到识别结果。');
-                        // 遍历所有识别结果
-                        for (let i = event.resultIndex; i < event.results.length; ++i) {
-                            const transcript = event.results[i][0].transcript; // 获取识别到的文本
-                            if (event.results[i].isFinal) {
-                                finalTranscript += transcript; // 如果是最终结果，累加到最终文本
-                                Logger.info(`[语音识别] 最终结果部分: "${transcript}"`);
-                            } else {
-                                interimTranscript += transcript; // 如果是临时结果，累加到临时文本
-                                Logger.info(`[语音识别] 临时结果部分: "${transcript}"`);
-                            }
-                        }
-                        // 在页面上显示临时结果和最终结果
-                        recognitionResultsElement.textContent = `最终结果: ${finalTranscript}\n临时结果: ${interimTranscript}`;
-                    };
-
-                    recognition.onerror = function(event) {
-                        isRecognizingAndRecording = false; // 识别停止
-                        // 将整个事件对象传递给 Logger.error，以便记录更详细的错误信息
-                        Logger.error('[语音识别] 事件: onerror - 语音识别发生错误!', event);
-                        let errorMessage = `语音识别错误：${event.error}`; // event.error 是错误类型字符串
-                        if (event.error === 'not-allowed') {
-                            errorMessage = '语音识别被拒绝。请确保已授权麦克风权限，且未被其他应用占用。';
-                        } else if (event.error === 'no-speech') {
-                            errorMessage = '未检测到语音。请确保麦克风正常工作并重新尝试。';
-                        } else if (event.error === 'network') {
-                            errorMessage = '网络错误，请检查您的网络连接。';
-                        } else if (event.error === 'aborted') {
-                            errorMessage = '语音识别被中止。这可能是由于网络问题、麦克风被占用或浏览器内部错误。';
-                        } else if (event.error === 'audio-capture') {
-                            errorMessage = '无法捕获音频。请检查麦克风连接或驱动。';
-                        } else if (event.error === 'service-not-allowed') {
-                            errorMessage = '语音识别服务不允许。可能需要在HTTPS环境下运行。';
-                        }
-                        statusMessageElement.textContent = errorMessage; // 更新页面状态为错误信息
-                        statusMessageElement.className = 'error'; // 添加错误样式
-                        startRecognitionAndRecordingButton.disabled = false; // 启用开始按钮
-                        stopRecognitionAndRecordingButton.disabled = true; // 禁用停止按钮
-                        updateAudioInfo(); // 更新录音信息
-                    };
-
-                    recognition.onend = function() {
-                        // 识别结束（正常停止或因错误/超时等）
-                        isRecognizingAndRecording = false; // 识别停止
-                        Logger.info('[语音识别] 事件: onend - 语音识别已结束。');
-                        statusMessageElement.textContent = '语音识别已停止。';
-                        statusMessageElement.className = '';
-                        startRecognitionAndRecordingButton.disabled = false; // 启用开始按钮
-                        stopRecognitionAndRecordingButton.disabled = true; // 禁用停止按钮
-                        // 确保最终结果被显示
-                        if (finalTranscript) {
-                            recognitionResultsElement.textContent = `最终识别结果:\n${finalTranscript}`;
-                        } else {
-                            recognitionResultsElement.textContent = '暂无识别结果。';
-                        }
-                        // 确保停止麦克风流，释放麦克风资源
-                        if (mediaStream) {
-                            mediaStream.getTracks().forEach(track => track.stop());
-                            mediaStream = null;
-                            Logger.info('[语音识别] 麦克风流已通过 onend 事件停止。');
-                        }
-                        updateAudioInfo(); // 更新录音信息
-                    };
-
-                    // 以下是Web Speech API的一些额外事件，用于更细致的调试：
-                    recognition.onspeechstart = function() {
-                        Logger.info('[语音识别] 事件: onspeechstart - 检测到语音输入。');
-                    };
-
-                    recognition.onspeechend = function() {
-                        Logger.info('[语音识别] 事件: onspeechend - 语音输入已结束。');
-                    };
-
-                    recognition.onaudiostart = function() {
-                        Logger.info('[语音识别] 事件: onaudiostart - 音频捕获已开始。');
-                    };
-
-                    recognition.onaudioend = function() {
-                        Logger.info('[语音识别] 事件: onaudioend - 音频捕获已结束。');
-                    };
-                }
-
-                /**
-                 * startRecognitionAndRecording 函数：开始语音识别并录音。
-                 * 1. 首先获取麦克风音频流。
-                 * 2. 然后启动语音识别服务。
-                 */
-                async function startRecognitionAndRecording() {
-                    Logger.info('[主控] 正在尝试开始语音识别和录音...'); // 记录日志
-                    if (isRecognizingAndRecording) {
-                        Logger.warn('[主控] 语音识别和录音已在进行中。'); // 如果已在进行中，发出警告
-                        statusMessageElement.textContent = '语音识别和录音正在进行中...';
-                        return;
-                    }
-
-                    statusMessageElement.textContent = '正在启动麦克风和识别服务...'; // 更新页面状态
-                    recognitionResultsElement.textContent = '正在初始化识别...'; // 清空并提示识别区域
-
-                    try {
-                        // 1. 获取麦克风音频流 (录音部分)
-                        // navigator.mediaDevices.getUserMedia 返回一个Promise，成功时提供MediaStream对象。
-                        // 这是获取麦克风输入的关键步骤。
-                        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        Logger.info('[主控] 麦克风音频流已成功获取。');
-                        updateAudioInfo(); // 立即更新页面上的录音信息
-
-                        // 为媒体流添加事件监听器，以便在流状态改变时记录日志。
-                        // 这有助于追踪麦克风是否意外停止。
-                        mediaStream.oninactive = () => {
-                            Logger.info('[录音] 音频流已停止 (oninactive 事件)。');
-                            // 如果流不活跃，尝试停止所有识别和录音进程
-                            stopRecognitionAndRecording();
-                        };
-                        mediaStream.onended = () => {
-                            Logger.info('[录音] 音频流已结束 (onended 事件)。');
-                            // 如果流结束，尝试停止所有识别和录音进程
-                            stopRecognitionAndRecording();
-                        };
-                        mediaStream.onaddtrack = (event) => {
-                            Logger.info(`[录音] 新增音频轨道: ${event.track.label}`);
-                            updateAudioInfo();
-                        };
-                        mediaStream.onremovetrack = (event) => {
-                            Logger.info(`[录音] 移除音频轨道: ${event.track.label}`);
-                            updateAudioInfo();
-                        };
-
-
-                        // 2. 启动语音识别 (识别部分)
-                        // 如果识别器尚未初始化，则先初始化它。
-                        if (!recognition) {
-                            initializeRecognition();
-                        }
-                        recognition.start(); // 调用 Web Speech API 的 start 方法开始识别
-
-                        // onstart 事件会负责更新 isRecognizingAndRecording 状态和按钮。
-                        // 这里的 try-catch 主要捕获 getUserMedia 的错误。
-                    } catch (error) {
-                        // 捕获获取音频流或启动识别过程中可能发生的错误。
-                        Logger.error('[主控] 启动语音识别和录音失败:', error); // 记录详细错误日志
-                        let errorMessage = '启动失败。请确保麦克风权限已授予且麦克风未被占用。';
-                        if (error.name === 'NotAllowedError') {
-                            errorMessage = '用户拒绝了麦克风权限或权限已被禁用。';
-                        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-                            errorMessage = '未找到麦克风设备。';
-                        } else if (error.name === 'AbortError') {
-                            errorMessage = '操作被中止。这可能是由于网络问题、麦克风被占用或浏览器内部错误。';
-                        } else if (error.name === 'SecurityError') {
-                            errorMessage = '安全错误：可能需要在HTTPS环境下运行。';
-                        } else if (error.name === 'NotReadableError') {
-                            errorMessage = '麦克风无法读取。可能被其他应用占用或硬件故障。';
-                        }
-                        statusMessageElement.textContent = errorMessage; // 更新页面状态为错误信息
-                        statusMessageElement.className = 'error'; // 添加错误样式
-                        startRecognitionAndRecordingButton.disabled = false; // 启用开始按钮
-                        stopRecognitionAndRecordingButton.disabled = true; // 禁用停止按钮
-                        updateAudioInfo(); // 更新录音信息
-                    }
-                }
-
-                /**
-                 * stopRecognitionAndRecording 函数：停止语音识别并释放麦克风。
-                 */
-                function stopRecognitionAndRecording() {
-                    Logger.info('[主控] 正在尝试停止语音识别和录音...'); // 记录日志
-                    if (!isRecognizingAndRecording) {
-                        Logger.warn('[主控] 语音识别和录音未启动或已停止。'); // 如果未在进行中，发出警告
-                        statusMessageElement.textContent = '语音识别和录音未启动或已停止。';
-                        return;
-                    }
-
-                    // 1. 停止语音识别服务
-                    // 调用 Web Speech API 的 stop 方法来终止识别过程。
-                    if (recognition) {
-                        recognition.stop();
-                        Logger.info('[主控] recognition.stop() 已调用。');
-                    }
-
-                    // 2. 停止麦克风音频流并释放麦克风资源
-                    // 遍历媒体流中的所有轨道（包括音频和视频，这里只有音频），并停止它们。
-                    // track.stop() 是释放麦克风的关键操作。
-                    if (mediaStream) {
-                        mediaStream.getTracks().forEach(track => {
-                            track.stop();
-                            Logger.info(`[主控] 停止麦克风轨道: ${track.label} (ID: ${track.id})`);
-                        });
-                        mediaStream = null; // 清空媒体流变量
-                    }
-
-                    isRecognizingAndRecording = false; // 更新状态为停止
-                    Logger.info('[主控] 语音识别和麦克风已停止。'); // 记录成功日志
-                    statusMessageElement.textContent = '语音识别和录音已停止。'; // 更新页面状态
-                    statusMessageElement.className = ''; // 清除状态样式
-                    startRecognitionAndRecordingButton.disabled = false; // 启用开始按钮
-                    stopRecognitionAndRecordingButton.disabled = true; // 禁用停止按钮
-                    updateAudioInfo(); // 更新录音信息
-                }
-
-                // 返回公共方法，供外部使用。
-                return {
-                    initializeRecognition, // 在模块加载时初始化识别器
-                    start: startRecognitionAndRecording, // 启动识别和录音
-                    stop: stopRecognitionAndRecording // 停止识别和录音
-                };
-            })();
-
-            /**
-             * @module EventHandlers
-             * @description 事件处理模块：负责为页面上的按钮添加事件监听器。
-             */
-            const EventHandlers = (function() {
-                /**
-                 * init 函数：初始化所有事件监听器。
-                 */
-                function init() {
-                    Logger.info('[事件处理] 正在初始化所有事件监听器。'); // 记录日志
-                    // 为“请求麦克风权限”按钮添加点击事件，调用 Permissions 模块的相应方法。
-                    requestPermissionButton.addEventListener('click', Permissions.requestMicrophonePermission);
-                    // 为“开始语音识别并录音”按钮添加点击事件，调用 SpeechAndAudioHandler 模块的相应方法。
-                    startRecognitionAndRecordingButton.addEventListener('click', SpeechAndAudioHandler.start);
-                    // 为“停止语音识别并录音”按钮添加点击事件，调用 SpeechAndAudioHandler 模块的相应方法。
-                    stopRecognitionAndRecordingButton.addEventListener('click', SpeechAndAudioHandler.stop);
-                    // 为“清空日志”按钮添加点击事件，调用 Logger 模块的相应方法。
-                    clearLogButton.addEventListener('click', Logger.clear);
-
-                    // 在页面加载时初始化语音识别对象，但不会立即开始识别。
-                    // 这确保 recognition 对象在需要时已经准备就绪。
-                    SpeechAndAudioHandler.initializeRecognition();
-                }
-
-                // 返回公共方法。
-                return {
-                    init
-                };
-            })();
-
-            // 公共接口：暴露给外部调用的模块初始化方法。
-            // 当页面加载完成后，会调用 SpeechRecognitionAndRecordingModule.init() 来启动整个应用。
-            return {
-                init: EventHandlers.init // 初始化所有事件处理器
+        function logGameEvent(level, eventType, message, details = {}) {
+            const logEntry = {
+                timestamp: new Date().toISOString(),
+                level: level,
+                state: currentGameState,
+                event: eventType,
+                details: details,
+                message: message
             };
 
-        })(); // 立即执行函数表达式 (IIFE) 结束
+            const jsonLog = JSON.stringify(logEntry);
+            switch (level) {
+                case 'DEBUG':
+                    console.log(`[DEBUG] ${message} | ${jsonLog}`);
+                    break;
+                case 'INFO':
+                    console.info(`[INFO] ${message} | ${jsonLog}`);
+                    break;
+                case 'WARN':
+                    console.warn(`[WARN] ${message} | ${jsonLog}`);
+                    break;
+                case 'ERROR':
+                    console.error(`[ERROR] ${message} | ${jsonLog}`);
+                    break;
+                default:
+                    console.log(`[UNKNOWN] ${message} | ${jsonLog}`);
+            }
+        }
 
-        // DOMContentLoaded 事件监听器：
-        // 确保在HTML文档的DOM（文档对象模型）完全加载和解析后才执行JavaScript代码。
-        // 这样可以避免在HTML元素尚未创建时就尝试操作它们而导致的错误。
-        document.addEventListener('DOMContentLoaded', SpeechRecognitionAndRecordingModule.init);
+        /**
+         * Displays a message box to the user.
+         * @param {string} title - The title of the message box.
+         * @param {string} message - The main message content.
+         */
+        function displayMessageBox(title, message) {
+            let messageBox = document.getElementById('customMessageBox');
+            if (!messageBox) {
+                messageBox = document.createElement('div');
+                messageBox.id = 'customMessageBox';
+                messageBox.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); color: white; padding: 25px; border-radius: 12px; z-index: 10000; text-align: center; cursor: pointer; font-size: 1.2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.5);';
+                document.body.appendChild(messageBox);
+            }
+            messageBox.innerHTML = `<h3>${title}</h3><p>${message}</p><p class="text-sm mt-2 opacity-75">（点击此处继续）</p>`;
+            messageBox.style.display = 'block';
+            messageBox.onclick = () => {
+                messageBox.style.display = 'none';
+                // Only re-enable button if not in a state where it should be disabled (e.g., processing feedback)
+                if (currentGameState !== GAME_STATE.PROCESSING_FEEDBACK) {
+                     recordButton.disabled = false;
+                     recordButton.classList.remove('recording', 'stopping');
+                }
+            };
+            logGameEvent('INFO', 'MessageBoxDisplayed', `显示消息框: ${title}`);
+        }
+
+        /**
+         * Updates the score display.
+         */
+        function updateScoreDisplay() {
+            if (MAX_SCORE === 0) {
+                scoreDisplay.textContent = `得分: ${score}`;
+                logGameEvent('INFO', 'ScoreUpdate', `分数已更新 (无上限模式): ${score}`);
+            } else {
+                scoreDisplay.textContent = `${score}/${MAX_SCORE}`;
+                logGameEvent('INFO', 'ScoreUpdate', `分数已更新: ${score}/${MAX_SCORE}`);
+            }
+        }
+
+        /**
+         * Plays a sound effect.
+         * @param {string} key - The key for the audio asset in AUDIO_ASSETS.
+         * @param {number} [volume=1] - Playback volume (0-1).
+         */
+        function playSound(key, volume = 1) {
+            const audioSource = loadedAudio[key];
+            if (audioSource) {
+                const soundInstance = audioSource.cloneNode();
+                soundInstance.volume = volume;
+                soundInstance.muted = false;
+                soundInstance.play().catch(e => {
+                    logGameEvent('ERROR', 'AudioPlayFailure', `播放音频 ${key} 失败:`, { error: e.message, key: key });
+                });
+                soundInstance.onended = () => {
+                    soundInstance.remove();
+                };
+                logGameEvent('DEBUG', 'AudioPlayed', `播放音效: ${key}`);
+            } else {
+                logGameEvent('WARN', 'AudioNotFound', `尝试播放未加载的音频: ${key}`);
+            }
+        }
+
+        /**
+         * Lights up the traffic light image.
+         * @param {string} color 'red', 'yellow', 'green' or null to turn off.
+         */
+        function lightUpTrafficLight(color) {
+            if (color) {
+                trafficLightImage.src = ASSETS.trafficLight[color];
+                logGameEvent('INFO', 'LightOn', `红绿灯亮起: ${color}`);
+            } else {
+                trafficLightImage.src = ASSETS.trafficLight.gray;
+                logGameEvent('INFO', 'LightOff', `红绿灯熄灭。`);
+            }
+        }
+
+        /**
+         * Gets the correct guide dog action based on traffic light color.
+         * @param {string} lightColor
+         * @returns {string} 'stop', 'wait', or 'go'
+         */
+        function getCorrectActionForLight(lightColor) {
+            if (lightColor === 'red') return 'stop';
+            if (lightColor === 'yellow') return 'wait';
+            if (lightColor === 'green') return 'go';
+            return null;
+        }
+
+
+        // ==========================================================
+        // SECTION: Asset Preloading and Priming
+        // ==========================================================
+
+        /**
+         * Preloads all audio files.
+         * @returns {Promise<void>} Resolves when all audio files are loaded.
+         */
+        async function preloadAudio() {
+            logGameEvent('DEBUG', 'PreloadAudioFunctionCall', 'preloadAudio function entered.');
+            const audioKeys = Object.keys(AUDIO_ASSETS);
+            const audioPromises = audioKeys.map(key => {
+                return new Promise((resolve, reject) => {
+                    const audio = document.createElement('audio');
+                    audio.preload = 'auto';
+                    audio.volume = 0.8;
+                    audio.muted = true;
+                    audio.style.display = 'none';
+                    document.body.appendChild(audio);
+
+                    const onLoaded = () => {
+                        loadedAudio[key] = audio;
+                        logGameEvent('INFO', 'AudioLoadSuccess', `音频加载成功: ${key}`);
+                        resolve();
+                    };
+                    const onError = (e) => {
+                        logGameEvent('ERROR', 'AudioLoadFailure', `音频加载失败: ${key}`, { error: e.message || e, event: e, url: AUDIO_ASSETS[key] });
+                        document.body.removeChild(audio);
+                        reject(new Error(`Failed to load audio: ${key}`));
+                    };
+
+                    audio.addEventListener('canplaythrough', onLoaded, { once: true });
+                    audio.addEventListener('error', onError, { once: true });
+                    audio.src = AUDIO_ASSETS[key];
+                    audio.load();
+                });
+            });
+
+            try {
+                await Promise.all(audioPromises);
+                logGameEvent('INFO', 'AllAudioLoaded', '所有音频文件已成功预加载。');
+            } catch (error) {
+                logGameEvent('ERROR', 'PartialAudioLoadFailure', '部分音频文件预加载失败:', { error: error.message });
+                throw error;
+            }
+        }
+
+        /**
+         * Preloads all image files.
+         * @returns {Promise<void>} Resolves when all image files are loaded.
+         */
+        async function preloadImages() {
+            logGameEvent('DEBUG', 'PreloadImagesFunctionCall', 'preloadImages function entered.');
+            const imagePromises = [];
+            const imagesToPreload = [
+                ASSETS.feedback.goodJob,
+                ASSETS.feedback.tryAgain,
+                ASSETS.trafficLight.gray,
+                ASSETS.trafficLight.red,
+                ASSETS.trafficLight.yellow,
+                ASSETS.trafficLight.green,
+                'SDHG_MicrophoneIcon.png',
+                'SDHG_Background10-16.png'
+            ];
+
+            for (const src of imagesToPreload) {
+                imagePromises.push(new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.src = src;
+                    img.onload = () => {
+                        logGameEvent('INFO', 'ImageLoadSuccess', `图片加载成功: ${src}`);
+                        resolve();
+                    };
+                    img.onerror = (e) => {
+                        logGameEvent('ERROR', 'ImageLoadFailure', `图片加载失败: ${src}`, { error: e.message });
+                        reject(new Error(`Failed to load image: ${src}`));
+                    };
+                }));
+            }
+
+            try {
+                await Promise.all(imagePromises);
+                logGameEvent('INFO', 'AllImagesLoaded', '所有图片文件已成功预加载。');
+            } catch (error) {
+                logGameEvent('ERROR', 'PartialImageLoadFailure', '部分图片文件预加载失败:', { error: error.message });
+                throw error;
+            }
+        }
+
+        /**
+         * Preloads all video files.
+         * @returns {Promise<void>} Resolves when all video files are loaded.
+         */
+        async function preloadVideos() {
+            logGameEvent('DEBUG', 'PreloadVideosFunctionCall', 'preloadVideos function entered.');
+            const videoPromises = [];
+            const videoActions = Object.keys(ASSETS.dog);
+            const VIDEO_LOAD_TIMEOUT_MS = 15000;
+
+            for (const action of videoActions) {
+                const videoSources = ASSETS.dog[action];
+                for (const sourceData of videoSources) {
+                    const videoLoadPromise = new Promise((resolve, reject) => {
+                        const video = document.createElement('video');
+                        video.muted = true;
+                        video.playsInline = true;
+                        video.preload = 'auto';
+                        video.style.display = 'none';
+                        document.body.appendChild(video);
+
+                        const source = document.createElement('source');
+                        source.src = sourceData.src;
+                        source.type = sourceData.type;
+                        video.appendChild(source);
+
+                        const cleanup = () => {
+                            video.removeEventListener('canplaythrough', onCanPlayThrough);
+                            video.removeEventListener('error', onError);
+                            if (video.parentNode) {
+                                document.body.removeChild(video);
+                            }
+                        };
+
+                        const onCanPlayThrough = () => {
+                            logGameEvent('INFO', 'VideoLoadSuccess', `视频加载成功: ${sourceData.src}`);
+                            cleanup();
+                            resolve();
+                        };
+                        const onError = (e) => {
+                            const errorDetails = e.target.error ? `Code: ${e.target.error.code}, Message: ${e.target.error.message || JSON.stringify(e.target.error)}` : e.message || '未知错误';
+                            logGameEvent('ERROR', 'VideoLoadFailure', `视频加载失败: ${sourceData.src}。错误: ${errorDetails}`, { error: errorDetails, url: sourceData.src });
+                            cleanup();
+                            reject(new Error(`Failed to load video: ${sourceData.src} - ${errorDetails}`));
+                        };
+
+                        video.addEventListener('canplaythrough', onCanPlayThrough, { once: true });
+                        video.addEventListener('error', onError, { once: true });
+                        video.load();
+                    });
+
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => {
+                            logGameEvent('WARN', 'VideoLoadTimeout', `视频加载超时: ${sourceData.src}`, { url: sourceData.src, timeout: VIDEO_LOAD_TIMEOUT_MS });
+                            reject(new Error(`Video load timed out for ${sourceData.src}`));
+                        }, VIDEO_LOAD_TIMEOUT_MS);
+                    });
+                    videoPromises.push(Promise.race([videoLoadPromise, timeoutPromise]));
+                }
+            }
+
+            try {
+                await Promise.all(videoPromises);
+                logGameEvent('INFO', 'AllVideosLoaded', '所有视频文件已成功预加载。');
+            } catch (error) {
+                logGameEvent('ERROR', 'PartialVideoLoadFailure', '部分视频文件预加载失败或超时:', { error: error.message });
+                throw error;
+            }
+        }
+
+        /**
+         * Primes all audio and video assets to force browser decoding and caching.
+         */
+        async function primeAssets() {
+            logGameEvent('INFO', 'PrimingAssets', '开始预热所有音频和视频资产...');
+
+            const audioPrimingPromises = [];
+            for (const key in loadedAudio) {
+                if (loadedAudio.hasOwnProperty(key)) {
+                    const audio = loadedAudio[key];
+                    audioPrimingPromises.push(new Promise(async (resolve) => {
+                        try {
+                            audio.muted = true;
+                            await audio.play();
+                            audio.pause();
+                            audio.currentTime = 0;
+                            audio.muted = false;
+                            logGameEvent('DEBUG', 'AudioPrimed', `音频 ${key} 已预热。`);
+                        } catch (e) {
+                            logGameEvent('WARN', 'AudioPrimingFailed', `音频 ${key} 预热失败 (可能由于自动播放策略或用户未互动): ${e.message}`);
+                        } finally {
+                            resolve();
+                        }
+                    }));
+                }
+            }
+            await Promise.all(audioPrimingPromises);
+
+            const videoPrimingPromises = [];
+            videoPrimingPromises.push(new Promise(async (resolve) => {
+                try {
+                    dogVideo.muted = true;
+                    dogVideo.currentTime = 0;
+                    await dogVideo.play();
+                    dogVideo.pause();
+                    dogVideo.currentTime = 0;
+                    dogVideo.muted = false;
+                    logGameEvent('DEBUG', 'MainDogVideoPrimed', `主导盲犬视频已预热。`);
+                } catch (e) {
+                    logGameEvent('WARN', 'MainDogVideoPrimingFailed', `主导盲犬视频预热失败: ${e.message}`);
+                } finally {
+                    resolve();
+                }
+            }));
+            await Promise.all(videoPrimingPromises);
+
+            logGameEvent('INFO', 'PrimingAssetsComplete', '所有音频和视频资产预热完成。');
+        }
+
+
+        // ==========================================================
+        // SECTION: Video Playback Logic
+        // ==========================================================
+
+        /**
+         * Plays a dog action video.
+         * @param {string} action - The action key from ASSETS.dog (e.g., 'standby', 'stop').
+         * @param {boolean} [loopVideo=true] - Whether the video should loop.
+         * @param {function} [onEndedCallback=null] - Callback function to run when the video ends (only if not looping).
+         */
+        function playDogVideo(action, loopVideo = true, onEndedCallback = null) {
+            let effectiveAction = action;
+            const validDogActions = Object.keys(ASSETS.dog);
+
+            if (typeof effectiveAction !== 'string' || !validDogActions.includes(effectiveAction)) {
+                logGameEvent('WARN', 'InvalidDogActionProvided', `提供的小狗动作无效或为null/undefined。回退到待机。`, { originalAction: action });
+                effectiveAction = 'standby';
+            }
+
+            logGameEvent('DEBUG', 'PlayVideoAttempt', `尝试播放小狗视频: ${effectiveAction}`, { action: effectiveAction, loop: loopVideo });
+            let videoSources = ASSETS.dog?.[effectiveAction];
+
+            if (!videoSources || videoSources.length === 0) {
+                logGameEvent('ERROR', 'VideoSourceNotFound', `未找到动作的视频源: ${effectiveAction}`, { action: effectiveAction });
+                const standbySources = ASSETS.dog?.['standby'];
+                if (standbySources && standbySources.length > 0) {
+                    logGameEvent('WARN', 'VideoFallback', `回退到待机视频。`, { originalAction: effectiveAction });
+                    effectiveAction = 'standby';
+                    videoSources = standbySources;
+                } else {
+                    logGameEvent('ERROR', 'NoVideoSources', `待机视频源也未找到。无法播放任何视频。`);
+                    return;
+                }
+            }
+
+            // Clear existing sources
+            while (dogVideo.firstChild) {
+                dogVideo.removeChild(dogVideo.firstChild);
+            }
+
+            // Add new sources
+            videoSources.forEach(sourceData => {
+                const sourceElement = document.createElement('source');
+                sourceElement.src = sourceData.src;
+                sourceElement.type = sourceData.type;
+                dogVideo.appendChild(sourceElement);
+            });
+
+            dogVideo.loop = loopVideo;
+            dogVideo.muted = false; // IMPORTANT: Unmute the actual video playback
+            dogVideo.playsInline = true;
+
+            const attemptPlay = () => {
+                logGameEvent('DEBUG', 'VideoPlayCall', `调用 dogVideo.play() for action: ${effectiveAction}`);
+                dogVideo.play().then(() => {
+                    logGameEvent('DEBUG', 'VideoPlaySuccess', `视频 ${effectiveAction} 播放成功。`);
+                    dogVideo.style.display = 'block'; // Ensure video is visible when playing
+                }).catch(error => {
+                    logGameEvent('ERROR', 'VideoPlayError', `播放视频 ${effectiveAction} 失败。: ${error.message || (error.code ? `Code: ${error.code}, Name: ${error.name}` : JSON.stringify(error))}`, { error: error });
+                    console.error(`播放视频 ${effectiveAction} 失败的 Promise 拒绝:`, error);
+                    dogVideo.style.display = 'none'; // Hide video on play failure
+                    if (currentGameState !== GAME_STATE.IDLE && currentGameState !== GAME_STATE.DOG_ACTION) {
+                        currentGameState = GAME_STATE.IDLE;
+                        recordButton.disabled = false;
+                        displayMessageBox('视频播放失败', '无法自动播放视频，请点击屏幕继续。');
+                    }
+                });
+            };
+
+            const videoErrorListener = (e) => {
+                logGameEvent('ERROR', 'VideoElementError', `视频元素播放错误 for action ${effectiveAction}: ${e.message || (e.target.error ? `Code: ${e.target.error.code}, Message: ${e.target.error.message || JSON.stringify(e.target.error)}` : '未知错误')}`, { error: e.target.error });
+                console.error(`视频元素播放错误 for action ${effectiveAction}:`, e);
+                console.dir(e.target.error);
+                dogVideo.removeEventListener('error', videoErrorListener);
+            };
+            dogVideo.addEventListener('error', videoErrorListener);
+
+            logGameEvent('DEBUG', 'VideoLoadCall', `调用 dogVideo.load() for action: ${effectiveAction}`);
+            dogVideo.load();
+
+            const newCanPlayThroughListener = () => {
+                logGameEvent('DEBUG', 'CanPlayThrough', `canplaythrough 事件触发 for action: ${effectiveAction}`);
+                attemptPlay();
+                dogVideo.removeEventListener('canplaythrough', newCanPlayThroughListener);
+                dogVideo._currentCanPlayThroughListener = null;
+            };
+
+            if (dogVideo._currentCanPlayThroughListener) {
+                dogVideo.removeEventListener('canplaythrough', dogVideo._currentCanPlayThroughListener);
+            }
+            dogVideo.addEventListener('canplaythrough', newCanPlayThroughListener);
+            dogVideo._currentCanPlayThroughListener = newCanPlayThroughListener;
+
+            if (onEndedCallback && !loopVideo) {
+                const newEndedListener = () => {
+                    logGameEvent('DEBUG', 'VideoEnded', `视频 ${effectiveAction} 播放结束。`);
+                    if (effectiveAction === 'attention') {
+                        logGameEvent('DEBUG', 'BeforeAttentionEndedCallback', `在 attention 视频结束回调内，currentDogAction (预期为 null): ${currentDogAction}`);
+                    }
+                    onEndedCallback();
+                    if (effectiveAction === 'attention') {
+                        logGameEvent('DEBUG', 'AfterAttentionEndedCallback', `在 attention 视频结束回调后，currentDogAction (预期已设置): ${currentDogAction}`);
+                    }
+                    dogVideo.removeEventListener('ended', newEndedListener);
+                    dogVideo._currentEndedListener = null;
+                };
+                if (dogVideo._currentEndedListener) {
+                    dogVideo.removeEventListener('ended', dogVideo._currentEndedListener);
+                }
+                dogVideo.addEventListener('ended', newEndedListener);
+                dogVideo._currentEndedListener = newEndedListener;
+            }
+        }
+
+
+        // ==========================================================
+        // SECTION: Speech Recognition Functions
+        // ==========================================================
+
+        /**
+         * Initializes the Speech Recognition object and its event handlers.
+         */
+        function initSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window)) {
+                logGameEvent('WARN', 'SpeechAPIUnsupported', "Web Speech API 不受此浏览器支持。请使用 Chrome。");
+                displayMessageBox('浏览器不支持', '您的浏览器不支持语音识别功能，请使用最新版 Chrome 或其他兼容浏览器。');
+                micAccessGranted = false;
+                recordButton.disabled = true;
+                return;
+            }
+
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'zh-CN'; // Changed from 'en-US' to 'zh-CN'
+
+            recognition.onstart = () => {
+                isRecording = true;
+                recognitionSuccess = false;
+                feedbackDisplayedForCurrentRecognition = false;
+                logGameEvent('INFO', 'SpeechStarted', '语音识别已启动。');
+                recordButton.classList.remove('stopping');
+                recordButton.classList.add('recording'); // Ensure recording class is added on start
+            };
+
+            recognition.onresult = (event) => {
+                isRecording = false;
+                recognitionSuccess = true; // 成功识别，设置标志
+                recordButton.classList.remove('recording');
+                recordButton.classList.remove('stopping');
+                recordButton.disabled = false; // 成功后立即启用按钮
+                const transcript = event.results?.[0]?.[0]?.transcript?.toLowerCase();
+                logGameEvent('INFO', 'SpeechRecognized', `识别到的语音: "${transcript}"`, { transcript: transcript, confidence: event.results?.[0]?.[0]?.confidence });
+                logGameEvent('DEBUG', 'BeforeHandleSpeech', `调用 handleOverallSpeech 前: currentGameState=${currentGameState}`);
+                handleOverallSpeech(transcript);
+            };
+
+            recognition.onerror = (event) => {
+                isRecording = false;
+                recordButton.classList.remove('recording');
+                recordButton.classList.remove('stopping');
+                logGameEvent('ERROR', 'SpeechError', `语音识别错误: ${event.error}`, { error: event.error }); // 立即记录错误
+
+                // 只有在没有成功识别结果且未显示过反馈时才处理
+                if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) {
+                    feedbackDisplayedForCurrentRecognition = true; // 标记已处理此识别尝试的反馈
+
+                    let errorMessage = '未能识别您的语音，请清晰地再说一遍。';
+                    
+                    if (event.error === 'not-allowed' || event.error === 'permission-denied' || event.error === 'audio-capture' || event.error === 'network') {
+                        errorMessage = '麦克风或网络连接有问题。请检查权限并刷新页面。';
+                        micAccessGranted = false; // 假设是权限或网络问题，麦克风访问可能受阻
+                        recordButton.disabled = true; // 禁用按钮，需要用户手动解决
+                    } else if (event.error === 'no-speech') {
+                        errorMessage = '没有听到声音，请确保麦克风已连接并清晰地说话。';
+                        recordButton.disabled = false; // 这种情况下可以重试，按钮可以重新启用
+                    } else if (event.error === 'aborted') {
+                        errorMessage = '语音识别已中断。请重试。';
+                        recordButton.disabled = false; // 可能是浏览器行为，通常可以重试
+                    } else {
+                        errorMessage = `语音识别出现未知错误: ${event.error}。请重试。`;
+                        micAccessGranted = false;
+                        recordButton.disabled = true; // 未知错误，保守处理
+                    }
+
+                    displayMessageBox('语音识别失败', errorMessage); // 消息框会在用户点击后启用按钮
+
+                    // 根据当前游戏状态回滚
+                    if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
+                        currentGameState = GAME_STATE.IDLE;
+                        playDogVideo('standby', true);
+                        logGameEvent('DEBUG', 'StateRevert', `语音识别错误: 回滚到 IDLE 状态。`);
+                    } else if (currentGameState === GAME_STATE.LISTENING_DOG_FEEDBACK) {
+                        currentGameState = GAME_STATE.DOG_ACTION;
+                        playDogVideo(currentDogAction, true);
+                        logGameEvent('DEBUG', 'StateRevert', `语音识别错误: 回滚到 DOG_ACTION 状态。`);
+                    } else {
+                        currentGameState = GAME_STATE.IDLE;
+                        playDogVideo('standby', true);
+                        logGameEvent('DEBUG', 'StateRevert', `语音识别错误: 回滚到 IDLE 状态 (fallback)。`);
+                    }
+                }
+            };
+
+            recognition.onend = () => {
+                isRecording = false;
+                recordButton.classList.remove('recording');
+                recordButton.classList.remove('stopping');
+                logGameEvent('INFO', 'SpeechEnded', '语音识别已结束。'); // 立即记录结束
+
+                // 只有在没有成功识别结果且未显示过反馈时才处理
+                if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) {
+                    feedbackDisplayedForCurrentRecognition = true;
+                    logGameEvent('WARN', 'SpeechNoResult', '语音识别结束但无结果。');
+                    displayMessageBox('没有听到声音', '请确保麦克风已连接并清晰地说话。');
+                    // 按钮启用由 displayMessageBox 的点击事件处理
+                    if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
+                        currentGameState = GAME_STATE.IDLE;
+                        playDogVideo('standby', true);
+                        logGameEvent('DEBUG', 'StateRevert', `语音识别无结果: 回滚到 IDLE 状态。`);
+                    } else if (currentGameState === GAME_STATE.LISTENING_DOG_FEEDBACK) {
+                        currentGameState = GAME_STATE.DOG_ACTION;
+                        playDogVideo(currentDogAction, true);
+                        logGameEvent('DEBUG', 'StateRevert', `语音识别无结果: 回滚到 DOG_ACTION 状态。`);
+                    }
+                }
+            };
+
+            // Additional logging for more granular events
+            recognition.onaudiostart = () => {
+                logGameEvent('INFO', 'AudioStart', '浏览器开始捕获音频。');
+            };
+
+            recognition.onsoundstart = () => {
+                logGameEvent('INFO', 'SoundStart', '检测到非语音音频。');
+            };
+
+            recognition.onspeechend = () => {
+                logGameEvent('INFO', 'SpeechEnd', '检测到语音结束。');
+            };
+
+            recognition.onnomatch = (event) => {
+                isRecording = false;
+                recordButton.classList.remove('recording');
+                recordButton.classList.remove('stopping');
+                logGameEvent('WARN', 'SpeechNoMatch', '识别到语音但无匹配结果。', { event: event });
+                if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) {
+                    feedbackDisplayedForCurrentRecognition = true;
+                    displayMessageBox('没有匹配结果', '请尝试更清晰地说话或使用不同的词语。');
+                    if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
+                        currentGameState = GAME_STATE.IDLE;
+                        playDogVideo('standby', true);
+                    } else if (currentGameState === GAME_STATE.LISTENING_DOG_FEEDBACK) {
+                        currentGameState = GAME_STATE.DOG_ACTION;
+                        playDogVideo(currentDogAction, true);
+                    }
+                }
+            };
+        }
+
+        /**
+         * Starts voice recording based on the current game state.
+         * @param {string} type 'lightColor' or 'dogFeedback'
+         */
+        function startRecording(type) {
+            logGameEvent('INFO', 'StartRecordingCall', `调用 startRecording。类型: ${type}, 当前状态: ${currentGameState}, isRecording: ${isRecording}, micAccessGranted: ${micAccessGranted}`);
+
+            if (!micAccessGranted) {
+                displayMessageBox('需要麦克风权限', '请允许浏览器访问麦克风。');
+                return;
+            }
+
+            if (recognition && !isRecording) {
+                const prevState = currentGameState;
+
+                if (type === 'lightColor' && currentGameState === GAME_STATE.IDLE) {
+                    currentGameState = GAME_STATE.LISTENING_LIGHT_COLOR;
+                } else if (type === 'dogFeedback' && currentGameState === GAME_STATE.DOG_ACTION) {
+                    currentGameState = GAME_STATE.LISTENING_DOG_FEEDBACK;
+                } else {
+                    logGameEvent('WARN', 'InvalidStateForRecording', `无法在当前状态下开始录音: ${currentGameState}`);
+                    recordButton.disabled = false;
+                    recordButton.classList.remove('recording', 'stopping');
+                    return;
+                }
+
+                recordButton.disabled = true;
+                recordButton.classList.add('recording');
+
+                try {
+                    recognition.start();
+                    playSound('recordStartSound');
+                    logGameEvent('INFO', 'RecordingAttempted', `尝试启动录音，等待 onstart 回调。`);
+                } catch (e) {
+                    logGameEvent('ERROR', 'RecordingStartError', `启动语音识别失败: ${e.message}`, { error: e.message });
+                    recordButton.disabled = false;
+                    recordButton.classList.remove('recording', 'stopping');
+                    displayMessageBox('录音启动失败', '无法启动录音，请确保麦克风可用。');
+                    if (prevState === GAME_STATE.IDLE) {
+                        currentGameState = GAME_STATE.IDLE;
+                        playDogVideo('standby', true);
+                    } else if (prevState === GAME_STATE.DOG_ACTION) {
+                        currentGameState = GAME_STATE.DOG_ACTION;
+                        playDogVideo(currentDogAction, true);
+                    } else {
+                        currentGameState = GAME_STATE.IDLE;
+                        playDogVideo('standby', true);
+                    }
+                }
+            } else {
+                logGameEvent('WARN', 'StartRecordingBlocked', `startRecording 被阻止。recognition: ${!!recognition}, isRecording: ${isRecording}`);
+                recordButton.disabled = false;
+                recordButton.classList.remove('recording', 'stopping');
+            }
+        }
+
+        /**
+         * Stops voice recording.
+         */
+        function stopRecording() {
+            if (recognition && isRecording) {
+                logGameEvent('INFO', 'RecordingManualStop', '手动点击按钮结束录音。');
+                recognition.stop();
+                recordButton.classList.remove('recording');
+                recordButton.classList.add('stopping');
+                recordButton.disabled = true;
+            }
+        }
+
+
+        // ==========================================================
+        // SECTION: Game Logic Functions
+        // ==========================================================
+
+        /**
+         * Handles all speech commands based on the current game state.
+         * @param {string} transcript - The recognized speech transcript.
+         */
+        function handleOverallSpeech(transcript) {
+            recordButton.classList.remove('recording');
+            recordButton.classList.remove('stopping');
+            logGameEvent('INFO', 'HandleSpeechCall', `处理语音指令。当前状态: ${currentGameState}, 文本: "${transcript}"`);
+
+            if (!transcript || transcript.trim().length < 2) {
+                logGameEvent('WARN', 'EmptyTranscript', "语音文本为空或过短。视为不正确反馈。");
+                displayFeedback(false, () => {
+                    recordButton.disabled = false;
+                    currentGameState = (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) ? GAME_STATE.IDLE : GAME_STATE.DOG_ACTION;
+                    playDogVideo(currentGameState === GAME_STATE.IDLE ? 'standby' : currentDogAction, true);
+                    logGameEvent('INFO', 'EmptyTranscriptFeedbackHidden', '空/短文本反馈已隐藏，按钮已启用，状态已回滚。');
+                });
+                playSound('tryAgainSound');
+                recordButton.disabled = true;
+                feedbackDisplayedForCurrentRecognition = true;
+                return;
+            }
+
+            let isCorrectFeedback = false;
+
+            if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
+                // Adjust keywords for Chinese if necessary, or keep English if that's the expected spoken input
+                const hasLook = transcript.includes('look') || transcript.includes('看');
+                const hasLight = transcript.includes('light') || transcript.includes('灯');
+                const isRed = transcript.includes('red') || transcript.includes('红');
+                const isYellow = transcript.includes('yellow') || transcript.includes('黄');
+                const isGreen = transcript.includes('green') || transcript.includes('绿');
+
+                logGameEvent('DEBUG', 'LightDetectionDetails', `灯光颜色检测: hasLook=${hasLook}, hasLight=${hasLight}, isRed=${isRed}, isYellow=${isYellow}, isGreen=${isGreen}`);
+
+                let detectedColor = null;
+                if ((hasLook || hasLight) && isRed) {
+                    detectedColor = 'red';
+                } else if ((hasLook || hasLight) && isYellow) {
+                    detectedColor = 'yellow';
+                } else if ((hasLook || hasLight) && isGreen) {
+                    detectedColor = 'green';
+                }
+                logGameEvent('INFO', 'ColorDetected', `检测到的颜色: ${detectedColor}`);
+
+                if (detectedColor) {
+                    currentTrafficLightColor = detectedColor;
+                    lightUpTrafficLight(currentTrafficLightColor);
+                    playSound('recordCompleteSound');
+
+                    recordButton.disabled = true;
+                    playDogVideo('attention', false, () => {
+                        const actions = ['stop', 'wait', 'go'];
+                        currentDogAction = actions?.[Math.floor(Math.random() * actions.length)];
+                        logGameEvent('DEBUG', 'DogActionSetAfterAttention', `导盲犬动作已在 attention 视频结束后设置: ${currentDogAction}`);
+
+                        if (currentDogAction === null) {
+                            logGameEvent('ERROR', 'DogActionNotSetAfterAttention', '严重错误: attention 视频结束后 currentDogAction 未能正确设置。强制重置游戏。');
+                            displayMessageBox('游戏错误', '游戏状态异常，导盲犬动作未定义。游戏将重置。');
+                            resetFullGame();
+                            return;
+                        }
+
+                        playDogVideo(currentDogAction, true);
+                        currentGameState = GAME_STATE.DOG_ACTION;
+                        recordButton.disabled = false;
+                        logGameEvent('INFO', 'LightColorCorrect', `灯光颜色正确: 转换为 DOG_ACTION 状态。`, { color: detectedColor, dogAction: currentDogAction });
+                    });
+                    currentGameState = GAME_STATE.DOG_ATTENTION;
+                } else {
+                    displayFeedback(false, () => {
+                        recordButton.disabled = false;
+                        currentGameState = GAME_STATE.IDLE;
+                        playDogVideo('standby', true);
+                        logGameEvent('INFO', 'LightColorIncorrectFeedbackHidden', '灯光颜色不正确反馈已隐藏，按钮已启用，状态已回滚到 IDLE。');
+                    });
+                    playSound('tryAgainSound');
+                    recordButton.disabled = true;
+                    logGameEvent('WARN', 'LightColorIncorrect', `灯光颜色不正确: 显示 Try Again 提示。`, { transcript: transcript });
+                }
+            } else if (currentGameState === GAME_STATE.LISTENING_DOG_FEEDBACK) {
+                if (currentDogAction === null) {
+                    logGameEvent('ERROR', 'DogActionMissing', '在 LISTENING_DOG_FEEDBACK 状态下 currentDogAction 为 null。这不应该发生。重置游戏。');
+                    displayMessageBox('游戏错误', '导盲犬动作丢失，游戏将重置。');
+                    resetFullGame();
+                    return;
+                }
+
+                currentGameState = GAME_STATE.PROCESSING_FEEDBACK;
+
+                const correctActionForLight = getCorrectActionForLight(currentTrafficLightColor);
+                const dogActionWasCorrect = (currentDogAction === correctActionForLight);
+
+                let spokenGuideAction = null;
+                // Adjust keywords for Chinese if necessary
+                if (transcript.includes('stop') || transcript.includes('停')) spokenGuideAction = 'stop';
+                else if (transcript.includes('wait') || transcript.includes('等')) spokenGuideAction = 'wait';
+                else if (transcript.includes('go') || transcript.includes('走')) spokenGuideAction = 'go';
+
+                const spokeReward = transcript.includes('reward') || transcript.includes('good job') || transcript.includes('yes') || transcript.includes('好棒') || transcript.includes('做得好') || transcript.includes('对');
+
+                logGameEvent('DEBUG', 'DogFeedbackDetails', `导盲犬反馈判断: correctActionForLight=${correctActionForLight}, dogActionWasCorrect=${dogActionWasCorrect}, spokenGuideAction=${spokenGuideAction}, spokeReward=${spokeReward}`);
+                logGameEvent('DEBUG', 'CurrentDogActionBeforeFeedback', `当前导盲犬动作 (处理反馈前): ${currentDogAction}`);
+
+                if (spokeReward) {
+                    if (dogActionWasCorrect) {
+                        isCorrectFeedback = true;
+                    } else {
+                        isCorrectFeedback = false;
+                    }
+                } else if (spokenGuideAction) {
+                    if (!dogActionWasCorrect && spokenGuideAction === correctActionForLight) {
+                        isCorrectFeedback = true;
+                    } else {
+                        isCorrectFeedback = false;
+                    }
+                } else {
+                    isCorrectFeedback = false;
+                }
+                logGameEvent('INFO', 'FeedbackResult', `导盲犬反馈结果: ${isCorrectFeedback ? '正确' : '不正确'}`, { correct: isCorrectFeedback, transcript: transcript });
+
+                if (isCorrectFeedback) {
+                    playSound('yesSound');
+                    score++;
+                    updateScoreDisplay();
+
+                    if (MAX_SCORE === 0 || score === MAX_SCORE) {
+                        logGameEvent('INFO', 'GameCompleted', '恭喜！已达到最高分或无上限模式。游戏将完全重置。');
+                        logGameEvent('DEBUG', 'BeforeDisplayFeedbackCorrectDog', `调用 displayFeedback (正确导盲犬反馈)。当前导盲犬动作: ${currentDogAction}`);
+                        displayFeedback(true, resetFullGame);
+                    } else {
+                        logGameEvent('INFO', 'RoundCompleted', '正确反馈。游戏将开始新一轮。');
+                        logGameEvent('DEBUG', 'BeforeDisplayFeedbackCorrectDog', `调用 displayFeedback (正确导盲犬反馈)。当前导盲犬动作: ${currentDogAction}`);
+                        displayFeedback(true, startNewRound);
+                    }
+                    clearTimeout(resetGameTimeout);
+                } else {
+                    const onTryAgainHidden = () => {
+                        recordButton.disabled = false;
+                        currentGameState = GAME_STATE.DOG_ACTION;
+                        logGameEvent('DEBUG', 'OnTryAgainHiddenCallback', `执行 Try Again 隐藏回调。当前导盲犬动作: ${currentDogAction}`);
+                        playDogVideo(currentDogAction, true);
+                        logGameEvent('INFO', 'TryAgainFeedbackHidden', 'Try Again 提示已完全隐藏，按钮已启用，状态已回滚到 DOG_ACTION。');
+                    };
+
+                    logGameEvent('INFO', 'IncorrectFeedbackRetry', "不正确反馈。显示 Try Again 提示。");
+                    logGameEvent('DEBUG', 'BeforeDisplayFeedbackIncorrectDog', `调用 displayFeedback (不正确导盲犬反馈)。当前导盲犬动作: ${currentDogAction}`);
+                    displayFeedback(false, onTryAgainHidden);
+                    playSound('tryAgainSound');
+                    recordButton.disabled = true;
+                    clearTimeout(resetGameTimeout);
+                }
+            }
+            else {
+                logGameEvent('WARN', 'UnexpectedSpeechState', `在意外状态下识别到语音或无效的初始命令: ${currentGameState}。游戏将在反馈消失后重置。`);
+                logGameEvent('DEBUG', 'BeforeDisplayFeedbackUnexpectedState', `调用 displayFeedback (意外状态)。当前导盲犬动作: ${currentDogAction}`);
+                displayFeedback(false, resetFullGame);
+                playSound('tryAgainSound');
+                recordButton.disabled = true;
+                playDogVideo('standby', true);
+                clearTimeout(resetGameTimeout);
+            }
+        }
+
+        /**
+         * Displays feedback image and overlay.
+         * @param {boolean} isCorrect - true for Good Job (now YES), false for Try Again.
+         * @param {function} [onHiddenCallback=null] - Callback to execute after the feedback image is fully hidden.
+         */
+        function displayFeedback(isCorrect, onHiddenCallback = null) {
+            recordButton.disabled = true;
+            feedbackImage.src = ASSETS.feedback[isCorrect ? 'goodJob' : 'tryAgain'];
+            
+            feedbackImage.style.display = 'block';
+            overlayElement.style.display = 'block';
+            logGameEvent('INFO', 'UI_ElementsSetToBlock', `反馈图片和透明遮罩已设置为 display: block。`);
+
+            overlayElement.classList.remove('good-job-overlay', 'try-again-overlay');
+
+            let fadeInHandler = null;
+
+            fadeInHandler = function() {
+                logGameEvent('INFO', 'UI_FeedbackImageAndOverlayFadeInCompleted', `反馈图片和透明遮罩渐入完成。`);
+                overlayElement.removeEventListener('transitionend', fadeInHandler);
+
+                setTimeout(() => {
+                    feedbackImage.classList.remove('is-visible');
+                    overlayElement.classList.remove('is-visible');
+                    logGameEvent('INFO', 'UI_FeedbackImageAndOverlayFadeOutStarted', `反馈图片和透明遮罩开始渐出。`);
+
+                    overlayElement.addEventListener('transitionend', function fadeOutHandler() {
+                        if (window.getComputedStyle(overlayElement).opacity === '0') {
+                            feedbackImage.style.display = 'none';
+                            overlayElement.style.display = 'none';
+                            logGameEvent('INFO', 'UI_FeedbackImageAndOverlayHidden', `反馈图片和透明遮罩已隐藏。`);
+                            
+                            if (onHiddenCallback && typeof onHiddenCallback === 'function') {
+                                logGameEvent('INFO', 'FeedbackHiddenCallback', `执行反馈隐藏回调函数。`);
+                                onHiddenCallback();
+                            }
+                            overlayElement.removeEventListener('transitionend', fadeOutHandler);
+                        }
+                    }, { once: true });
+                }, 2500);
+            };
+
+            requestAnimationFrame(() => {
+                overlayElement.addEventListener('transitionend', fadeInHandler, { once: true });
+                feedbackImage.classList.add('is-visible');
+                overlayElement.classList.add('is-visible');
+                logGameEvent('INFO', 'UI_FeedbackImageAndOverlayFadeInStarted', `反馈图片和透明遮罩开始渐入。`);
+            });
+
+            attachQuickResetListener();
+        }
+
+        /**
+         * Resets the game to its initial state, including score. This is a full game reset.
+         */
+        function resetFullGame() {
+            logGameEvent('INFO', 'ResetFullGame', "进入 resetFullGame()。游戏将完全重置，包括分数。");
+            currentGameState = GAME_STATE.IDLE;
+            currentTrafficLightColor = null;
+            currentDogAction = null;
+            score = 0;
+            updateScoreDisplay();
+            lightUpTrafficLight(null);
+            
+            const standbyVideoSrc = ASSETS.dog.standby[0].src;
+            if (dogVideo.currentSrc !== standbyVideoSrc || dogVideo.paused) {
+                playDogVideo('standby', true);
+                logGameEvent('DEBUG', 'VideoReset', '已播放待机视频作为重置的一部分。');
+            } else {
+                logGameEvent('DEBUG', 'VideoAlreadyStandby', '待机视频已在播放，跳过重新加载。');
+            }
+
+            dogVideo.play().then(() => {
+                logGameEvent('INFO', 'ResetVideoAutoplaySuccess', '重置后视频自动播放成功。');
+            }).catch(error => {
+                logGameEvent('WARN', 'ResetVideoAutoplayFailed', `重置后视频自动播放失败: ${error.message || (error.code ? `Code: ${error.code}, Name: ${error.name}` : JSON.stringify(error))}.`, { error: error });
+                displayMessageBox('视频播放提示', '游戏已重置，但视频可能需要您的再次点击才能播放。');
+            });
+
+            recordButton.disabled = false;
+            clearTimeout(resetGameTimeout);
+            detachQuickResetListener();
+        }
+
+        /**
+         * Prepares the game for a new round, without resetting the score.
+         */
+        function startNewRound() {
+            logGameEvent('INFO', 'StartNewRound', "进入 startNewRound()。游戏将开始新一轮。");
+            currentGameState = GAME_STATE.IDLE;
+            currentTrafficLightColor = null;
+            currentDogAction = null;
+            lightUpTrafficLight(null);
+            
+            const standbyVideoSrc = ASSETS.dog.standby[0].src;
+            if (dogVideo.currentSrc !== standbyVideoSrc || dogVideo.paused) {
+                playDogVideo('standby', true);
+                logGameEvent('DEBUG', 'VideoReset', '已播放待机视频作为新一轮的一部分。');
+            } else {
+                logGameEvent('DEBUG', 'VideoAlreadyStandby', '待机视频已在播放，跳过重新加载 (新一轮)。');
+            }
+            
+            recordButton.disabled = false;
+            clearTimeout(resetGameTimeout);
+            detachQuickResetListener();
+        }
+
+
+        // ==========================================================
+        // SECTION: Modal and Settings Functions
+        // ==========================================================
+
+        function openSettingsModal() {
+            settingsModal.classList.remove('hidden');
+            scoreLimitInput.value = MAX_SCORE;
+            logGameEvent('INFO', 'SettingsOpened', '设置界面已打开。');
+        }
+
+        function closeSettingsModal() {
+            settingsModal.classList.add('hidden');
+            logGameEvent('INFO', 'SettingsClosed', '设置界面已关闭。');
+        }
+
+        function updateScoreLimit() {
+            let newLimit = parseInt(scoreLimitInput.value, 10);
+            if (isNaN(newLimit) || newLimit < 0) {
+                newLimit = 0;
+            } else if (newLimit > 10) {
+                newLimit = 10;
+            }
+            scoreLimitInput.value = newLimit;
+            MAX_SCORE = newLimit;
+            localStorage.setItem('maxScore', MAX_SCORE);
+            updateScoreDisplay();
+            logGameEvent('INFO', 'ScoreLimitChanged', `计分上限已设置为: ${MAX_SCORE}。`);
+        }
+
+        function handleResetGame() {
+            logGameEvent('INFO', 'ResetGameButtonClicked', '用户点击了“重置游戏”按钮。');
+            resetFullGame();
+            closeSettingsModal();
+        }
+
+        function handleResetScore() {
+            logGameEvent('INFO', 'ResetScoreButtonClicked', '用户点击了“重置计分”按钮。');
+            score = 0;
+            updateScoreDisplay();
+        }
+
+        function openProducerInfoModal() {
+            producerInfoModal.classList.remove('hidden');
+            logGameEvent('INFO', 'ProducerInfoOpened', '制作者信息界面已打开。');
+        }
+
+        function closeProducerInfoModal() {
+            producerInfoModal.classList.add('hidden');
+            logGameEvent('INFO', 'ProducerInfoClosed', '制作者信息界面已关闭。');
+        }
+
+
+        // ==========================================================
+        // SECTION: Event Listeners
+        // ==========================================================
+
+        scoreDisplay.addEventListener('click', openSettingsModal);
+        closeSettingsButton.addEventListener('click', closeSettingsModal);
+        scoreLimitInput.addEventListener('input', updateScoreLimit);
+        producerInfoButton.addEventListener('click', openProducerInfoModal);
+        closeProducerInfoButton.addEventListener('click', closeProducerInfoModal);
+        resetGameButton.addEventListener('click', handleResetGame);
+        resetScoreButton.addEventListener('click', handleResetScore);
+
+        const recordButtonHandler = (event) => {
+            logGameEvent('INFO', 'RecordButtonClickOrTouch', `录音按钮点击/触摸。类型: ${event.type}, 当前状态: ${currentGameState}, isRecording: ${isRecording}`);
+            event.stopPropagation();
+            event.preventDefault();
+
+            if (!micAccessGranted) {
+                displayMessageBox('需要麦克风权限', '请允许浏览器访问麦克风。');
+                return;
+            }
+
+            if (recordButton.disabled && !isRecording) { // Allow click if disabled but not recording (e.g., after an error message)
+                logGameEvent('WARN', 'RecordButtonDisabledClick', '尝试点击禁用状态的录音按钮。');
+                // If the button is disabled but not recording, it means a message box is likely open.
+                // The message box's click handler will re-enable the button.
+                // So, just return here and let the message box handle the re-enabling.
+                return;
+            }
+
+            if (isRecording) {
+                logGameEvent('INFO', 'RecordButtonClick', '已在录制中，停止录制。');
+                stopRecording();
+            } else {
+                if (currentGameState === GAME_STATE.IDLE) {
+                    logGameEvent('INFO', 'RecordButtonClick', '状态为 IDLE，开始录制红绿灯颜色。');
+                    startRecording('lightColor');
+                } else if (currentGameState === GAME_STATE.DOG_ACTION) {
+                    logGameEvent('INFO', 'RecordButtonClick', '状态为 DOG_ACTION，开始录制导盲犬反馈。');
+                    startRecording('dogFeedback');
+                } else {
+                    logGameEvent('WARN', 'RecordButtonClickInvalidState', `在无效状态下点击录音按钮: ${currentGameState}。`);
+                }
+            }
+        };
+
+        recordButton.addEventListener('click', recordButtonHandler);
+        recordButton.addEventListener('touchstart', recordButtonHandler, { passive: false });
+
+        /**
+         * Attaches a click listener to the overlay for quick reset/dismissal.
+         */
+        function attachQuickResetListener() {
+            if (quickResetHandler) {
+                overlayElement.removeEventListener('click', quickResetHandler);
+                overlayElement.removeEventListener('touchstart', quickResetHandler);
+            }
+            quickResetHandler = handleOverlayClick;
+            overlayElement.addEventListener('click', quickResetHandler);
+            overlayElement.addEventListener('touchstart', quickResetHandler);
+            logGameEvent('DEBUG', 'QuickResetListenerAttached', '快速重置监听器已附加到透明遮罩。');
+        }
+
+        /**
+         * Removes the quick reset click listener from the overlay.
+         */
+        function detachQuickResetListener() {
+            if (quickResetHandler) {
+                overlayElement.removeEventListener('click', quickResetHandler);
+                overlayElement.removeEventListener('touchstart', quickResetHandler);
+                quickResetHandler = null;
+                logGameEvent('DEBUG', 'QuickResetListenerDetached', '快速重置监听器已从透明遮罩分离。');
+            }
+        }
+
+        /**
+         * Handles click events on the overlay for quick reset or dismissing Try Again.
+         * @param {Event} event - The click event object.
+         */
+        function handleOverlayClick(event) {
+            detachQuickResetListener();
+            clearTimeout(resetGameTimeout);
+
+            feedbackImage.classList.remove('is-visible');
+            overlayElement.classList.remove('is-visible');
+            logGameEvent('INFO', 'UI_FeedbackImageFadeOutStarted', `反馈图片和透明遮罩开始渐出。`);
+
+            overlayElement.addEventListener('transitionend', function handler() {
+                if (window.getComputedStyle(overlayElement).opacity === '0') {
+                    feedbackImage.style.display = 'none';
+                    overlayElement.style.display = 'none';
+                    overlayElement.classList.remove('try-again-overlay', 'good-job-overlay');
+                    logGameEvent('INFO', 'UI_FeedbackImageAndOverlayHidden', `反馈图片和透明遮罩已隐藏。`);
+
+                    if (feedbackImage.src.includes(ASSETS.feedback.goodJob)) {
+                        logGameEvent('INFO', 'OverlayClickAction', '点击透明遮罩: 触发 YES 后的快速前进。');
+                        if (MAX_SCORE === 0 || score === MAX_SCORE) {
+                            logGameEvent('INFO', 'GameCompletedQuick', '已达到最高分或无上限模式。点击遮罩立即完全重置。');
+                            resetFullGame();
+                        } else {
+                            logGameEvent('INFO', 'RoundCompletedQuick', '正确反馈。点击遮罩立即开始新一轮。');
+                            startNewRound();
+                        }
+                    } else if (feedbackImage.src.includes(ASSETS.feedback.tryAgain)) {
+                        logGameEvent('INFO', 'OverlayClickAction', '点击透明遮罩: 隐藏 Try Again 提示。');
+                        recordButton.disabled = false;
+                        logGameEvent('DEBUG', 'TryAgainOverlayClick', `尝试播放当前导盲犬动作: ${currentDogAction}`);
+                        playDogVideo(currentDogAction, true);
+                        currentGameState = GAME_STATE.DOG_ACTION;
+                        logGameEvent('INFO', 'TryAgainDismissed', 'Try Again 提示已消失，游戏状态回滚到 DOG_ACTION。');
+                    } else {
+                        logGameEvent('WARN', 'OverlayClickUnexpected', '点击透明遮罩: 意外情况，执行新一轮。');
+                        startNewRound();
+                    }
+                    overlayElement.removeEventListener('transitionend', handler);
+                }
+            }, { once: true });
+        }
+
+
+        // ==========================================================
+        // SECTION: Game Initialization and Start
+        // ==========================================================
+
+        /**
+         * Handles the start game action when the user clicks the overlay.
+         * It hides the overlay, initializes game assets, plays the standby video, and then resets the game.
+         * @param {Event} event - The click or touchstart event object.
+         */
+        async function startGameHandler(event) {
+            logGameEvent('INFO', 'StartGameInitiated', `用户点击/触摸了“点击开始游戏”遮罩。事件类型: ${event.type}`);
+            event.stopPropagation();
+            event.preventDefault();
+
+            // Hide the start game overlay
+            startGameOverlay.style.opacity = '0';
+            startGameOverlay.addEventListener('transitionend', function handler() {
+                startGameOverlay.style.display = 'none';
+                startGameOverlay.removeEventListener('transitionend', handler);
+                logGameEvent('INFO', 'StartGameOverlayHidden', '“点击开始游戏”遮罩已隐藏。');
+            }, { once: true });
+
+            // Initialize game assets (including mic access)
+            await initializeGameAssets();
+
+            // After assets are loaded and mic access is handled, play the standby video
+            playDogVideo('standby', true);
+            logGameEvent('INFO', 'InitialStandbyVideoPlayed', '初始待机视频已播放。');
+
+            // Finally, reset the game to its initial state, ready for interaction
+            resetFullGame();
+        }
+
+        /**
+         * Initializes game assets, including loading settings, preloading media,
+         * priming assets, and requesting microphone access.
+         */
+        async function initializeGameAssets() {
+            logGameEvent('INFO', 'InitializeGameAssets', '开始初始化游戏资源...');
+            
+            // Load settings from localStorage
+            const savedMaxScore = localStorage.getItem('maxScore');
+            if (savedMaxScore !== null) {
+                MAX_SCORE = parseInt(savedMaxScore, 10);
+                if (isNaN(MAX_SCORE) || MAX_SCORE < 0 || MAX_SCORE > 10) {
+                    MAX_SCORE = 5;
+                }
+            }
+            scoreLimitInput.value = MAX_SCORE;
+
+            const loadingTimeout = setTimeout(() => {
+                logGameEvent('ERROR', 'LoadingTimeout', '游戏资源加载超时。请检查网络连接或尝试刷新页面。');
+                displayMessageBox('加载超时', '游戏资源加载时间过长。请检查您的网络连接或尝试刷新页面。');
+            }, 60000);
+
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                try {
+                    logGameEvent('INFO', 'MicAccessRequest', '请求麦克风权限...');
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    logGameEvent('INFO', 'MicAccessGranted', '麦克风权限已授予。');
+                    micAccessGranted = true;
+                    // Stop tracks immediately after getting access to release the mic
+                    stream.getTracks().forEach(track => track.stop());
+                    initSpeechRecognition();
+
+                    logGameEvent('INFO', 'AssetPreloading - Images', '开始按顺序预加载所有游戏图片...');
+                    await preloadImages();
+                    logGameEvent('INFO', 'AssetPreloading - Videos', '开始按顺序预加载所有游戏视频...');
+                    await preloadVideos();
+                    logGameEvent('INFO', 'AssetPreloading - Audio', '开始按顺序预加载所有游戏音频...');
+                    await preloadAudio();
+
+                    logGameEvent('INFO', 'AssetPreloadingComplete', '所有游戏资源已成功预加载。');
+
+                    logGameEvent('INFO', 'AssetPriming', '开始预热所有游戏资产...');
+                    await primeAssets();
+                    logGameEvent('INFO', 'AssetPrimingComplete', '所有游戏资产预热完成。');
+                    
+                    clearTimeout(loadingTimeout);
+
+                } catch (err) {
+                    clearTimeout(loadingTimeout);
+                    micAccessGranted = false;
+                    recordButton.disabled = true;
+                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                        logGameEvent('ERROR', 'MicAccessDenied', `麦克风权限被拒绝: ${err.message}`, { error: err.message });
+                        displayMessageBox('麦克风权限被拒绝！', '需要麦克风权限才能进行语音互动。请允许浏览器访问麦克风并刷新页面。');
+                    } else {
+                        logGameEvent('ERROR', 'AssetLoadingFailed', `游戏资源加载失败: ${err.message}`, { error: err.message });
+                        displayMessageBox('加载失败', `游戏资源加载失败: ${err.message}。请检查网络连接或尝试刷新页面。`);
+                    }
+                }
+            } else {
+                clearTimeout(loadingTimeout);
+                logGameEvent('ERROR', 'GetUserMediaUnsupported', '您的浏览器不支持麦克风功能。');
+                displayMessageBox('浏览器不支持！', '您的浏览器不支持麦克风功能。请升级到最新版浏览器。');
+                micAccessGranted = false;
+                recordButton.disabled = true;
+            }
+        }
+
+        // Initial setup on window load
+        window.onload = () => {
+            logGameEvent('INFO', 'WindowLoaded', '窗口加载完成。');
+            // Display the start game overlay initially
+            startGameOverlay.style.display = 'flex';
+            startGameOverlay.style.opacity = '1';
+
+            // Attach the click and touchstart listeners to the start game overlay
+            startGameOverlay.addEventListener('click', startGameHandler, { once: true });
+            startGameOverlay.addEventListener('touchstart', startGameHandler, { once: true, passive: false });
+        };
     </script>
 </body>
 </html>
