@@ -6,15 +6,36 @@
     <title>Seeing Dog HTML Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 10:16竖屏比例容器 - 修正版 */
+        /* Ensure html and body take full viewport height and width */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrolling if content overflows */
+        }
+
+        /* Apply background to the body */
+        body {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: #1a202c; /* Fallback background color */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif; /* Use Inter font */
+            color: white; /* Default text color */
+        }
+
+        /* Game container now fills the available space */
         .game-container {
             position: relative;
             width: 100%;
-            aspect-ratio: 10/16; /* 使用aspect-ratio确保比例 */
-            max-width: 600px;
-            margin: 0 auto;
-            background-size: cover;
-            background-position: center;
+            height: 100%; /* Take full height of the body */
+            /* aspect-ratio: 10/16; /* Remove fixed aspect ratio to allow full page fill */
+            /* max-width: 600px; /* Remove max-width */
+            margin: 0; /* Remove auto margin */
             overflow: hidden;
         }
         
@@ -55,6 +76,9 @@
             font-weight: bold;
             color: white;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            border-radius: 0.5rem; /* Rounded corners */
+            padding: 0.5rem 1rem;
+            background-color: rgba(0, 0, 0, 0.3); /* Slightly transparent background */
         }
         
         /* 反馈模块 */
@@ -65,6 +89,12 @@
             width: 50%;
             z-index: 10;
             display: none;
+            border-radius: 1rem; /* Rounded corners */
+            overflow: hidden; /* Ensure image respects border-radius */
+        }
+
+        #feedback-module img {
+            border-radius: 1rem; /* Apply rounded corners to the image inside */
         }
         
         /* 胜利屏幕 */
@@ -78,6 +108,7 @@
             background-position: center;
             display: none;
             z-index: 20;
+            border-radius: 0.5rem; /* Rounded corners */
         }
         
         /* 预加载遮罩 */
@@ -94,6 +125,7 @@
             align-items: center;
             z-index: 100;
             color: white;
+            border-radius: 0.5rem; /* Rounded corners */
         }
         
         .loading-spinner {
@@ -124,6 +156,11 @@
             cursor: pointer;
             font-weight: bold;
             z-index: 5;
+            transition: background 0.3s ease; /* Smooth transition for hover */
+        }
+
+        #reset-button:hover {
+            background: rgba(0, 0, 0, 0.7);
         }
         
         /* 录音动画效果 */
@@ -143,6 +180,8 @@
             height: 0;
             padding-bottom: 100%; /* 正方形视频 */
             position: relative;
+            border-radius: 0.5rem; /* Rounded corners */
+            overflow: hidden; /* Ensure video respects border-radius */
         }
         
         .dog-video-container video {
@@ -152,67 +191,56 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
+            border-radius: 0.5rem; /* Apply rounded corners to the video inside */
         }
         
-        /* 确保背景正确填充 */
-        .background-cover {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            z-index: -1;
+        /* Removed .background-cover as background is now on body */
+
+        /* Styles for the record button image */
+        #record-button img {
+            border-radius: 50%; /* Make the microphone icon circular */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+            transition: transform 0.2s ease-in-out; /* Smooth scale effect on click */
+        }
+
+        #record-button:active img {
+            transform: scale(0.95);
         }
     </style>
 </head>
-<body class="bg-gray-900 flex flex-col items-center justify-center min-h-screen p-4">
+<body>
     <div id="game-container" class="game-container">
-        <!-- 背景层 -->
-        <div id="background-layer" class="background-cover"></div>
-        
-        <!-- 预加载遮罩 -->
         <div id="preloader">
             <h2 class="text-2xl font-bold mb-4">Loading Game Resources...</h2>
             <div class="loading-spinner"></div>
         </div>
         
-        <!-- 重置按钮 -->
         <button id="reset-button" class="hidden">Restart</button>
         
-        <!-- 计分模块 -->
         <div id="score-module" class="module-container">0/5</div>
         
-        <!-- 红绿灯模块 -->
         <div id="traffic-light-module" class="module-container">
-            <img id="traffic-light" src="" alt="Traffic Light" class="w-full">
-        </div>
+            <img id="traffic-light" src="" alt="Traffic Light" class="w-full rounded-lg"> </div>
         
-        <!-- 导盲犬模块 -->
         <div id="guide-dog-module" class="module-container">
             <div class="dog-video-container">
                 <video id="dog-video" autoplay muted loop></video>
             </div>
         </div>
         
-        <!-- 录音按钮模块 -->
         <div id="record-button-module" class="module-container">
             <button id="record-button">
                 <img id="mic-icon" src="" alt="Microphone" class="w-full">
             </button>
         </div>
         
-        <!-- 反馈模块 -->
         <div id="feedback-module" class="module-container">
             <img id="feedback-image" src="" alt="Feedback" class="w-full">
         </div>
         
-        <!-- 胜利屏幕 -->
         <div id="win-screen-container"></div>
     </div>
     
-    <!-- 音频元素 -->
     <audio id="record-click-sound" src=""></audio>
     <audio id="light-sound" src=""></audio>
     <audio id="try-again-sound" src=""></audio>
@@ -281,7 +309,7 @@
         // DOM元素引用
         const dom = {
             gameContainer: document.getElementById('game-container'),
-            backgroundLayer: document.getElementById('background-layer'),
+            // Removed backgroundLayer as it's no longer needed
             preloader: document.getElementById('preloader'),
             resetButton: document.getElementById('reset-button'),
             scoreModule: document.getElementById('score-module'),
@@ -301,8 +329,8 @@
         
         // 初始化游戏
         function initGame() {
-            // 设置背景
-            dom.backgroundLayer.style.backgroundImage = `url('${RESOURCES.images.background}')`;
+            // 设置背景到body
+            document.body.style.backgroundImage = `url('${RESOURCES.images.background}')`;
             
             // 设置初始状态
             resetGame();
@@ -366,21 +394,49 @@
                     })
                     .catch(function(err) {
                         console.error('Microphone access error:', err);
-                        alert('Microphone access is required for this game. Please grant permission and refresh the page.');
+                        // Using a custom message box instead of alert
+                        showMessageBox('Microphone access is required for this game. Please grant permission and refresh the page.');
                     });
             } else {
                 console.error('getUserMedia not supported');
-                alert('Your browser does not support microphone access. Please try a different browser.');
+                // Using a custom message box instead of alert
+                showMessageBox('Your browser does not support microphone access. Please try a different browser.');
             }
         }
         
+        // Custom message box function
+        function showMessageBox(message) {
+            const messageBox = document.createElement('div');
+            messageBox.style.position = 'fixed';
+            messageBox.style.top = '50%';
+            messageBox.style.left = '50%';
+            messageBox.style.transform = 'translate(-50%, -50%)';
+            messageBox.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            messageBox.style.color = 'white';
+            messageBox.style.padding = '20px';
+            messageBox.style.borderRadius = '10px';
+            messageBox.style.zIndex = '1000';
+            messageBox.style.textAlign = 'center';
+            messageBox.style.maxWidth = '80%';
+            messageBox.innerHTML = `
+                <p class="mb-4">${message}</p>
+                <button id="message-box-ok" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">OK</button>
+            `;
+            document.body.appendChild(messageBox);
+
+            document.getElementById('message-box-ok').addEventListener('click', () => {
+                document.body.removeChild(messageBox);
+            });
+        }
+
         // 初始化语音识别
         function initSpeechRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             
             if (!SpeechRecognition) {
                 console.error('Speech Recognition not supported');
-                alert('Your browser does not support speech recognition. Please try Chrome on Android.');
+                // Using a custom message box instead of alert
+                showMessageBox('Your browser does not support speech recognition. Please try Chrome on Android.');
                 return;
             }
             
@@ -446,6 +502,13 @@
                     dom.dogVideo.loop = true;
                     dom.dogVideo.play();
                 }
+            });
+
+            // Handle window resize to adjust game container if needed (though with 100% width/height, it should adapt)
+            window.addEventListener('resize', () => {
+                // No specific action needed here as width/height are 100%
+                // If a specific aspect ratio was desired for the game content
+                // while filling the screen, more complex logic would be needed.
             });
         }
         
