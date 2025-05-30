@@ -251,13 +251,24 @@
                 return {
                     info: (msg) => logToPage(msg, 'info'),
                     warn: (msg) => logToPage(msg, 'warn'),
-                    error: (msg, errorObj = null) => {
+                    error: (msg, errorDetail = null) => { // errorDetail can be a string (event.error) or an Error object
                         let fullMsg = msg;
-                        if (errorObj) {
-                            fullMsg += ` Error: ${errorObj.name || 'UnknownError'} - ${errorObj.message || 'No message'}`;
-                            // If error object has a stack, include it
-                            if (errorObj.stack) {
-                                fullMsg += `\nStack: ${errorObj.stack}`;
+                        if (errorDetail) {
+                            if (typeof errorDetail === 'string') {
+                                fullMsg += ` Error Type: ${errorDetail}`; // For SpeechRecognitionErrorEvent.error (string)
+                            } else if (errorDetail instanceof Error) {
+                                fullMsg += ` Error: ${errorDetail.name || 'UnknownError'} - ${errorDetail.message || 'No message'}`;
+                                if (errorDetail.stack) {
+                                    fullMsg += `\nStack: ${errorDetail.stack}`;
+                                }
+                            } else if (typeof errorDetail === 'object' && 'error' in errorDetail) {
+                                // This handles SpeechRecognitionErrorEvent structure (e.g., event object itself)
+                                fullMsg += ` Error Type: ${errorDetail.error}`;
+                                if (errorDetail.message) { // Some SpeechRecognitionErrorEvents might have a message
+                                    fullMsg += ` Message: ${errorDetail.message}`;
+                                }
+                            } else {
+                                fullMsg += ` Detail: ${JSON.stringify(errorDetail)}`; // Catch-all for other types
                             }
                         }
                         logToPage(fullMsg, 'error');
@@ -374,8 +385,9 @@
 
                     recognition.onerror = function(event) {
                         isRecognizing = false;
-                        Logger.error('[SpeechRecognition] Event: onerror - Speech recognition error occurred!', event.error);
-                        let errorMessage = `语音识别错误：${event.error}`;
+                        // Pass the entire event object to Logger.error for more detailed logging
+                        Logger.error('[SpeechRecognition] Event: onerror - Speech recognition error occurred!', event);
+                        let errorMessage = `语音识别错误：${event.error}`; // event.error is the error type string
                         if (event.error === 'not-allowed') {
                             errorMessage = '语音识别被拒绝。请确保已授权麦克风权限，且未被其他应用占用。';
                         } else if (event.error === 'no-speech') {
