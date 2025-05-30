@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>安卓麦克风与录音测试</title>
+    <title>安卓麦克风与语音识别测试</title>
     <style>
         /*
          * CSS 样式部分：定义网页的外观和布局。
@@ -102,7 +102,7 @@
         }
 
         /* 识别结果/录音信息显示区域样式 */
-        #recognition-results { /* 在本次修改中，此ID将用于显示录音信息，而非识别结果 */
+        #recognition-results {
             white-space: pre-wrap; /* 保留空白符和换行符，确保格式正确 */
             word-break: break-word; /* 允许长单词在必要时换行 */
             min-height: 80px; /* 最小高度 */
@@ -176,12 +176,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>安卓麦克风与录音测试</h1>
-        <p>点击下方按钮，测试您的安卓设备浏览器是否支持麦克风权限和获取音频流。</p>
+        <h1>安卓麦克风与语音识别测试</h1> <p>点击下方按钮，测试您的安卓设备浏览器是否支持麦克风权限和语音识别功能。</p>
 
         <div class="controls">
             <button id="requestPermissionButton">请求麦克风权限</button>
-            <button id="startRecordingButton" disabled>开始录音</button> <button id="stopRecordingButton" disabled>停止录音</button> </div>
+            <button id="startRecognitionAndRecordingButton" disabled>开始语音识别并录音</button>
+            <button id="stopRecognitionAndRecordingButton" disabled>停止语音识别并录音</button>
+        </div>
 
         <div class="status-section">
             <h2>当前状态</h2>
@@ -189,9 +190,16 @@
         </div>
     </div>
 
+    <div class="container results-section">
+        <h2>识别结果</h2>
+        <pre id="recognition-results">暂无识别结果。</pre>
+    </div>
+
     <div class="container audio-info-section">
         <h2>录音信息</h2>
-        <pre id="audio-stream-status">等待开始录音...</pre> <pre id="audio-track-info">麦克风轨道: 未连接</pre> </div>
+        <pre id="audio-stream-status">等待开始...</pre>
+        <pre id="audio-track-info">麦克风轨道: 未连接</pre>
+    </div>
 
     <div class="container log-section">
         <h2>调试日志</h2>
@@ -207,17 +215,21 @@
          * 1. 避免全局变量污染：所有变量都在这个函数内部，不会影响到其他脚本。
          * 2. 模块化：代码被组织成独立的逻辑块，便于管理和维护。
          */
-        const AudioRecordingModule = (function() {
+        const SpeechRecognitionAndRecordingModule = (function() {
             // 私有变量：这些变量只能在当前模块内部访问和修改。
+            let recognition = null; // 用于存储Web Speech API的语音识别对象
             let mediaStream = null; // 用于存储从麦克风获取的音频流对象
-            let isRecording = false; // 标志，表示当前是否正在录音
+            let isRecognizingAndRecording = false; // 标志，表示当前是否正在识别和录音
+            let finalTranscript = ''; // 存储最终的语音识别结果文本
 
             // 获取DOM元素：提前获取页面上需要操作的HTML元素，避免重复查找。
             const statusMessageElement = document.getElementById('status-message'); // 用于显示当前操作状态的段落
+            const recognitionResultsElement = document.getElementById('recognition-results'); // 用于显示语音识别结果的pre标签
             const audioStreamStatusElement = document.getElementById('audio-stream-status'); // 用于显示音频流状态的pre标签
             const audioTrackInfoElement = document.getElementById('audio-track-info'); // 用于显示音频轨道信息的pre标签
-            const startRecordingButton = document.getElementById('startRecordingButton'); // “开始录音”按钮
-            const stopRecordingButton = document.getElementById('stopRecordingButton'); // “停止录音”按钮
+            // 按钮ID更新，以反映其双重功能（识别和录音）
+            const startRecognitionAndRecordingButton = document.getElementById('startRecognitionAndRecordingButton'); // “开始语音识别并录音”按钮
+            const stopRecognitionAndRecordingButton = document.getElementById('stopRecognitionAndRecordingButton'); // “停止语音识别并录音”按钮
             const requestPermissionButton = document.getElementById('requestPermissionButton'); // “请求麦克风权限”按钮
             const logOutputElement = document.getElementById('log-output'); // 日志输出区域
             const clearLogButton = document.getElementById('clearLogButton'); // 清空日志按钮
@@ -321,9 +333,9 @@
                         // 此时，我们立即停止并释放麦克风，因为这个函数只是为了“检查权限”，而不是开始录音。
                         stream.getTracks().forEach(track => track.stop());
                         Logger.info('[权限] 麦克风权限已成功授予。'); // 记录成功日志
-                        statusMessageElement.textContent = '麦克风权限已授予。您可以开始录音了。'; // 更新页面状态
+                        statusMessageElement.textContent = '麦克风权限已授予。您可以开始语音识别和录音了。'; // 更新页面状态
                         statusMessageElement.className = 'success'; // 添加成功样式
-                        startRecordingButton.disabled = false; // 启用“开始录音”按钮
+                        startRecognitionAndRecordingButton.disabled = false; // 启用“开始语音识别并录音”按钮
                         return true; // 返回成功
                     } catch (error) {
                         // 如果获取权限失败，会捕获到错误。
@@ -344,7 +356,7 @@
                         }
                         statusMessageElement.textContent = errorMessage; // 更新页面状态为错误信息
                         statusMessageElement.className = 'error'; // 添加错误样式
-                        startRecordingButton.disabled = true; // 禁用“开始录音”按钮
+                        startRecognitionAndRecordingButton.disabled = true; // 禁用“开始语音识别并录音”按钮
                         return false; // 返回失败
                     }
                 }
@@ -356,11 +368,10 @@
             })();
 
             /**
-             * @module AudioRecorder
-             * @description 录音模块：处理麦克风音频流的获取、开始和停止。
-             * 此模块不再包含语音识别逻辑，只专注于音频流本身。
+             * @module SpeechAndAudioHandler
+             * @description 语音识别与录音处理模块：结合了麦克风音频流的获取和Web Speech API的语音识别功能。
              */
-            const AudioRecorder = (function() {
+            const SpeechAndAudioHandler = (function() {
                 /**
                  * updateAudioInfo 函数：更新页面上显示的音频流和轨道信息。
                  */
@@ -383,57 +394,192 @@
                 }
 
                 /**
-                 * startRecording 函数：开始获取麦克风音频流。
+                 * initializeRecognition 函数：初始化Web Speech API的语音识别对象。
+                 * 这一步在页面加载时就完成，确保识别器对象准备就绪。
                  */
-                async function startRecording() {
-                    Logger.info('[录音] 正在尝试开始录音...'); // 记录日志
-                    if (isRecording) {
-                        Logger.warn('[录音] 录音已在进行中。'); // 如果已经在录音，发出警告
-                        statusMessageElement.textContent = '录音正在进行中...';
+                function initializeRecognition() {
+                    Logger.info('[语音识别] 正在初始化语音识别服务...'); // 记录日志
+                    // 检查浏览器是否支持Web Speech API
+                    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                        Logger.error('[语音识别] 抱歉，您的浏览器不支持Web Speech API。'); // 记录错误
+                        statusMessageElement.textContent = '抱歉，您的浏览器不支持语音识别功能。请尝试使用支持Web Speech API的最新版Chrome浏览器。';
+                        statusMessageElement.className = 'error';
+                        startRecognitionAndRecordingButton.disabled = true;
+                        stopRecognitionAndRecordingButton.disabled = true;
                         return;
                     }
 
-                    statusMessageElement.textContent = '正在启动录音...'; // 更新页面状态
+                    // 优先使用 webkitSpeechRecognition (Chrome等浏览器支持)
+                    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                    Logger.info('[语音识别] SpeechRecognition 对象已创建。'); // 记录创建成功
+
+                    // 设置语音识别器的属性
+                    recognition.continuous = true; // 持续识别，直到调用 stop()
+                    recognition.interimResults = true; // 返回临时结果，以便实时显示
+                    recognition.lang = 'zh-CN'; // 设置识别语言为中文（中国）
+                    Logger.info('[语音识别] 识别属性已设置: 持续=true, 临时结果=true, 语言=zh-CN。');
+
+                    // 语音识别器事件监听器：这些函数在识别过程的不同阶段被触发
+                    recognition.onstart = function() {
+                        isRecognizingAndRecording = true; // 标志识别正在进行
+                        Logger.info('[语音识别] 事件: onstart - 语音识别已启动。');
+                        statusMessageElement.textContent = '语音识别已启动，请开始讲话...';
+                        statusMessageElement.className = ''; // 清除状态样式
+                        startRecognitionAndRecordingButton.disabled = true; // 禁用开始按钮
+                        stopRecognitionAndRecordingButton.disabled = false; // 启用停止按钮
+                        finalTranscript = ''; // 重置最终识别结果
+                        recognitionResultsElement.textContent = '正在倾听...'; // 显示提示
+                    };
+
+                    recognition.onresult = function(event) {
+                        let interimTranscript = ''; // 临时识别结果
+                        Logger.info('[语音识别] 事件: onresult - 收到识别结果。');
+                        // 遍历所有识别结果
+                        for (let i = event.resultIndex; i < event.results.length; ++i) {
+                            const transcript = event.results[i][0].transcript; // 获取识别到的文本
+                            if (event.results[i].isFinal) {
+                                finalTranscript += transcript; // 如果是最终结果，累加到最终文本
+                                Logger.info(`[语音识别] 最终结果部分: "${transcript}"`);
+                            } else {
+                                interimTranscript += transcript; // 如果是临时结果，累加到临时文本
+                                Logger.info(`[语音识别] 临时结果部分: "${transcript}"`);
+                            }
+                        }
+                        // 在页面上显示临时结果和最终结果
+                        recognitionResultsElement.textContent = `最终结果: ${finalTranscript}\n临时结果: ${interimTranscript}`;
+                    };
+
+                    recognition.onerror = function(event) {
+                        isRecognizingAndRecording = false; // 识别停止
+                        // 将整个事件对象传递给 Logger.error，以便记录更详细的错误信息
+                        Logger.error('[语音识别] 事件: onerror - 语音识别发生错误!', event);
+                        let errorMessage = `语音识别错误：${event.error}`; // event.error 是错误类型字符串
+                        if (event.error === 'not-allowed') {
+                            errorMessage = '语音识别被拒绝。请确保已授权麦克风权限，且未被其他应用占用。';
+                        } else if (event.error === 'no-speech') {
+                            errorMessage = '未检测到语音。请确保麦克风正常工作并重新尝试。';
+                        } else if (event.error === 'network') {
+                            errorMessage = '网络错误，请检查您的网络连接。';
+                        } else if (event.error === 'aborted') {
+                            errorMessage = '语音识别被中止。这可能是由于网络问题、麦克风被占用或浏览器内部错误。';
+                        } else if (event.error === 'audio-capture') {
+                            errorMessage = '无法捕获音频。请检查麦克风连接或驱动。';
+                        } else if (event.error === 'service-not-allowed') {
+                            errorMessage = '语音识别服务不允许。可能需要在HTTPS环境下运行。';
+                        }
+                        statusMessageElement.textContent = errorMessage; // 更新页面状态为错误信息
+                        statusMessageElement.className = 'error'; // 添加错误样式
+                        startRecognitionAndRecordingButton.disabled = false; // 启用开始按钮
+                        stopRecognitionAndRecordingButton.disabled = true; // 禁用停止按钮
+                        updateAudioInfo(); // 更新录音信息
+                    };
+
+                    recognition.onend = function() {
+                        // 识别结束（正常停止或因错误/超时等）
+                        isRecognizingAndRecording = false; // 识别停止
+                        Logger.info('[语音识别] 事件: onend - 语音识别已结束。');
+                        statusMessageElement.textContent = '语音识别已停止。';
+                        statusMessageElement.className = '';
+                        startRecognitionAndRecordingButton.disabled = false; // 启用开始按钮
+                        stopRecognitionAndRecordingButton.disabled = true; // 禁用停止按钮
+                        // 确保最终结果被显示
+                        if (finalTranscript) {
+                            recognitionResultsElement.textContent = `最终识别结果:\n${finalTranscript}`;
+                        } else {
+                            recognitionResultsElement.textContent = '暂无识别结果。';
+                        }
+                        // 确保停止麦克风流，释放麦克风资源
+                        if (mediaStream) {
+                            mediaStream.getTracks().forEach(track => track.stop());
+                            mediaStream = null;
+                            Logger.info('[语音识别] 麦克风流已通过 onend 事件停止。');
+                        }
+                        updateAudioInfo(); // 更新录音信息
+                    };
+
+                    // 以下是Web Speech API的一些额外事件，用于更细致的调试：
+                    recognition.onspeechstart = function() {
+                        Logger.info('[语音识别] 事件: onspeechstart - 检测到语音输入。');
+                    };
+
+                    recognition.onspeechend = function() {
+                        Logger.info('[语音识别] 事件: onspeechend - 语音输入已结束。');
+                    };
+
+                    recognition.onaudiostart = function() {
+                        Logger.info('[语音识别] 事件: onaudiostart - 音频捕获已开始。');
+                    };
+
+                    recognition.onaudioend = function() {
+                        Logger.info('[语音识别] 事件: onaudioend - 音频捕获已结束。');
+                    };
+                }
+
+                /**
+                 * startRecognitionAndRecording 函数：开始语音识别并录音。
+                 * 1. 首先获取麦克风音频流。
+                 * 2. 然后启动语音识别服务。
+                 */
+                async function startRecognitionAndRecording() {
+                    Logger.info('[主控] 正在尝试开始语音识别和录音...'); // 记录日志
+                    if (isRecognizingAndRecording) {
+                        Logger.warn('[主控] 语音识别和录音已在进行中。'); // 如果已在进行中，发出警告
+                        statusMessageElement.textContent = '语音识别和录音正在进行中...';
+                        return;
+                    }
+
+                    statusMessageElement.textContent = '正在启动麦克风和识别服务...'; // 更新页面状态
+                    recognitionResultsElement.textContent = '正在初始化识别...'; // 清空并提示识别区域
+
                     try {
-                        // 再次调用 getUserMedia 来获取音频流。
-                        // 这里的 stream 将被保存到 mediaStream 变量中，以便后续停止。
+                        // 1. 获取麦克风音频流 (录音部分)
+                        // navigator.mediaDevices.getUserMedia 返回一个Promise，成功时提供MediaStream对象。
+                        // 这是获取麦克风输入的关键步骤。
                         mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        isRecording = true; // 设置录音状态为true
+                        Logger.info('[主控] 麦克风音频流已成功获取。');
+                        updateAudioInfo(); // 立即更新页面上的录音信息
 
                         // 为媒体流添加事件监听器，以便在流状态改变时记录日志。
+                        // 这有助于追踪麦克风是否意外停止。
                         mediaStream.oninactive = () => {
                             Logger.info('[录音] 音频流已停止 (oninactive 事件)。');
-                            stopRecording(); // 流不活跃时自动停止录音
+                            // 如果流不活跃，尝试停止所有识别和录音进程
+                            stopRecognitionAndRecording();
                         };
                         mediaStream.onended = () => {
                             Logger.info('[录音] 音频流已结束 (onended 事件)。');
-                            stopRecording(); // 流结束时自动停止录音
+                            // 如果流结束，尝试停止所有识别和录音进程
+                            stopRecognitionAndRecording();
                         };
                         mediaStream.onaddtrack = (event) => {
                             Logger.info(`[录音] 新增音频轨道: ${event.track.label}`);
-                            updateAudioInfo(); // 轨道变化时更新信息
+                            updateAudioInfo();
                         };
                         mediaStream.onremovetrack = (event) => {
                             Logger.info(`[录音] 移除音频轨道: ${event.track.label}`);
-                            updateAudioInfo(); // 轨道变化时更新信息
+                            updateAudioInfo();
                         };
 
-                        Logger.info('[录音] 麦克风音频流已成功获取。'); // 记录成功日志
-                        statusMessageElement.textContent = '录音已启动，麦克风正在工作...'; // 更新页面状态
-                        statusMessageElement.className = ''; // 清除状态样式
-                        startRecordingButton.disabled = true; // 禁用“开始录音”按钮
-                        stopRecordingButton.disabled = false; // 启用“停止录音”按钮
-                        updateAudioInfo(); // 更新页面上的录音信息
+
+                        // 2. 启动语音识别 (识别部分)
+                        // 如果识别器尚未初始化，则先初始化它。
+                        if (!recognition) {
+                            initializeRecognition();
+                        }
+                        recognition.start(); // 调用 Web Speech API 的 start 方法开始识别
+
+                        // onstart 事件会负责更新 isRecognizingAndRecording 状态和按钮。
+                        // 这里的 try-catch 主要捕获 getUserMedia 的错误。
                     } catch (error) {
-                        // 捕获获取音频流过程中可能发生的错误。
-                        Logger.error('[录音] 启动录音失败:', error); // 记录错误日志
-                        let errorMessage = '启动录音失败。请确保麦克风权限已授予且麦克风未被占用。';
+                        // 捕获获取音频流或启动识别过程中可能发生的错误。
+                        Logger.error('[主控] 启动语音识别和录音失败:', error); // 记录详细错误日志
+                        let errorMessage = '启动失败。请确保麦克风权限已授予且麦克风未被占用。';
                         if (error.name === 'NotAllowedError') {
                             errorMessage = '用户拒绝了麦克风权限或权限已被禁用。';
                         } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
                             errorMessage = '未找到麦克风设备。';
                         } else if (error.name === 'AbortError') {
-                            errorMessage = '录音操作被中止。这可能是由于网络问题、麦克风被占用或浏览器内部错误。';
+                            errorMessage = '操作被中止。这可能是由于网络问题、麦克风被占用或浏览器内部错误。';
                         } else if (error.name === 'SecurityError') {
                             errorMessage = '安全错误：可能需要在HTTPS环境下运行。';
                         } else if (error.name === 'NotReadableError') {
@@ -441,43 +587,55 @@
                         }
                         statusMessageElement.textContent = errorMessage; // 更新页面状态为错误信息
                         statusMessageElement.className = 'error'; // 添加错误样式
-                        startRecordingButton.disabled = false; // 启用“开始录音”按钮
-                        stopRecordingButton.disabled = true; // 禁用“停止录音”按钮
-                        updateAudioInfo(); // 更新页面上的录音信息
+                        startRecognitionAndRecordingButton.disabled = false; // 启用开始按钮
+                        stopRecognitionAndRecordingButton.disabled = true; // 禁用停止按钮
+                        updateAudioInfo(); // 更新录音信息
                     }
                 }
 
                 /**
-                 * stopRecording 函数：停止获取麦克风音频流并释放麦克风。
+                 * stopRecognitionAndRecording 函数：停止语音识别并释放麦克风。
                  */
-                function stopRecording() {
-                    Logger.info('[录音] 正在尝试停止录音...'); // 记录日志
-                    if (mediaStream && isRecording) {
-                        // 遍历媒体流中的所有轨道（包括音频和视频，这里只有音频），并停止它们。
-                        // track.stop() 是释放麦克风的关键操作。
+                function stopRecognitionAndRecording() {
+                    Logger.info('[主控] 正在尝试停止语音识别和录音...'); // 记录日志
+                    if (!isRecognizingAndRecording) {
+                        Logger.warn('[主控] 语音识别和录音未启动或已停止。'); // 如果未在进行中，发出警告
+                        statusMessageElement.textContent = '语音识别和录音未启动或已停止。';
+                        return;
+                    }
+
+                    // 1. 停止语音识别服务
+                    // 调用 Web Speech API 的 stop 方法来终止识别过程。
+                    if (recognition) {
+                        recognition.stop();
+                        Logger.info('[主控] recognition.stop() 已调用。');
+                    }
+
+                    // 2. 停止麦克风音频流并释放麦克风资源
+                    // 遍历媒体流中的所有轨道（包括音频和视频，这里只有音频），并停止它们。
+                    // track.stop() 是释放麦克风的关键操作。
+                    if (mediaStream) {
                         mediaStream.getTracks().forEach(track => {
                             track.stop();
-                            Logger.info(`[录音] 停止轨道: ${track.label} (ID: ${track.id})`);
+                            Logger.info(`[主控] 停止麦克风轨道: ${track.label} (ID: ${track.id})`);
                         });
                         mediaStream = null; // 清空媒体流变量
-                        isRecording = false; // 设置录音状态为false
-
-                        Logger.info('[录音] 录音已停止，麦克风已释放。'); // 记录成功日志
-                        statusMessageElement.textContent = '录音已停止。'; // 更新页面状态
-                        statusMessageElement.className = ''; // 清除状态样式
-                        startRecordingButton.disabled = false; // 启用“开始录音”按钮
-                        stopRecordingButton.disabled = true; // 禁用“停止录音”按钮
-                        updateAudioInfo(); // 更新页面上的录音信息
-                    } else {
-                        Logger.warn('[录音] 录音未启动或已停止。'); // 如果未在录音，发出警告
-                        statusMessageElement.textContent = '录音未启动或已停止。';
                     }
+
+                    isRecognizingAndRecording = false; // 更新状态为停止
+                    Logger.info('[主控] 语音识别和麦克风已停止。'); // 记录成功日志
+                    statusMessageElement.textContent = '语音识别和录音已停止。'; // 更新页面状态
+                    statusMessageElement.className = ''; // 清除状态样式
+                    startRecognitionAndRecordingButton.disabled = false; // 启用开始按钮
+                    stopRecognitionAndRecordingButton.disabled = true; // 禁用停止按钮
+                    updateAudioInfo(); // 更新录音信息
                 }
 
                 // 返回公共方法，供外部使用。
                 return {
-                    startRecording,
-                    stopRecording
+                    initializeRecognition, // 在模块加载时初始化识别器
+                    start: startRecognitionAndRecording, // 启动识别和录音
+                    stop: stopRecognitionAndRecording // 停止识别和录音
                 };
             })();
 
@@ -493,12 +651,16 @@
                     Logger.info('[事件处理] 正在初始化所有事件监听器。'); // 记录日志
                     // 为“请求麦克风权限”按钮添加点击事件，调用 Permissions 模块的相应方法。
                     requestPermissionButton.addEventListener('click', Permissions.requestMicrophonePermission);
-                    // 为“开始录音”按钮添加点击事件，调用 AudioRecorder 模块的相应方法。
-                    startRecordingButton.addEventListener('click', AudioRecorder.startRecording);
-                    // 为“停止录音”按钮添加点击事件，调用 AudioRecorder 模块的相应方法。
-                    stopRecordingButton.addEventListener('click', AudioRecorder.stopRecording);
+                    // 为“开始语音识别并录音”按钮添加点击事件，调用 SpeechAndAudioHandler 模块的相应方法。
+                    startRecognitionAndRecordingButton.addEventListener('click', SpeechAndAudioHandler.start);
+                    // 为“停止语音识别并录音”按钮添加点击事件，调用 SpeechAndAudioHandler 模块的相应方法。
+                    stopRecognitionAndRecordingButton.addEventListener('click', SpeechAndAudioHandler.stop);
                     // 为“清空日志”按钮添加点击事件，调用 Logger 模块的相应方法。
                     clearLogButton.addEventListener('click', Logger.clear);
+
+                    // 在页面加载时初始化语音识别对象，但不会立即开始识别。
+                    // 这确保 recognition 对象在需要时已经准备就绪。
+                    SpeechAndAudioHandler.initializeRecognition();
                 }
 
                 // 返回公共方法。
@@ -508,7 +670,7 @@
             })();
 
             // 公共接口：暴露给外部调用的模块初始化方法。
-            // 当页面加载完成后，会调用 AudioRecordingModule.init() 来启动整个应用。
+            // 当页面加载完成后，会调用 SpeechRecognitionAndRecordingModule.init() 来启动整个应用。
             return {
                 init: EventHandlers.init // 初始化所有事件处理器
             };
@@ -518,7 +680,7 @@
         // DOMContentLoaded 事件监听器：
         // 确保在HTML文档的DOM（文档对象模型）完全加载和解析后才执行JavaScript代码。
         // 这样可以避免在HTML元素尚未创建时就尝试操作它们而导致的错误。
-        document.addEventListener('DOMContentLoaded', AudioRecordingModule.init);
+        document.addEventListener('DOMContentLoaded', SpeechRecognitionAndRecordingModule.init);
     </script>
 </body>
 </html>
