@@ -3,169 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>安卓麦克风与语音识别测试</title>
+    <title>安卓麦克风与录音测试</title>
     <style>
-        /* 全局样式 */
+        /*
+         * CSS 样式部分：定义网页的外观和布局。
+         * 这些样式确保网页在不同大小的屏幕（包括安卓触屏设备）上都能良好显示。
+         */
+
+        /* 全局样式：应用于整个页面的基本设置 */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f7f6;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* 设置字体，提供清晰的文本显示 */
+            margin: 0; /* 移除页面外边距 */
+            padding: 20px; /* 页面内边距，让内容不紧贴边缘 */
+            background-color: #f4f7f6; /* 页面背景色，柔和的灰色 */
+            color: #333; /* 默认文本颜色 */
+            display: flex; /* 使用Flexbox布局，方便内容垂直居中 */
+            flex-direction: column; /* Flexbox方向为列，使内容垂直堆叠 */
+            align-items: center; /* 水平居中Flexbox项目 */
+            min-height: 100vh; /* 最小高度为视口高度，确保内容少时也能撑满屏幕 */
+            box-sizing: border-box; /* 盒模型设置为边框盒，padding和border不增加元素总宽度/高度 */
         }
 
-        /* 容器样式 */
+        /* 容器样式：用于包裹主要内容的矩形区域 */
         .container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-            width: 100%;
-            max-width: 600px;
-            margin-bottom: 20px;
-            text-align: center;
+            background-color: #ffffff; /* 容器背景色为白色 */
+            padding: 30px; /* 容器内边距 */
+            border-radius: 12px; /* 圆角边框，使界面更柔和 */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); /* 阴影效果，增加立体感 */
+            width: 100%; /* 宽度占满父容器 */
+            max-width: 600px; /* 最大宽度限制，防止在大屏幕上过宽 */
+            margin-bottom: 20px; /* 容器底部外边距，与其他容器分隔 */
+            text-align: center; /* 容器内文本居中对齐 */
         }
 
+        /* 标题样式 */
         h1 {
-            color: #2c3e50;
-            margin-bottom: 25px;
-            font-size: 1.8em;
+            color: #2c3e50; /* 标题颜色，深蓝色 */
+            margin-bottom: 25px; /* 标题底部外边距 */
+            font-size: 1.8em; /* 标题字体大小 */
         }
 
         /* 按钮样式 */
         button {
-            background-color: #4CAF50; /* 绿色 */
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.1em;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            margin: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background-color: #4CAF50; /* 按钮背景色，绿色 */
+            color: white; /* 按钮文本颜色 */
+            padding: 12px 25px; /* 按钮内边距，增加点击区域 */
+            border: none; /* 无边框 */
+            border-radius: 8px; /* 圆角按钮 */
+            cursor: pointer; /* 鼠标悬停时显示手型光标 */
+            font-size: 1.1em; /* 按钮字体大小 */
+            transition: background-color 0.3s ease, transform 0.2s ease; /* 过渡效果，使交互更平滑 */
+            margin: 10px; /* 按钮外边距 */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* 按钮阴影 */
         }
 
+        /* 按钮悬停状态 */
         button:hover {
-            background-color: #45a049;
-            transform: translateY(-2px);
+            background-color: #45a049; /* 悬停时颜色变深 */
+            transform: translateY(-2px); /* 向上轻微移动，增加交互感 */
         }
 
+        /* 按钮点击状态 */
         button:active {
-            background-color: #3e8e41;
-            transform: translateY(0);
+            background-color: #3e8e41; /* 点击时颜色更深 */
+            transform: translateY(0); /* 恢复原始位置 */
         }
 
+        /* 按钮禁用状态 */
         button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-            box-shadow: none;
+            background-color: #cccccc; /* 禁用时背景色变灰 */
+            cursor: not-allowed; /* 鼠标显示禁止符号 */
+            box-shadow: none; /* 禁用时移除阴影 */
         }
 
-        /* 状态和结果显示区域 */
-        .status-section, .results-section, .log-section {
-            margin-top: 25px;
-            padding: 20px;
+        /* 状态、结果和日志显示区域的通用样式 */
+        .status-section, .results-section, .log-section, .audio-info-section {
+            margin-top: 25px; /* 顶部外边距 */
+            padding: 20px; /* 内边距 */
             background-color: #e8f5e9; /* 淡绿色背景 */
-            border-radius: 10px;
-            border: 1px solid #d4edda;
-            text-align: left;
+            border-radius: 10px; /* 圆角 */
+            border: 1px solid #d4edda; /* 边框 */
+            text-align: left; /* 文本左对齐 */
         }
 
-        .status-section h2, .results-section h2, .log-section h2 {
-            color: #2e7d32;
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 1.4em;
+        /* 各个区域的标题样式 */
+        .status-section h2, .results-section h2, .log-section h2, .audio-info-section h2 {
+            color: #2e7d32; /* 标题颜色，深绿色 */
+            margin-top: 0; /* 移除顶部外边距 */
+            margin-bottom: 15px; /* 底部外边距 */
+            font-size: 1.4em; /* 字体大小 */
         }
 
+        /* 状态消息文本样式 */
         #status-message {
-            font-size: 1.1em;
-            color: #333;
-            line-height: 1.6;
+            font-size: 1.1em; /* 字体大小 */
+            color: #333; /* 文本颜色 */
+            line-height: 1.6; /* 行高，增加可读性 */
         }
 
-        #recognition-results {
-            white-space: pre-wrap; /* Preserve whitespace and newlines */
-            word-break: break-word; /* Allow words to break in long text */
-            min-height: 80px;
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #eee;
-            font-size: 1.1em;
-            color: #555;
-            overflow-y: auto; /* Allow scrolling if content overflows */
-            max-height: 200px;
+        /* 识别结果/录音信息显示区域样式 */
+        #recognition-results { /* 在本次修改中，此ID将用于显示录音信息，而非识别结果 */
+            white-space: pre-wrap; /* 保留空白符和换行符，确保格式正确 */
+            word-break: break-word; /* 允许长单词在必要时换行 */
+            min-height: 80px; /* 最小高度 */
+            background-color: #f9f9f9; /* 背景色 */
+            padding: 15px; /* 内边距 */
+            border-radius: 8px; /* 圆角 */
+            border: 1px solid #eee; /* 边框 */
+            font-size: 1.1em; /* 字体大小 */
+            color: #555; /* 文本颜色 */
+            overflow-y: auto; /* 内容溢出时显示垂直滚动条 */
+            max-height: 200px; /* 最大高度限制 */
         }
 
+        /* 日志输出区域样式 */
         #log-output {
-            white-space: pre-wrap;
-            word-break: break-word;
-            min-height: 100px;
-            max-height: 300px; /* Limit log height */
-            background-color: #f0f0f0; /* Slightly darker background for logs */
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            font-size: 0.9em; /* Smaller font for logs */
-            color: #444;
-            overflow-y: auto;
-            font-family: 'Courier New', Courier, monospace; /* Monospace font for logs */
+            white-space: pre-wrap; /* 保留空白符和换行符 */
+            word-break: break-word; /* 允许长单词换行 */
+            min-height: 100px; /* 最小高度 */
+            max-height: 300px; /* 最大高度限制，防止日志过多撑满页面 */
+            background-color: #f0f0f0; /* 略深的背景色，与内容区域区分 */
+            padding: 15px; /* 内边距 */
+            border-radius: 8px; /* 圆角 */
+            border: 1px solid #ddd; /* 边框 */
+            font-size: 0.9em; /* 字体略小，适合显示日志 */
+            color: #444; /* 文本颜色 */
+            overflow-y: auto; /* 内容溢出时显示垂直滚动条 */
+            font-family: 'Courier New', Courier, monospace; /* 等宽字体，方便查看日志 */
         }
 
+        /* 错误状态文本颜色 */
         .error {
-            color: #d32f2f; /* Red */
-            font-weight: bold;
+            color: #d32f2f; /* 红色 */
+            font-weight: bold; /* 加粗 */
         }
 
+        /* 成功状态文本颜色 */
         .success {
-            color: #388e3c; /* Green */
-            font-weight: bold;
+            color: #388e3c; /* 绿色 */
+            font-weight: bold; /* 加粗 */
         }
 
+        /* 日志中错误信息的颜色 */
         .log-error {
             color: #d32f2f;
         }
 
+        /* 日志中警告信息的颜色 */
         .log-warn {
-            color: #f57f17; /* Orange */
+            color: #f57f17; /* 橙色 */
         }
 
+        /* 日志中普通信息的颜色 */
         .log-info {
-            color: #1976d2; /* Blue */
+            color: #1976d2; /* 蓝色 */
         }
 
-        /* Small screen adaptation */
+        /* 媒体查询：针对小屏幕设备（如手机）的适配 */
         @media (max-width: 600px) {
             .container {
-                padding: 20px;
+                padding: 20px; /* 小屏幕下容器内边距减小 */
             }
             button {
-                width: 100%;
-                margin: 8px 0;
+                width: 100%; /* 按钮宽度占满父容器 */
+                margin: 8px 0; /* 按钮垂直外边距 */
             }
             h1 {
-                font-size: 1.5em;
+                font-size: 1.5em; /* 小屏幕下标题字体减小 */
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>安卓麦克风与语音识别测试</h1>
-        <p>点击下方按钮，测试您的安卓设备浏览器是否支持麦克风权限和语音识别功能。</p>
+        <h1>安卓麦克风与录音测试</h1>
+        <p>点击下方按钮，测试您的安卓设备浏览器是否支持麦克风权限和获取音频流。</p>
 
         <div class="controls">
             <button id="requestPermissionButton">请求麦克风权限</button>
-            <button id="startRecognitionButton" disabled>开始语音识别</button>
-            <button id="stopRecognitionButton" disabled>停止语音识别</button>
-        </div>
+            <button id="startRecordingButton" disabled>开始录音</button> <button id="stopRecordingButton" disabled>停止录音</button> </div>
 
         <div class="status-section">
             <h2>当前状态</h2>
@@ -173,10 +189,9 @@
         </div>
     </div>
 
-    <div class="container results-section">
-        <h2>识别结果</h2>
-        <pre id="recognition-results">暂无识别结果。</pre>
-    </div>
+    <div class="container audio-info-section">
+        <h2>录音信息</h2>
+        <pre id="audio-stream-status">等待开始录音...</pre> <pre id="audio-track-info">麦克风轨道: 未连接</pre> </div>
 
     <div class="container log-section">
         <h2>调试日志</h2>
@@ -185,52 +200,59 @@
     </div>
 
     <script>
-        // Core functionality module
-        const SpeechRecognitionModule = (function() {
-            // Private variables
-            let recognition = null;
-            let isRecognizing = false;
-            let finalTranscript = '';
+        /*
+         * JavaScript 核心功能模块：
+         * 整个JavaScript代码被封装在一个“立即执行函数表达式 (IIFE)”中。
+         * 这样做的好处是：
+         * 1. 避免全局变量污染：所有变量都在这个函数内部，不会影响到其他脚本。
+         * 2. 模块化：代码被组织成独立的逻辑块，便于管理和维护。
+         */
+        const AudioRecordingModule = (function() {
+            // 私有变量：这些变量只能在当前模块内部访问和修改。
+            let mediaStream = null; // 用于存储从麦克风获取的音频流对象
+            let isRecording = false; // 标志，表示当前是否正在录音
 
-            // Get DOM elements
-            const statusMessageElement = document.getElementById('status-message');
-            const recognitionResultsElement = document.getElementById('recognition-results');
-            const startRecognitionButton = document.getElementById('startRecognitionButton');
-            const stopRecognitionButton = document.getElementById('stopRecognitionButton');
-            const requestPermissionButton = document.getElementById('requestPermissionButton');
-            const logOutputElement = document.getElementById('log-output'); // New: Log output element
-            const clearLogButton = document.getElementById('clearLogButton'); // New: Clear log button
+            // 获取DOM元素：提前获取页面上需要操作的HTML元素，避免重复查找。
+            const statusMessageElement = document.getElementById('status-message'); // 用于显示当前操作状态的段落
+            const audioStreamStatusElement = document.getElementById('audio-stream-status'); // 用于显示音频流状态的pre标签
+            const audioTrackInfoElement = document.getElementById('audio-track-info'); // 用于显示音频轨道信息的pre标签
+            const startRecordingButton = document.getElementById('startRecordingButton'); // “开始录音”按钮
+            const stopRecordingButton = document.getElementById('stopRecordingButton'); // “停止录音”按钮
+            const requestPermissionButton = document.getElementById('requestPermissionButton'); // “请求麦克风权限”按钮
+            const logOutputElement = document.getElementById('log-output'); // 日志输出区域
+            const clearLogButton = document.getElementById('clearLogButton'); // 清空日志按钮
 
             /**
              * @module Logger
-             * @description Handles logging messages to the webpage and console.
+             * @description 日志模块：负责将调试信息输出到网页和浏览器控制台。
+             * 这样即使没有连接电脑，也能直接在手机上看到运行日志。
              */
             const Logger = (function() {
                 /**
-                 * Appends a log message to the log output area on the webpage.
-                 * @param {string} message The message to log.
-                 * @param {string} type The type of log (info, warn, error).
+                 * logToPage 函数：将日志消息添加到网页上的日志输出区域。
+                 * @param {string} message 要记录的日志消息。
+                 * @param {string} type 日志类型（'info'：普通信息，'warn'：警告，'error'：错误）。
                  */
                 function logToPage(message, type = 'info') {
-                    const timestamp = new Date().toLocaleTimeString();
-                    const logEntry = document.createElement('div');
-                    logEntry.textContent = `[${timestamp}] ${message}`;
-                    logEntry.className = `log-${type}`; // Apply specific class for styling
+                    const timestamp = new Date().toLocaleTimeString(); // 获取当前时间，用于日志时间戳
+                    const logEntry = document.createElement('div'); // 创建一个新的div元素来承载日志条目
+                    logEntry.textContent = `[${timestamp}] ${message}`; // 设置日志文本，包含时间戳
+                    logEntry.className = `log-${type}`; // 根据日志类型添加CSS类，用于不同颜色显示
 
-                    // Prepend new log entries to keep the latest at the top
+                    // 将新的日志条目添加到日志区域的顶部，让最新日志最先显示。
                     if (logOutputElement.firstChild) {
                         logOutputElement.insertBefore(logEntry, logOutputElement.firstChild);
                     } else {
                         logOutputElement.appendChild(logEntry);
                     }
 
-                    // Keep only the last N log entries to prevent excessive memory usage
-                    const maxLogEntries = 100;
+                    // 控制日志条目数量，防止日志过多导致页面卡顿或内存溢出。
+                    const maxLogEntries = 100; // 最多保留100条日志
                     while (logOutputElement.children.length > maxLogEntries) {
-                        logOutputElement.removeChild(logOutputElement.lastChild);
+                        logOutputElement.removeChild(logOutputElement.lastChild); // 移除最旧的日志
                     }
 
-                    // Also log to console for robust debugging
+                    // 同时将日志输出到浏览器控制台，方便更专业的调试。
                     if (type === 'error') {
                         console.error(message);
                     } else if (type === 'warn') {
@@ -241,286 +263,262 @@
                 }
 
                 /**
-                 * Clears all messages from the log output area.
+                 * clearLogs 函数：清空网页上的所有日志。
                  */
                 function clearLogs() {
-                    logOutputElement.innerHTML = '日志已清空。';
-                    console.log('[Logger] Logs cleared from page.');
+                    logOutputElement.innerHTML = '日志已清空。'; // 清空内容并显示提示
+                    console.log('[Logger] Logs cleared from page.'); // 控制台也记录清空操作
                 }
 
+                // 返回一个包含公共方法的对象，供其他模块调用。
                 return {
-                    info: (msg) => logToPage(msg, 'info'),
-                    warn: (msg) => logToPage(msg, 'warn'),
-                    error: (msg, errorDetail = null) => { // errorDetail can be a string (event.error) or an Error object
+                    info: (msg) => logToPage(msg, 'info'), // 普通信息日志
+                    warn: (msg) => logToPage(msg, 'warn'), // 警告信息日志
+                    // 错误信息日志，可以接收一个错误对象，用于打印更详细的错误信息（如错误名称、消息、堆栈）。
+                    error: (msg, errorDetail = null) => {
                         let fullMsg = msg;
                         if (errorDetail) {
                             if (typeof errorDetail === 'string') {
-                                fullMsg += ` Error Type: ${errorDetail}`; // For SpeechRecognitionErrorEvent.error (string)
+                                fullMsg += ` 错误类型: ${errorDetail}`; // 如果是字符串，直接作为错误类型
                             } else if (errorDetail instanceof Error) {
-                                fullMsg += ` Error: ${errorDetail.name || 'UnknownError'} - ${errorDetail.message || 'No message'}`;
+                                fullMsg += ` 错误: ${errorDetail.name || '未知错误'} - ${errorDetail.message || '无消息'}`;
                                 if (errorDetail.stack) {
-                                    fullMsg += `\nStack: ${errorDetail.stack}`;
+                                    fullMsg += `\n堆栈: ${errorDetail.stack}`; // 包含错误堆栈
                                 }
                             } else if (typeof errorDetail === 'object' && 'error' in errorDetail) {
-                                // This handles SpeechRecognitionErrorEvent structure (e.g., event object itself)
-                                fullMsg += ` Error Type: ${errorDetail.error}`;
-                                if (errorDetail.message) { // Some SpeechRecognitionErrorEvents might have a message
-                                    fullMsg += ` Message: ${errorDetail.message}`;
+                                // 专门处理 SpeechRecognitionErrorEvent 这种包含 'error' 属性的对象
+                                fullMsg += ` 错误类型: ${errorDetail.error}`;
+                                if (errorDetail.message) {
+                                    fullMsg += ` 消息: ${errorDetail.message}`;
                                 }
                             } else {
-                                fullMsg += ` Detail: ${JSON.stringify(errorDetail)}`; // Catch-all for other types
+                                fullMsg += ` 详情: ${JSON.stringify(errorDetail)}`; // 其他未知类型的错误详情
                             }
                         }
                         logToPage(fullMsg, 'error');
                     },
-                    clear: clearLogs
+                    clear: clearLogs // 清空日志方法
                 };
             })();
 
             /**
              * @module Permissions
-             * @description Handles microphone permission requests and checks.
+             * @description 权限模块：处理麦克风权限的请求和检查。
              */
             const Permissions = (function() {
                 /**
-                 * Requests microphone permission.
-                 * @returns {Promise<boolean>} Returns true if permission is successfully obtained, false otherwise.
+                 * requestMicrophonePermission 函数：请求麦克风权限。
+                 * @returns {Promise<boolean>} 返回一个Promise，如果成功获取权限则解析为 true，否则解析为 false。
                  */
                 async function requestMicrophonePermission() {
-                    Logger.info('[Permissions] Attempting to request microphone permission...');
-                    statusMessageElement.textContent = '正在请求麦克风权限...';
+                    Logger.info('[权限] 正在尝试请求麦克风权限...'); // 记录日志
+                    statusMessageElement.textContent = '正在请求麦克风权限...'; // 更新页面状态
                     try {
-                        // Use navigator.mediaDevices.getUserMedia to request microphone permission
+                        // navigator.mediaDevices.getUserMedia 是Web API，用于请求用户访问媒体输入设备（如麦克风、摄像头）。
+                        // { audio: true } 表示我们只需要音频输入。
                         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        // After successfully getting permission, stop the stream to release the microphone
+                        // 如果成功获取到流，说明权限已授予。
+                        // 此时，我们立即停止并释放麦克风，因为这个函数只是为了“检查权限”，而不是开始录音。
                         stream.getTracks().forEach(track => track.stop());
-                        Logger.info('[Permissions] Microphone permission granted successfully.');
-                        statusMessageElement.textContent = '麦克风权限已授予。您可以开始语音识别了。';
-                        statusMessageElement.className = 'success'; // Add success style
-                        startRecognitionButton.disabled = false; // Enable start recognition button
-                        return true;
+                        Logger.info('[权限] 麦克风权限已成功授予。'); // 记录成功日志
+                        statusMessageElement.textContent = '麦克风权限已授予。您可以开始录音了。'; // 更新页面状态
+                        statusMessageElement.className = 'success'; // 添加成功样式
+                        startRecordingButton.disabled = false; // 启用“开始录音”按钮
+                        return true; // 返回成功
                     } catch (error) {
-                        Logger.error('[Permissions] Failed to get microphone permission:', error);
+                        // 如果获取权限失败，会捕获到错误。
+                        Logger.error('[权限] 获取麦克风权限失败:', error); // 记录错误日志，包含错误详情
                         let errorMessage = '获取麦克风权限失败。请检查您的设备设置，确保浏览器有权访问麦克风。';
                         if (error.name === 'NotAllowedError') {
+                            // NotAllowedError 表示用户拒绝了权限请求，或者权限已被系统禁用。
                             errorMessage = '用户拒绝了麦克风权限请求或权限已被禁用。';
                         } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                            // NotNotFoundError/DevicesNotFoundError 表示未找到麦克风设备。
                             errorMessage = '未找到麦克风设备。';
                         } else if (error.name === 'AbortError') {
+                            // AbortError 表示权限请求被中止。
                             errorMessage = '权限请求被中止。';
                         } else if (error.name === 'SecurityError') {
+                            // SecurityError 表示安全错误，通常是因为页面没有通过HTTPS提供。
                             errorMessage = '安全错误：可能需要在HTTPS环境下运行。';
                         }
-                        statusMessageElement.textContent = errorMessage;
-                        statusMessageElement.className = 'error'; // Add error style
-                        startRecognitionButton.disabled = true; // Disable start recognition button
-                        return false;
+                        statusMessageElement.textContent = errorMessage; // 更新页面状态为错误信息
+                        statusMessageElement.className = 'error'; // 添加错误样式
+                        startRecordingButton.disabled = true; // 禁用“开始录音”按钮
+                        return false; // 返回失败
                     }
                 }
 
+                // 返回公共方法，供外部使用。
                 return {
                     requestMicrophonePermission
                 };
             })();
 
             /**
-             * @module SpeechRecognition
-             * @description Handles the core logic of speech recognition.
+             * @module AudioRecorder
+             * @description 录音模块：处理麦克风音频流的获取、开始和停止。
+             * 此模块不再包含语音识别逻辑，只专注于音频流本身。
              */
-            const SpeechRecognition = (function() {
+            const AudioRecorder = (function() {
                 /**
-                 * Initializes the speech recognition object.
+                 * updateAudioInfo 函数：更新页面上显示的音频流和轨道信息。
                  */
-                function initializeRecognition() {
-                    Logger.info('[SpeechRecognition] Initializing speech recognition...');
-                    // Check if the browser supports Web Speech API
-                    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                        Logger.error('[SpeechRecognition] Browser does not support Web Speech API.');
-                        statusMessageElement.textContent = '抱歉，您的浏览器不支持语音识别功能。请尝试使用支持Web Speech API的最新版Chrome浏览器。';
-                        statusMessageElement.className = 'error';
-                        startRecognitionButton.disabled = true;
-                        stopRecognitionButton.disabled = true;
+                function updateAudioInfo() {
+                    if (mediaStream && mediaStream.active) {
+                        // 如果媒体流存在且处于激活状态
+                        audioStreamStatusElement.textContent = `音频流状态: 激活中 (ID: ${mediaStream.id})`;
+                        const audioTracks = mediaStream.getAudioTracks();
+                        if (audioTracks.length > 0) {
+                            const track = audioTracks[0];
+                            audioTrackInfoElement.textContent = `麦克风轨道: ${track.label} (ID: ${track.id}, 状态: ${track.readyState}, 静音: ${track.muted})`;
+                        } else {
+                            audioTrackInfoElement.textContent = '麦克风轨道: 未找到音频轨道。';
+                        }
+                    } else {
+                        // 如果媒体流不激活或不存在
+                        audioStreamStatusElement.textContent = '音频流状态: 未激活';
+                        audioTrackInfoElement.textContent = '麦克风轨道: 未连接';
+                    }
+                }
+
+                /**
+                 * startRecording 函数：开始获取麦克风音频流。
+                 */
+                async function startRecording() {
+                    Logger.info('[录音] 正在尝试开始录音...'); // 记录日志
+                    if (isRecording) {
+                        Logger.warn('[录音] 录音已在进行中。'); // 如果已经在录音，发出警告
+                        statusMessageElement.textContent = '录音正在进行中...';
                         return;
                     }
 
-                    // Prioritize webkitSpeechRecognition (Chrome, etc.)
-                    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-                    Logger.info('[SpeechRecognition] SpeechRecognition object created.');
+                    statusMessageElement.textContent = '正在启动录音...'; // 更新页面状态
+                    try {
+                        // 再次调用 getUserMedia 来获取音频流。
+                        // 这里的 stream 将被保存到 mediaStream 变量中，以便后续停止。
+                        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        isRecording = true; // 设置录音状态为true
 
-                    // Set speech recognition properties
-                    recognition.continuous = true; // Continuous recognition until stop() is called
-                    recognition.interimResults = true; // Return interim results for real-time display
-                    recognition.lang = 'zh-CN'; // Set recognition language to Chinese (China)
-                    Logger.info('[SpeechRecognition] Recognition properties set: continuous=true, interimResults=true, lang=zh-CN.');
+                        // 为媒体流添加事件监听器，以便在流状态改变时记录日志。
+                        mediaStream.oninactive = () => {
+                            Logger.info('[录音] 音频流已停止 (oninactive 事件)。');
+                            stopRecording(); // 流不活跃时自动停止录音
+                        };
+                        mediaStream.onended = () => {
+                            Logger.info('[录音] 音频流已结束 (onended 事件)。');
+                            stopRecording(); // 流结束时自动停止录音
+                        };
+                        mediaStream.onaddtrack = (event) => {
+                            Logger.info(`[录音] 新增音频轨道: ${event.track.label}`);
+                            updateAudioInfo(); // 轨道变化时更新信息
+                        };
+                        mediaStream.onremovetrack = (event) => {
+                            Logger.info(`[录音] 移除音频轨道: ${event.track.label}`);
+                            updateAudioInfo(); // 轨道变化时更新信息
+                        };
 
-                    // Event listeners
-                    recognition.onstart = function() {
-                        isRecognizing = true;
-                        Logger.info('[SpeechRecognition] Event: onstart - Recognition started.');
-                        statusMessageElement.textContent = '语音识别已启动，请开始讲话...';
-                        statusMessageElement.className = ''; // Clear style
-                        startRecognitionButton.disabled = true;
-                        stopRecognitionButton.disabled = false;
-                        finalTranscript = ''; // Reset final recognition result
-                        recognitionResultsElement.textContent = '正在倾听...';
-                    };
-
-                    recognition.onresult = function(event) {
-                        let interimTranscript = '';
-                        Logger.info('[SpeechRecognition] Event: onresult - Received recognition result.');
-                        // Iterate through all recognition results
-                        for (let i = event.resultIndex; i < event.results.length; ++i) {
-                            const transcript = event.results[i][0].transcript;
-                            if (event.results[i].isFinal) {
-                                finalTranscript += transcript; // Accumulate final results
-                                Logger.info(`[SpeechRecognition] Final result part: "${transcript}"`);
-                            } else {
-                                interimTranscript += transcript; // Interim result
-                                Logger.info(`[SpeechRecognition] Interim result part: "${transcript}"`);
-                            }
+                        Logger.info('[录音] 麦克风音频流已成功获取。'); // 记录成功日志
+                        statusMessageElement.textContent = '录音已启动，麦克风正在工作...'; // 更新页面状态
+                        statusMessageElement.className = ''; // 清除状态样式
+                        startRecordingButton.disabled = true; // 禁用“开始录音”按钮
+                        stopRecordingButton.disabled = false; // 启用“停止录音”按钮
+                        updateAudioInfo(); // 更新页面上的录音信息
+                    } catch (error) {
+                        // 捕获获取音频流过程中可能发生的错误。
+                        Logger.error('[录音] 启动录音失败:', error); // 记录错误日志
+                        let errorMessage = '启动录音失败。请确保麦克风权限已授予且麦克风未被占用。';
+                        if (error.name === 'NotAllowedError') {
+                            errorMessage = '用户拒绝了麦克风权限或权限已被禁用。';
+                        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                            errorMessage = '未找到麦克风设备。';
+                        } else if (error.name === 'AbortError') {
+                            errorMessage = '录音操作被中止。这可能是由于网络问题、麦克风被占用或浏览器内部错误。';
+                        } else if (error.name === 'SecurityError') {
+                            errorMessage = '安全错误：可能需要在HTTPS环境下运行。';
+                        } else if (error.name === 'NotReadableError') {
+                            errorMessage = '麦克风无法读取。可能被其他应用占用或硬件故障。';
                         }
-                        // Display interim and final results
-                        recognitionResultsElement.textContent = `最终结果: ${finalTranscript}\n临时结果: ${interimTranscript}`;
-                    };
-
-                    recognition.onerror = function(event) {
-                        isRecognizing = false;
-                        // Pass the entire event object to Logger.error for more detailed logging
-                        Logger.error('[SpeechRecognition] Event: onerror - Speech recognition error occurred!', event);
-                        let errorMessage = `语音识别错误：${event.error}`; // event.error is the error type string
-                        if (event.error === 'not-allowed') {
-                            errorMessage = '语音识别被拒绝。请确保已授权麦克风权限，且未被其他应用占用。';
-                        } else if (event.error === 'no-speech') {
-                            errorMessage = '未检测到语音。请确保麦克风正常工作并重新尝试。';
-                        } else if (event.error === 'network') {
-                            errorMessage = '网络错误，请检查您的网络连接。';
-                        } else if (event.error === 'aborted') {
-                            errorMessage = '语音识别被中止。这可能是由于网络问题、麦克风被占用或浏览器内部错误。';
-                        } else if (event.error === 'audio-capture') {
-                            errorMessage = '无法捕获音频。请检查麦克风连接或驱动。';
-                        } else if (event.error === 'service-not-allowed') {
-                            errorMessage = '语音识别服务不允许。可能需要在HTTPS环境下运行。';
-                        }
-                        statusMessageElement.textContent = errorMessage;
-                        statusMessageElement.className = 'error';
-                        startRecognitionButton.disabled = false;
-                        stopRecognitionButton.disabled = true;
-                    };
-
-                    recognition.onend = function() {
-                        isRecognizing = false;
-                        Logger.info('[SpeechRecognition] Event: onend - Recognition ended.');
-                        statusMessageElement.textContent = '语音识别已停止。';
-                        statusMessageElement.className = '';
-                        startRecognitionButton.disabled = false;
-                        stopRecognitionButton.disabled = true;
-                        // If there are final results, ensure they are displayed
-                        if (finalTranscript) {
-                            recognitionResultsElement.textContent = `最终识别结果:\n${finalTranscript}`;
-                        } else {
-                            recognitionResultsElement.textContent = '暂无识别结果。';
-                        }
-                    };
-
-                    recognition.onspeechstart = function() {
-                        Logger.info('[SpeechRecognition] Event: onspeechstart - Speech detected.');
-                    };
-
-                    recognition.onspeechend = function() {
-                        Logger.info('[SpeechRecognition] Event: onspeechend - Speech ended.');
-                    };
-
-                    recognition.onaudiostart = function() {
-                        Logger.info('[SpeechRecognition] Event: onaudiostart - Audio capture started.');
-                    };
-
-                    recognition.onaudioend = function() {
-                        Logger.info('[SpeechRecognition] Event: onaudioend - Audio capture ended.');
-                    };
-                }
-
-                /**
-                 * Starts speech recognition.
-                 */
-                function startRecognition() {
-                    Logger.info('[SpeechRecognition] Attempting to start recognition...');
-                    if (!recognition) {
-                        initializeRecognition(); // If not yet initialized, initialize it
-                    }
-                    if (recognition && !isRecognizing) {
-                        try {
-                            recognition.start();
-                            Logger.info('[SpeechRecognition] recognition.start() called successfully.');
-                        } catch (e) {
-                            Logger.error('[SpeechRecognition] Failed to call recognition.start():', e);
-                            statusMessageElement.textContent = '启动语音识别失败。可能已经启动或权限问题。';
-                            statusMessageElement.className = 'error';
-                        }
-                    } else if (isRecognizing) {
-                        Logger.warn('[SpeechRecognition] Recognition is already in progress.');
-                        statusMessageElement.textContent = '语音识别正在进行中...';
-                    } else {
-                        Logger.error('[SpeechRecognition] Recognition object is null or undefined.');
-                        statusMessageElement.textContent = '语音识别对象未准备好。';
-                        statusMessageElement.className = 'error';
+                        statusMessageElement.textContent = errorMessage; // 更新页面状态为错误信息
+                        statusMessageElement.className = 'error'; // 添加错误样式
+                        startRecordingButton.disabled = false; // 启用“开始录音”按钮
+                        stopRecordingButton.disabled = true; // 禁用“停止录音”按钮
+                        updateAudioInfo(); // 更新页面上的录音信息
                     }
                 }
 
                 /**
-                 * Stops speech recognition.
+                 * stopRecording 函数：停止获取麦克风音频流并释放麦克风。
                  */
-                function stopRecognition() {
-                    Logger.info('[SpeechRecognition] Attempting to stop recognition...');
-                    if (recognition && isRecognizing) {
-                        recognition.stop();
-                        Logger.info('[SpeechRecognition] recognition.stop() called successfully.');
+                function stopRecording() {
+                    Logger.info('[录音] 正在尝试停止录音...'); // 记录日志
+                    if (mediaStream && isRecording) {
+                        // 遍历媒体流中的所有轨道（包括音频和视频，这里只有音频），并停止它们。
+                        // track.stop() 是释放麦克风的关键操作。
+                        mediaStream.getTracks().forEach(track => {
+                            track.stop();
+                            Logger.info(`[录音] 停止轨道: ${track.label} (ID: ${track.id})`);
+                        });
+                        mediaStream = null; // 清空媒体流变量
+                        isRecording = false; // 设置录音状态为false
+
+                        Logger.info('[录音] 录音已停止，麦克风已释放。'); // 记录成功日志
+                        statusMessageElement.textContent = '录音已停止。'; // 更新页面状态
+                        statusMessageElement.className = ''; // 清除状态样式
+                        startRecordingButton.disabled = false; // 启用“开始录音”按钮
+                        stopRecordingButton.disabled = true; // 禁用“停止录音”按钮
+                        updateAudioInfo(); // 更新页面上的录音信息
                     } else {
-                        Logger.warn('[SpeechRecognition] Recognition is not active or already stopped.');
-                        statusMessageElement.textContent = '语音识别未启动或已停止。';
+                        Logger.warn('[录音] 录音未启动或已停止。'); // 如果未在录音，发出警告
+                        statusMessageElement.textContent = '录音未启动或已停止。';
                     }
                 }
 
+                // 返回公共方法，供外部使用。
                 return {
-                    initializeRecognition,
-                    startRecognition,
-                    stopRecognition
+                    startRecording,
+                    stopRecording
                 };
             })();
 
             /**
              * @module EventHandlers
-             * @description Handles page events.
+             * @description 事件处理模块：负责为页面上的按钮添加事件监听器。
              */
             const EventHandlers = (function() {
                 /**
-                 * Initializes all event listeners.
+                 * init 函数：初始化所有事件监听器。
                  */
                 function init() {
-                    Logger.info('[EventHandlers] Initializing all event listeners.');
+                    Logger.info('[事件处理] 正在初始化所有事件监听器。'); // 记录日志
+                    // 为“请求麦克风权限”按钮添加点击事件，调用 Permissions 模块的相应方法。
                     requestPermissionButton.addEventListener('click', Permissions.requestMicrophonePermission);
-                    startRecognitionButton.addEventListener('click', SpeechRecognition.startRecognition);
-                    stopRecognitionButton.addEventListener('click', SpeechRecognition.stopRecognition);
-                    clearLogButton.addEventListener('click', Logger.clear); // New: Clear log button event
-
-                    // Initialize recognition object when the page loads, but do not start it.
-                    // This ensures the object is ready when needed.
-                    SpeechRecognition.initializeRecognition();
+                    // 为“开始录音”按钮添加点击事件，调用 AudioRecorder 模块的相应方法。
+                    startRecordingButton.addEventListener('click', AudioRecorder.startRecording);
+                    // 为“停止录音”按钮添加点击事件，调用 AudioRecorder 模块的相应方法。
+                    stopRecordingButton.addEventListener('click', AudioRecorder.stopRecording);
+                    // 为“清空日志”按钮添加点击事件，调用 Logger 模块的相应方法。
+                    clearLogButton.addEventListener('click', Logger.clear);
                 }
 
+                // 返回公共方法。
                 return {
                     init
                 };
             })();
 
-            // Public interface, exposed for external calls
+            // 公共接口：暴露给外部调用的模块初始化方法。
+            // 当页面加载完成后，会调用 AudioRecordingModule.init() 来启动整个应用。
             return {
-                init: EventHandlers.init // Initialize all event handlers
+                init: EventHandlers.init // 初始化所有事件处理器
             };
 
-        })(); // Immediately Invoked Function Expression (IIFE)
+        })(); // 立即执行函数表达式 (IIFE) 结束
 
-        // Call the initialization function after the page content is loaded
-        document.addEventListener('DOMContentLoaded', SpeechRecognitionModule.init);
+        // DOMContentLoaded 事件监听器：
+        // 确保在HTML文档的DOM（文档对象模型）完全加载和解析后才执行JavaScript代码。
+        // 这样可以避免在HTML元素尚未创建时就尝试操作它们而导致的错误。
+        document.addEventListener('DOMContentLoaded', AudioRecordingModule.init);
     </script>
 </body>
 </html>
