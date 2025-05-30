@@ -95,191 +95,202 @@
     </div>
 
     <script>
-        // 将主要逻辑包裹在 DOMContentLoaded 中，但初始化的调用放在 window.onload
-        document.addEventListener('DOMContentLoaded', () => {
-            // 在这里填写你的讯飞开放平台 APPID, API_KEY, API_SECRET
-            const APPID = '61653c47';
-            const API_KEY = 'OGFmMzMyMDU0ZDcyNTg5YjMyNTY2N2Q2';
-            const API_SECRET = 'aba4c9a1526fcc5037f4dad7955e63d9';
+        // 定义全局常量和变量
+        const APPID = '61653c47';
+        const API_KEY = 'OGFmMzMyMDU0ZDcyNTg5YjMyNTY2N2Q2';
+        const API_SECRET = 'aba4c9a1526fcc5037f4dad7955e63d9';
 
-            const HOST = 'iat-api.xfyun.cn';
-            const API_URL = '/v2/iat';
+        const HOST = 'iat-api.xfyun.cn';
+        const API_URL = '/v2/iat';
 
-            const startRecordBtn = document.getElementById('start-record-btn');
-            const resultDisplay = document.getElementById('result-display');
-            const messageBox = document.getElementById('message-box');
-            const statusDisplay = document.getElementById('status-display'); // 新增状态显示元素
+        let startRecordBtn; // DOM元素，在 DOMContentLoaded 中赋值
+        let resultDisplay;
+        let messageBox;
+        let statusDisplay;
 
-            let recorder = null;
-            let isRecording = false;
-            let hasMicrophonePermission = false; // 跟踪麦克风权限状态
+        let recorder = null;
+        let isRecording = false;
+        let hasMicrophonePermission = false; // 跟踪麦克风权限状态
 
-            // 显示消息的函数
-            function showMessage(message, type = 'warning') {
-                messageBox.textContent = message;
-                messageBox.className = `message-box p-4 rounded-lg mt-4 text-sm ${type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 'bg-yellow-100 border-yellow-400 text-yellow-700'}`;
-                messageBox.style.display = 'block';
-                setTimeout(() => {
-                    messageBox.style.display = 'none';
-                }, 5000);
+        // === 所有函数定义都放在全局作用域 ===
+
+        // 显示消息的函数
+        function showMessage(message, type = 'warning') {
+            if (!messageBox) return; // 确保元素已加载
+            messageBox.textContent = message;
+            messageBox.className = `message-box p-4 rounded-lg mt-4 text-sm ${type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 'bg-yellow-100 border-yellow-400 text-yellow-700'}`;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 5000);
+        }
+
+        // 更新程序状态的函数
+        function updateStatus(message, type = 'info') {
+            if (!statusDisplay) return; // 确保元素已加载
+            statusDisplay.textContent = message;
+            statusDisplay.className = `status-box mt-4 p-3 rounded-lg text-sm `;
+            if (type === 'info') {
+                statusDisplay.classList.add('bg-blue-100', 'text-blue-700', 'border-blue-400');
+            } else if (type === 'success') {
+                statusDisplay.classList.add('bg-green-100', 'text-green-700', 'border-green-400');
+            } else if (type === 'warning') {
+                statusDisplay.classList.add('bg-yellow-100', 'text-yellow-700', 'border-yellow-400');
+            } else if (type === 'error') {
+                statusDisplay.classList.add('bg-red-100', 'text-red-700', 'border-red-400');
+            }
+        }
+
+        // 生成鉴权URL的函数
+        function getAuthUrl(apiKey, apiSecret, host, url) {
+            const date = new Date().toUTCString();
+            const hostUrl = host;
+            const requestLine = `GET ${url} HTTP/1.1`;
+
+            const signatureOrigin = `host: ${hostUrl}\ndate: ${date}\n${requestLine}`;
+
+            // 再次检查 CryptoJS 是否已加载，以防万一
+            // 这里的判断条件更严格，确保HmacSHA256和enc.Base64存在
+            if (typeof CryptoJS === 'undefined' || typeof CryptoJS.HmacSHA256 === 'undefined' || typeof CryptoJS.enc.Base64 === 'undefined') {
+                console.error("CryptoJS 未加载或不完整。请检查 CryptoJS CDN 链接或本地文件路径。");
+                showMessage("加密库加载失败，无法进行鉴权。请检查网络或CDN链接。", "error");
+                return null;
             }
 
-            // 更新程序状态的函数
-            function updateStatus(message, type = 'info') {
-                statusDisplay.textContent = message;
-                statusDisplay.className = `status-box mt-4 p-3 rounded-lg text-sm `;
-                if (type === 'info') {
-                    statusDisplay.classList.add('bg-blue-100', 'text-blue-700', 'border-blue-400');
-                } else if (type === 'success') {
-                    statusDisplay.classList.add('bg-green-100', 'text-green-700', 'border-green-400');
-                } else if (type === 'warning') {
-                    statusDisplay.classList.add('bg-yellow-100', 'text-yellow-700', 'border-yellow-400');
-                } else if (type === 'error') {
-                    statusDisplay.classList.add('bg-red-100', 'text-red-700', 'border-red-400');
-                }
-            }
+            const signatureSha = CryptoJS.HmacSHA256(signatureOrigin, apiSecret);
+            const signature = CryptoJS.enc.Base64.stringify(signatureSha);
 
-            // 1. 生成鉴权URL的函数 (与之前相同)
-            function getAuthUrl(apiKey, apiSecret, host, url) {
-                const date = new Date().toUTCString();
-                const hostUrl = host;
-                const requestLine = `GET ${url} HTTP/1.1`;
+            const authorizationOrigin = `api_key="${apiKey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`;
+            const authorization = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(authorizationOrigin));
 
-                const signatureOrigin = `host: ${hostUrl}\ndate: ${date}\n${requestLine}`;
+            const finalUrl = `wss://${hostUrl}${url}?authorization=${encodeURIComponent(authorization)}&date=${encodeURIComponent(date)}&host=${encodeURIComponent(hostUrl)}`;
+            
+            return finalUrl;
+        }
 
-                // 再次检查 CryptoJS 是否已加载，以防万一
-                if (typeof CryptoJS === 'undefined' || typeof CryptoJS.HmacSHA256 === 'undefined' || typeof CryptoJS.enc.Base64 === 'undefined') {
-                    console.error("CryptoJS 未加载或不完整。请检查 CryptoJS CDN 链接或本地文件路径。");
-                    showMessage("加密库加载失败，无法进行鉴权。请检查网络或CDN链接。", "error");
-                    return null;
-                }
+        // 初始化 RecorderManager 和麦克风权限检查
+        function initializeRecorder() {
+            updateStatus("正在检查麦克风权限...");
+            // 尝试获取麦克风权限
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    // 成功获取权限
+                    hasMicrophonePermission = true;
+                    updateStatus("麦克风权限已获取，可以开始录音。", "success");
+                    startRecordBtn.disabled = false; // 启用按钮
+                    stream.getTracks().forEach(track => track.stop()); // 立即停止媒体流，避免麦克风一直被占用
 
-                const signatureSha = CryptoJS.HmacSHA256(signatureOrigin, apiSecret);
-                const signature = CryptoJS.enc.Base64.stringify(signatureSha);
-
-                const authorizationOrigin = `api_key="${apiKey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`;
-                const authorization = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(authorizationOrigin));
-
-                const finalUrl = `wss://${hostUrl}${url}?authorization=${encodeURIComponent(authorization)}&date=${encodeURIComponent(date)}&host=${encodeURIComponent(hostUrl)}`;
-                
-                return finalUrl;
-            }
-
-            // 初始化 RecorderManager 和麦克风权限检查
-            function initializeRecorder() {
-                updateStatus("正在检查麦克风权限...");
-                // 尝试获取麦克风权限
-                navigator.mediaDevices.getUserMedia({ audio: true })
-                    .then(stream => {
-                        // 成功获取权限
-                        hasMicrophonePermission = true;
-                        updateStatus("麦克风权限已获取，可以开始录音。", "success");
-                        startRecordBtn.disabled = false; // 启用按钮
-                        stream.getTracks().forEach(track => track.stop()); // 立即停止媒体流，避免麦克风一直被占用
-
-                        // 2. 初始化 RecorderManager (只有在权限获取后才初始化)
-                        if (typeof RecorderManager !== 'undefined') {
-                            try {
-                                recorder = new RecorderManager('./dist'); // 这里的路径就是相对路径
-                                setupRecorderListeners(); // 设置事件监听器
-                            } catch (e) {
-                                console.error("RecorderManager 初始化失败:", e);
-                                showMessage("录音功能初始化失败，请检查SDK文件路径是否正确。", "error");
-                                updateStatus("录音功能初始化失败。", "error");
-                            }
-                        } else {
-                            console.error("RecorderManager 未定义。请确保 index.umd.js 已正确加载。");
-                            showMessage("录音功能初始化失败：核心SDK未加载。请检查dist文件夹和文件路径。", "error");
-                            updateStatus("录音功能初始化失败：核心SDK未加载。", "error");
+                    // 只有在权限获取后才初始化 RecorderManager
+                    if (typeof RecorderManager !== 'undefined') {
+                        try {
+                            recorder = new RecorderManager('./dist'); // 这里的路径就是相对路径
+                            setupRecorderListeners(); // 设置事件监听器
+                        } catch (e) {
+                            console.error("RecorderManager 初始化失败:", e);
+                            showMessage("录音功能初始化失败，请检查SDK文件路径是否正确。", "error");
+                            updateStatus("录音功能初始化失败。", "error");
                         }
-                    })
-                    .catch(err => {
-                        // 无法获取权限
-                        hasMicrophonePermission = false;
-                        startRecordBtn.disabled = true; // 禁用按钮
-                        console.error("无法获取麦克风权限:", err);
-                        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                            updateStatus("麦克风权限被拒绝。请在浏览器设置中允许此网站使用麦克风。", "error");
-                            showMessage("麦克风权限被拒绝。请确保允许此网站访问您的麦克风。", "error");
-                        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                             updateStatus("未找到麦克风设备。请连接麦克风或检查设备设置。", "error");
-                             showMessage("未找到麦克风设备。请连接麦克风或检查设备设置。", "error");
-                        } else {
-                            updateStatus(`获取麦克风权限失败: ${err.message || err}`, "error");
-                            showMessage(`获取麦克风权限失败: ${err.message || err}`, "error");
-                        }
-                    });
-            }
-
-            // 3. 监听录音事件 (单独一个函数，在 recorder 初始化成功后调用)
-            function setupRecorderListeners() {
-                if (!recorder) return; // 确保 recorder 已存在
-
-                recorder.onStart = () => {
-                    console.log('录音开始');
-                    isRecording = true;
-                    startRecordBtn.textContent = '停止录音';
-                    startRecordBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-                    startRecordBtn.classList.add('bg-red-500', 'hover:bg-red-600');
-                    resultDisplay.textContent = '正在倾听...';
-                    updateStatus("正在录音中...", "info");
-                    showMessage('录音已开始，请说话。');
-                };
-
-                recorder.onFrameRecorded = ({ isLastFrame, frameBuffer }) => {
-                    // 讯飞SDK内部会处理这些数据并发送给API
-                };
-
-                recorder.onStop = (audioBuffers) => {
-                    console.log('录音停止', audioBuffers);
-                    isRecording = false;
-                    startRecordBtn.textContent = '开始录音';
-                    startRecordBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
-                    startRecordBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-                    updateStatus("录音已停止。", "info");
-                    showMessage('录音已停止。');
-                };
-
-                recorder.onTextReceived = (res) => {
-                    const data = JSON.parse(res);
-                    if (data.code !== 0) {
-                        console.error('讯飞API返回错误:', data.code, data.message);
-                        showMessage(`识别错误: ${data.message} (错误码: ${data.code})`, "error");
-                        updateStatus(`识别错误: ${data.message}`, "error");
-                        return;
-                    }
-
-                    const result = data.data.result;
-                    let text = '';
-                    result.ws.forEach(i => {
-                        i.cw.forEach(j => {
-                            text += j.w;
-                        });
-                    });
-
-                    if (result.ls) {
-                        resultDisplay.textContent = text;
-                        console.log('最终识别结果:', text);
-                        updateStatus("识别完成。", "success");
                     } else {
-                        resultDisplay.textContent = text;
-                        console.log('中间识别结果:', text);
-                        updateStatus("正在识别中...", "info");
+                        console.error("RecorderManager 未定义。请确保 index.umd.js 已正确加载。");
+                        showMessage("录音功能初始化失败：核心SDK未加载。请检查dist文件夹和文件路径。", "error");
+                        updateStatus("录音功能初始化失败：核心SDK未加载。", "error");
                     }
-                };
+                })
+                .catch(err => {
+                    // 无法获取权限
+                    hasMicrophonePermission = false;
+                    startRecordBtn.disabled = true; // 禁用按钮
+                    console.error("无法获取麦克风权限:", err);
+                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                        updateStatus("麦克风权限被拒绝。请在浏览器设置中允许此网站使用麦克风。", "error");
+                        showMessage("麦克风权限被拒绝。请确保允许此网站访问您的麦克风。", "error");
+                    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                         updateStatus("未找到麦克风设备。请连接麦克风或检查设备设置。", "error");
+                         showMessage("未找到麦克风设备。请连接麦克风或检查设备设置。", "error");
+                    } else {
+                        updateStatus(`获取麦克风权限失败: ${err.message || err}`, "error");
+                        showMessage(`获取麦克风权限失败: ${err.message || err}`, "error");
+                    }
+                });
+        }
 
-                recorder.onError = (error) => {
-                    console.error('录音错误:', error);
-                    isRecording = false; // 确保错误时也重置状态
-                    startRecordBtn.textContent = '开始录音';
-                    startRecordBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
-                    startRecordBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-                    showMessage(`录音发生错误: ${error.message || error}`, "error");
-                    updateStatus(`录音错误: ${error.message || error}`, "error");
-                };
-            }
+        // 监听录音事件
+        function setupRecorderListeners() {
+            if (!recorder) return; // 确保 recorder 已存在
 
-            // 4. 按钮点击事件处理
+            recorder.onStart = () => {
+                console.log('录音开始');
+                isRecording = true;
+                startRecordBtn.textContent = '停止录音';
+                startRecordBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                startRecordBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+                resultDisplay.textContent = '正在倾听...';
+                updateStatus("正在录音中...", "info");
+                showMessage('录音已开始，请说话。');
+            };
+
+            recorder.onFrameRecorded = ({ isLastFrame, frameBuffer }) => {
+                // 讯飞SDK内部会处理这些数据并发送给API
+            };
+
+            recorder.onStop = (audioBuffers) => {
+                console.log('录音停止', audioBuffers);
+                isRecording = false;
+                startRecordBtn.textContent = '开始录音';
+                startRecordBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                startRecordBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                updateStatus("录音已停止。", "info");
+                showMessage('录音已停止。');
+            };
+
+            recorder.onTextReceived = (res) => {
+                const data = JSON.parse(res);
+                if (data.code !== 0) {
+                    console.error('讯飞API返回错误:', data.code, data.message);
+                    showMessage(`识别错误: ${data.message} (错误码: ${data.code})`, "error");
+                    updateStatus(`识别错误: ${data.message}`, "error");
+                    return;
+                }
+
+                const result = data.data.result;
+                let text = '';
+                result.ws.forEach(i => {
+                    i.cw.forEach(j => {
+                        text += j.w;
+                    });
+                });
+
+                if (result.ls) {
+                    resultDisplay.textContent = text;
+                    console.log('最终识别结果:', text);
+                    updateStatus("识别完成。", "success");
+                } else {
+                    resultDisplay.textContent = text;
+                    console.log('中间识别结果:', text);
+                    updateStatus("正在识别中...", "info");
+                }
+            };
+
+            recorder.onError = (error) => {
+                console.error('录音错误:', error);
+                isRecording = false; // 确保错误时也重置状态
+                startRecordBtn.textContent = '开始录音';
+                startRecordBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                startRecordBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                showMessage(`录音发生错误: ${error.message || error}`, "error");
+                updateStatus(`录音错误: ${error.message || error}`, "error");
+            };
+        }
+
+        // === DOMContentLoaded 事件处理（只处理 DOM 元素和事件监听器）===
+        document.addEventListener('DOMContentLoaded', () => {
+            // 获取 DOM 元素
+            startRecordBtn = document.getElementById('start-record-btn');
+            resultDisplay = document.getElementById('result-display');
+            messageBox = document.getElementById('message-box');
+            statusDisplay = document.getElementById('status-display');
+
+            // 按钮点击事件处理
             startRecordBtn.addEventListener('click', () => {
                 if (!hasMicrophonePermission) {
                     showMessage("请先允许麦克风权限！", "warning");
@@ -317,7 +328,7 @@
             });
         }); // DOMContentLoaded 结束
 
-        // 页面所有资源加载完成后，再初始化 RecorderManager 和麦克风权限检查
+        // === window.onload 事件处理（在所有资源加载完成后执行初始化）===
         window.onload = () => {
             initializeRecorder();
         };
