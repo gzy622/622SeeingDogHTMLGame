@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>你的游戏中心 - 语音识别功能</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.0/crypto-js.min.js"></script>
+    <script src="./dist/index.umd.js"></script>
     <style>
         body {
             font-family: "Inter", sans-serif;
@@ -92,10 +94,6 @@
             </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.0/crypto-js.min.js"></script>
-
-    <script src="./dist/index.umd.js"></script>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // 在这里填写你的讯飞开放平台 APPID, API_KEY, API_SECRET
@@ -148,6 +146,7 @@
 
                 const signatureOrigin = `host: ${hostUrl}\ndate: ${date}\n${requestLine}`;
 
+                // 再次检查 CryptoJS 是否已加载，以防万一
                 if (typeof CryptoJS === 'undefined' || typeof CryptoJS.HmacSHA256 === 'undefined') {
                     console.error("CryptoJS 未加载或不完整。请检查 CryptoJS CDN 链接或本地文件路径。");
                     showMessage("加密库加载失败，无法进行鉴权。请检查网络或CDN链接。", "error");
