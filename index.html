@@ -395,11 +395,11 @@
                         } else if (event.error === 'network') {
                             errorMessage = '网络错误，请检查您的网络连接。';
                         } else if (event.error === 'aborted') {
-                            errorMessage = '语音识别被中止。';
+                            errorMessage = '语音识别被中止。这可能是由于网络问题、麦克风被占用或浏览器内部错误。';
                         } else if (event.error === 'audio-capture') {
                             errorMessage = '无法捕获音频。请检查麦克风连接或驱动。';
                         } else if (event.error === 'service-not-allowed') {
-                            errorMessage = '语音识别服务不允许。可能需要HTTPS。';
+                            errorMessage = '语音识别服务不允许。可能需要在HTTPS环境下运行。';
                         }
                         statusMessageElement.textContent = errorMessage;
                         statusMessageElement.className = 'error';
