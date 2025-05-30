@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seeing Dog HTML Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 10:16竖屏比例容器 */
+        .game-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 160%; /* 10:16的比例计算 (10/16=0.625, 1/0.625=1.6) */
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+            margin: 0 auto;
+            max-width: 600px;
+        }
+        
+        /* 所有模块的定位容器 */
+        .module-container {
+            position: absolute;
+        }
+        
+        /* 红绿灯模块 */
+        #traffic-light-module {
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30%;
+        }
+        
+        /* 导盲犬模块 */
+        #guide-dog-module {
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+        }
+        
+        /* 录音按钮模块 */
+        #record-button-module {
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15%;
+        }
+        
+        /* 计分模块 */
+        #score-module {
+            top: 5%;
+            right: 5%;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        
+        /* 反馈模块 */
+        #feedback-module {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50%;
+            z-index: 10;
+            display: none;
+        }
+        
+        /* 胜利屏幕 */
+        #win-screen-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            display: none;
+            z-index: 20;
+        }
+        
+        /* 预加载遮罩 */
+        #preloader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: white;
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-top: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 重置按钮 */
+        #reset-button {
+            position: absolute;
+            top: 5%;
+            left: 5%;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 5;
+        }
+        
+        /* 录音动画效果 */
+        .recording-animation {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        /* 狗视频容器 */
+        .dog-video-container {
+            width: 100%;
+            height: 0;
+            padding-bottom: 100%; /* 正方形视频 */
+            position: relative;
+        }
+        
+        .dog-video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 flex flex-col items-center justify-center min-h-screen p-4">
+    <div id="game-container" class="game-container">
+        <!-- 预加载遮罩 -->
+        <div id="preloader">
+            <h2 class="text-2xl font-bold mb-4">Loading Game Resources...</h2>
+            <div class="loading-spinner"></div>
+        </div>
+        
+        <!-- 重置按钮 -->
+        <button id="reset-button" class="hidden">Restart</button>
+        
+        <!-- 计分模块 -->
+        <div id="score-module" class="module-container">0/5</div>
+        
+        <!-- 红绿灯模块 -->
+        <div id="traffic-light-module" class="module-container">
+            <img id="traffic-light" src="" alt="Traffic Light" class="w-full">
+        </div>
+        
+        <!-- 导盲犬模块 -->
+        <div id="guide-dog-module" class="module-container">
+            <div class="dog-video-container">
+                <video id="dog-video" autoplay muted loop></video>
+            </div>
+        </div>
+        
+        <!-- 录音按钮模块 -->
+        <div id="record-button-module" class="module-container">
+            <button id="record-button">
+                <img id="mic-icon" src="" alt="Microphone" class="w-full">
+            </button>
+        </div>
+        
+        <!-- 反馈模块 -->
+        <div id="feedback-module" class="module-container">
+            <img id="feedback-image" src="" alt="Feedback" class="w-full">
+        </div>
+        
+        <!-- 胜利屏幕 -->
+        <div id="win-screen-container"></div>
+    </div>
+    
+    <!-- 音频元素 -->
+    <audio id="record-click-sound" src=""></audio>
+    <audio id="light-sound" src=""></audio>
+    <audio id="try-again-sound" src=""></audio>
+    <audio id="yes-sound" src=""></audio>
+    <audio id="win-sound" src=""></audio>
+    
+    <script>
+        // 游戏状态常量
+        const GAME_STATES = {
+            PRELOAD: 'preload',
+            IDLE: 'idle',
+            LISTENING_LIGHT_COLOR: 'listening_light_color',
+            LISTENING_DOG_ACTION: 'listening_dog_action',
+            FEEDBACK: 'feedback',
+            WIN: 'win'
+        };
+        
+        // 游戏配置
+        const GAME_CONFIG = {
+            maxScore: 5,
+            lightColors: ['red', 'yellow', 'green'],
+            dogActions: ['stop', 'wait', 'go'],
+            colorKeywords: ['red', 'yellow', 'green'],
+            actionKeywords: ['stop', 'wait', 'go'],
+            feedbackKeywords: ['good job']
+        };
+        
+        // 资源URL
+        const RESOURCES = {
+            images: {
+                background: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_Background10-16.png',
+                winBackground: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_Background_Win.png',
+                micIcon: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_MicrophoneIcon.png',
+                trafficLightGray: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_TrafficLight_gray2.png',
+                trafficLightRed: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_TrafficLight_red2.png',
+                trafficLightYellow: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_TrafficLight_yellow2.png',
+                trafficLightGreen: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_TrafficLight_green2.png',
+                tryAgain: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_TryAgain_2.png',
+                yes: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_YES.png'
+            },
+            videos: {
+                dogAttention: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_dog_attention_mov.webm',
+                dogGo: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_dog_go_2.webm',
+                dogStandby: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_dog_standby_2.webm',
+                dogStop: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_dog_stop_2.webm',
+                dogWait: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_dog_wait.webm'
+            },
+            audio: {
+                recordClick: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_sound_record_click.mp3',
+                light: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_sound_light.mp3',
+                tryAgain: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_sound_TryAgain.mp3',
+                yes: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_sound_yes.mp3',
+                win: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_sound_win.mp3'
+            }
+        };
+        
+        // 游戏状态变量
+        let gameState = GAME_STATES.PRELOAD;
+        let currentScore = 0;
+        let currentLightColor = null;
+        let currentDogAction = null;
+        let targetDogAction = null;
+        let recognition = null;
+        let isRecording = false;
+        
+        // DOM元素引用
+        const dom = {
+            gameContainer: document.getElementById('game-container'),
+            preloader: document.getElementById('preloader'),
+            resetButton: document.getElementById('reset-button'),
+            scoreModule: document.getElementById('score-module'),
+            trafficLight: document.getElementById('traffic-light'),
+            dogVideo: document.getElementById('dog-video'),
+            recordButton: document.getElementById('record-button'),
+            micIcon: document.getElementById('mic-icon'),
+            feedbackModule: document.getElementById('feedback-module'),
+            feedbackImage: document.getElementById('feedback-image'),
+            winScreen: document.getElementById('win-screen-container'),
+            recordClickSound: document.getElementById('record-click-sound'),
+            lightSound: document.getElementById('light-sound'),
+            tryAgainSound: document.getElementById('try-again-sound'),
+            yesSound: document.getElementById('yes-sound'),
+            winSound: document.getElementById('win-sound')
+        };
+        
+        // 初始化游戏
+        function initGame() {
+            // 设置游戏容器背景
+            dom.gameContainer.style.backgroundImage = `url('${RESOURCES.images.background}')`;
+            
+            // 设置初始状态
+            resetGame();
+            
+            // 请求麦克风权限
+            requestMicrophonePermission();
+            
+            // 初始化语音识别
+            initSpeechRecognition();
+            
+            // 设置事件监听器
+            setupEventListeners();
+            
+            // 隐藏预加载器
+            dom.preloader.style.display = 'none';
+            dom.resetButton.classList.remove('hidden');
+            
+            // 进入空闲状态
+            setGameState(GAME_STATES.IDLE);
+        }
+        
+        // 重置游戏
+        function resetGame() {
+            currentScore = 0;
+            updateScore();
+            
+            // 重置红绿灯
+            dom.trafficLight.src = RESOURCES.images.trafficLightGray;
+            currentLightColor = null;
+            
+            // 重置导盲犬
+            dom.dogVideo.src = RESOURCES.videos.dogStandby;
+            dom.dogVideo.load();
+            dom.dogVideo.play();
+            currentDogAction = null;
+            targetDogAction = null;
+            
+            // 隐藏胜利屏幕
+            dom.winScreen.style.display = 'none';
+            
+            // 隐藏反馈
+            dom.feedbackModule.style.display = 'none';
+            
+            // 激活录音按钮
+            dom.recordButton.disabled = false;
+        }
+        
+        // 更新分数显示
+        function updateScore() {
+            dom.scoreModule.textContent = `${currentScore}/${GAME_CONFIG.maxScore}`;
+        }
+        
+        // 请求麦克风权限
+        function requestMicrophonePermission() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(function(stream) {
+                        console.log('Microphone access granted');
+                        // 停止所有轨道以释放资源
+                        stream.getTracks().forEach(track => track.stop());
+                    })
+                    .catch(function(err) {
+                        console.error('Microphone access error:', err);
+                        alert('Microphone access is required for this game. Please grant permission and refresh the page.');
+                    });
+            } else {
+                console.error('getUserMedia not supported');
+                alert('Your browser does not support microphone access. Please try a different browser.');
+            }
+        }
+        
+        // 初始化语音识别
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                console.error('Speech Recognition not supported');
+                alert('Your browser does not support speech recognition. Please try Chrome on Android.');
+                return;
+            }
+            
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+            
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript.toLowerCase();
+                console.log('Speech recognized:', transcript);
+                
+                // 根据当前游戏状态处理结果
+                switch (gameState) {
+                    case GAME_STATES.LISTENING_LIGHT_COLOR:
+                        processLightColor(transcript);
+                        break;
+                    case GAME_STATES.LISTENING_DOG_ACTION:
+                        processDogAction(transcript);
+                        break;
+                }
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR || 
+                    gameState === GAME_STATES.LISTENING_DOG_ACTION) {
+                    showFeedback(false);
+                }
+            };
+            
+            recognition.onend = function() {
+                isRecording = false;
+                dom.recordButton.classList.remove('recording-animation');
+            };
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 录音按钮点击事件
+            dom.recordButton.addEventListener('click', function() {
+                if (gameState !== GAME_STATES.IDLE || isRecording) return;
+                
+                // 播放点击音效
+                dom.recordClickSound.currentTime = 0;
+                dom.recordClickSound.play();
+                
+                // 开始录音
+                startRecording();
+            });
+            
+            // 重置按钮点击事件
+            dom.resetButton.addEventListener('click', resetGame);
+            
+            // 胜利屏幕点击事件
+            dom.winScreen.addEventListener('click', resetGame);
+            
+            // 导盲犬视频结束事件
+            dom.dogVideo.addEventListener('ended', function() {
+                if (gameState === GAME_STATES.LISTENING_DOG_ACTION) {
+                    // 如果导盲犬动作视频结束，进入待机状态
+                    dom.dogVideo.src = RESOURCES.videos.dogStandby;
+                    dom.dogVideo.loop = true;
+                    dom.dogVideo.play();
+                }
+            });
+        }
+        
+        // 开始录音
+        function startRecording() {
+            if (!recognition) return;
+            
+            try {
+                recognition.start();
+                isRecording = true;
+                dom.recordButton.classList.add('recording-animation');
+                
+                // 根据当前游戏状态设置状态
+                if (gameState === GAME_STATES.IDLE && !currentLightColor) {
+                    setGameState(GAME_STATES.LISTENING_LIGHT_COLOR);
+                } else if (gameState === GAME_STATES.IDLE && currentLightColor) {
+                    setGameState(GAME_STATES.LISTENING_DOG_ACTION);
+                }
+            } catch (error) {
+                console.error('Speech recognition start error:', error);
+                isRecording = false;
+                setGameState(GAME_STATES.IDLE);
+            }
+        }
+        
+        // 处理颜色识别
+        function processLightColor(transcript) {
+            // 检查是否包含颜色关键词
+            const detectedColor = GAME_CONFIG.colorKeywords.find(color => 
+                transcript.includes(color)
+            );
+            
+            if (detectedColor) {
+                // 识别成功
+                currentLightColor = detectedColor;
+                
+                // 播放灯光音效
+                dom.lightSound.currentTime = 0;
+                dom.lightSound.play();
+                
+                // 更新红绿灯图片
+                switch (detectedColor) {
+                    case 'red':
+                        dom.trafficLight.src = RESOURCES.images.trafficLightRed;
+                        targetDogAction = 'stop';
+                        break;
+                    case 'yellow':
+                        dom.trafficLight.src = RESOURCES.images.trafficLightYellow;
+                        targetDogAction = 'wait';
+                        break;
+                    case 'green':
+                        dom.trafficLight.src = RESOURCES.images.trafficLightGreen;
+                        targetDogAction = 'go';
+                        break;
+                }
+                
+                // 播放导盲犬注意动画
+                dom.dogVideo.src = RESOURCES.videos.dogAttention;
+                dom.dogVideo.loop = false;
+                dom.dogVideo.play();
+                
+                // 设置导盲犬动作完成后的事件
+                dom.dogVideo.onended = function() {
+                    // 随机选择一个动作
+                    const randomAction = GAME_CONFIG.dogActions[Math.floor(Math.random() * GAME_CONFIG.dogActions.length)];
+                    currentDogAction = randomAction;
+                    
+                    // 播放随机动作
+                    switch (randomAction) {
+                        case 'stop':
+                            dom.dogVideo.src = RESOURCES.videos.dogStop;
+                            break;
+                        case 'wait':
+                            dom.dogVideo.src = RESOURCES.videos.dogWait;
+                            break;
+                        case 'go':
+                            dom.dogVideo.src = RESOURCES.videos.dogGo;
+                            break;
+                    }
+                    
+                    dom.dogVideo.loop = true;
+                    dom.dogVideo.play();
+                    
+                    // 进入阶段2
+                    setGameState(GAME_STATES.IDLE);
+                };
+            } else {
+                // 识别失败
+                showFeedback(false);
+            }
+        }
+        
+        // 处理导盲犬动作反馈
+        function processDogAction(transcript) {
+            // 检查是否包含反馈关键词
+            const isGoodJob = transcript.includes('good job');
+            
+            // 检查是否包含动作关键词
+            const detectedAction = GAME_CONFIG.actionKeywords.find(action => 
+                transcript.includes(action)
+            );
+            
+            // 判断是否正确
+            const isCorrect = (isGoodJob && currentDogAction === targetDogAction) || 
+                             (detectedAction && detectedAction === targetDogAction);
+            
+            if (isCorrect) {
+                // 正确反馈
+                currentScore++;
+                updateScore();
+                
+                // 播放正确音效
+                dom.yesSound.currentTime = 0;
+                dom.yesSound.play();
+                
+                // 显示正确反馈
+                dom.feedbackImage.src = RESOURCES.images.yes;
+                dom.feedbackModule.style.display = 'block';
+                
+                // 检查是否胜利
+                if (currentScore >= GAME_CONFIG.maxScore) {
+                    setTimeout(enterWinScreen, 2000);
+                } else {
+                    // 进入下一轮
+                    setTimeout(() => {
+                        dom.feedbackModule.style.display = 'none';
+                        
+                        // 重置当前状态
+                        currentLightColor = null;
+                        currentDogAction = null;
+                        targetDogAction = null;
+                        
+                        // 重置红绿灯
+                        dom.trafficLight.src = RESOURCES.images.trafficLightGray;
+                        
+                        // 重置导盲犬
+                        dom.dogVideo.src = RESOURCES.videos.dogStandby;
+                        dom.dogVideo.loop = true;
+                        dom.dogVideo.play();
+                        
+                        // 回到阶段1
+                        setGameState(GAME_STATES.IDLE);
+                    }, 2000);
+                }
+            } else {
+                // 错误反馈
+                showFeedback(false);
+            }
+        }
+        
+        // 显示反馈
+        function showFeedback(isPositive) {
+            if (isPositive) {
+                dom.feedbackImage.src = RESOURCES.images.yes;
+                dom.yesSound.currentTime = 0;
+                dom.yesSound.play();
+            } else {
+                dom.feedbackImage.src = RESOURCES.images.tryAgain;
+                dom.tryAgainSound.currentTime = 0;
+                dom.tryAgainSound.play();
+            }
+            
+            dom.feedbackModule.style.display = 'block';
+            
+            // 隐藏反馈并返回适当状态
+            setTimeout(() => {
+                dom.feedbackModule.style.display = 'none';
+                
+                if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR) {
+                    // 返回阶段1
+                    setGameState(GAME_STATES.IDLE);
+                } else if (gameState === GAME_STATES.LISTENING_DOG_ACTION) {
+                    // 返回阶段2
+                    setGameState(GAME_STATES.IDLE);
+                    
+                    // 重新播放导盲犬动作
+                    if (currentDogAction) {
+                        switch (currentDogAction) {
+                            case 'stop':
+                                dom.dogVideo.src = RESOURCES.videos.dogStop;
+                                break;
+                            case 'wait':
+                                dom.dogVideo.src = RESOURCES.videos.dogWait;
+                                break;
+                            case 'go':
+                                dom.dogVideo.src = RESOURCES.videos.dogGo;
+                                break;
+                        }
+                        dom.dogVideo.loop = true;
+                        dom.dogVideo.play();
+                    }
+                }
+            }, 2000);
+        }
+        
+        // 进入胜利屏幕
+        function enterWinScreen() {
+            setGameState(GAME_STATES.WIN);
+            
+            // 设置胜利背景
+            dom.winScreen.style.backgroundImage = `url('${RESOURCES.images.winBackground}')`;
+            dom.winScreen.style.display = 'block';
+            
+            // 播放胜利音效
+            dom.winSound.currentTime = 0;
+            dom.winSound.play();
+        }
+        
+        // 设置游戏状态
+        function setGameState(newState) {
+            gameState = newState;
+            console.log('Game state changed to:', newState);
+            
+            // 根据状态更新UI
+            switch (newState) {
+                case GAME_STATES.IDLE:
+                    dom.recordButton.disabled = false;
+                    break;
+                case GAME_STATES.LISTENING_LIGHT_COLOR:
+                case GAME_STATES.LISTENING_DOG_ACTION:
+                    dom.recordButton.disabled = true;
+                    break;
+                case GAME_STATES.WIN:
+                    dom.recordButton.disabled = true;
+                    break;
+            }
+        }
+        
+        // 预加载所有资源
+        function preloadResources() {
+            const imageUrls = Object.values(RESOURCES.images);
+            const videoUrls = Object.values(RESOURCES.videos);
+            const audioUrls = Object.values(RESOURCES.audio);
+            
+            const allResources = [...imageUrls, ...videoUrls, ...audioUrls];
+            let loadedCount = 0;
+            
+            function updateProgress() {
+                loadedCount++;
+                const progress = Math.round((loadedCount / allResources.length) * 100);
+                document.querySelector('#preloader h2').textContent = `Loading Game Resources... ${progress}%`;
+            }
+            
+            // 预加载图片
+            imageUrls.forEach(url => {
+                const img = new Image();
+                img.src = url;
+                img.onload = updateProgress;
+                img.onerror = updateProgress;
+            });
+            
+            // 预加载视频
+            videoUrls.forEach(url => {
+                const video = document.createElement('video');
+                video.src = url;
+                video.onloadeddata = updateProgress;
+                video.onerror = updateProgress;
+            });
+            
+            // 预加载音频
+            audioUrls.forEach(url => {
+                const audio = new Audio();
+                audio.src = url;
+                audio.onloadeddata = updateProgress;
+                audio.onerror = updateProgress;
+            });
+            
+            // 设置超时，确保游戏启动
+            setTimeout(initGame, 3000);
+        }
+        
+        // 设置资源
+        function assignResources() {
+            // 设置初始图片
+            dom.trafficLight.src = RESOURCES.images.trafficLightGray;
+            dom.micIcon.src = RESOURCES.images.micIcon;
+            
+            // 设置初始视频
+            dom.dogVideo.src = RESOURCES.videos.dogStandby;
+            
+            // 设置音频
+            dom.recordClickSound.src = RESOURCES.audio.recordClick;
+            dom.lightSound.src = RESOURCES.audio.light;
+            dom.tryAgainSound.src = RESOURCES.audio.tryAgain;
+            dom.yesSound.src = RESOURCES.audio.yes;
+            dom.winSound.src = RESOURCES.audio.win;
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            assignResources();
+            preloadResources();
+        });
+    </script>
+</body>
+</html>
