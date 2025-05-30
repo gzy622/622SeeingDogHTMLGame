@@ -935,82 +935,100 @@
                 logGameEvent('DEBUG', 'BeforeHandleSpeech', `调用 handleOverallSpeech 前: currentGameState=${currentGameState}`);
                 handleOverallSpeech(transcript);
             };
+// ... (其他 Speech Recognition 代码)
+
+            recognition.onstart = () => {
+                isRecording = true;
+                recognitionSuccess = false;
+                feedbackDisplayedForCurrentRecognition = false;
+                logGameEvent('INFO', 'SpeechStarted', '语音识别已启动。');
+                recordButton.classList.remove('stopping');
+            };
+
+            recognition.onresult = (event) => {
+                isRecording = false;
+                recognitionSuccess = true; // 成功识别，设置标志
+                recordButton.classList.remove('recording');
+                recordButton.classList.remove('stopping');
+                recordButton.disabled = false; // 成功后立即启用按钮
+                const transcript = event.results?.[0]?.[0]?.transcript?.toLowerCase();
+                logGameEvent('INFO', 'SpeechRecognized', `识别到的语音: "${transcript}"`, { transcript: transcript, confidence: event.results?.[0]?.[0]?.confidence });
+                logGameEvent('DEBUG', 'BeforeHandleSpeech', `调用 handleOverallSpeech 前: currentGameState=${currentGameState}`);
+                handleOverallSpeech(transcript);
+            };
 
             recognition.onerror = (event) => {
                 isRecording = false;
                 recordButton.classList.remove('recording');
                 recordButton.classList.remove('stopping');
-                setTimeout(() => {
-                    if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) {
-                        feedbackDisplayedForCurrentRecognition = true;
-                        logGameEvent('ERROR', 'SpeechError', `语音识别错误: ${event.error}`, { error: event.error });
-                        let errorMessage = '未能识别您的语音，请清晰地再说一遍。';
-                        
-                        if (event.error === 'not-allowed' || event.error === 'permission-denied' || event.error === 'audio-capture' || event.error === 'network') {
-                            errorMessage = '麦克风或网络连接有问题。请检查权限并刷新页面。';
-                            micAccessGranted = false;
-                            recordButton.disabled = true;
-                        } else if (event.error === 'no-speech') {
-                            errorMessage = '没有听到声音，请确保麦克风已连接并清晰地说话。';
-                            recordButton.disabled = false;
-                        } else if (event.error === 'aborted') {
-                            errorMessage = '语音识别已中断。请重试。';
-                            recordButton.disabled = false;
-                        } else {
-                            errorMessage = `语音识别出现未知错误: ${event.error}。请重试。`;
-                            micAccessGranted = false;
-                            recordButton.disabled = true;
-                        }
+                logGameEvent('ERROR', 'SpeechError', `语音识别错误: ${event.error}`, { error: event.error }); // 立即记录错误
 
-                        displayMessageBox('语音识别失败', errorMessage);
-                        
-                        if (!recordButton.disabled) {
-                            recordButton.disabled = false;
-                        }
+                // 只有在没有成功识别结果且未显示过反馈时才处理
+                if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) {
+                    feedbackDisplayedForCurrentRecognition = true; // 标记已处理此识别尝试的反馈
 
-                        if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
-                            currentGameState = GAME_STATE.IDLE;
-                            playDogVideo('standby', true);
-                            logGameEvent('DEBUG', 'StateRevert', `语音识别错误: 回滚到 IDLE 状态。`);
-                        } else if (currentGameState === GAME_STATE.LISTENING_DOG_FEEDBACK) {
-                            currentGameState = GAME_STATE.DOG_ACTION;
-                            playDogVideo(currentDogAction, true);
-                            logGameEvent('DEBUG', 'StateRevert', `语音识别错误: 回滚到 DOG_ACTION 状态。`);
-                        } else {
-                            currentGameState = GAME_STATE.IDLE;
-                            playDogVideo('standby', true);
-                            logGameEvent('DEBUG', 'StateRevert', `语音识别错误: 回滚到 IDLE 状态 (fallback)。`);
-                        }
+                    let errorMessage = '未能识别您的语音，请清晰地再说一遍。';
+                    
+                    if (event.error === 'not-allowed' || event.error === 'permission-denied' || event.error === 'audio-capture' || event.error === 'network') {
+                        errorMessage = '麦克风或网络连接有问题。请检查权限并刷新页面。';
+                        micAccessGranted = false; // 假设是权限或网络问题，麦克风访问可能受阻
+                        recordButton.disabled = true; // 禁用按钮，需要用户手动解决
+                    } else if (event.error === 'no-speech') {
+                        errorMessage = '没有听到声音，请确保麦克风已连接并清晰地说话。';
+                        recordButton.disabled = false; // 这种情况下可以重试，按钮可以重新启用
+                    } else if (event.error === 'aborted') {
+                        errorMessage = '语音识别已中断。请重试。';
+                        recordButton.disabled = false; // 可能是浏览器行为，通常可以重试
+                    } else {
+                        errorMessage = `语音识别出现未知错误: ${event.error}。请重试。`;
+                        micAccessGranted = false;
+                        recordButton.disabled = true; // 未知错误，保守处理
                     }
-                    if (!recordButton.disabled) {
-                        recordButton.disabled = false;
+
+                    displayMessageBox('语音识别失败', errorMessage); // 消息框会在用户点击后启用按钮
+
+                    // 根据当前游戏状态回滚
+                    if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
+                        currentGameState = GAME_STATE.IDLE;
+                        playDogVideo('standby', true);
+                        logGameEvent('DEBUG', 'StateRevert', `语音识别错误: 回滚到 IDLE 状态。`);
+                    } else if (currentGameState === GAME_STATE.LISTENING_DOG_FEEDBACK) {
+                        currentGameState = GAME_STATE.DOG_ACTION;
+                        playDogVideo(currentDogAction, true);
+                        logGameEvent('DEBUG', 'StateRevert', `语音识别错误: 回滚到 DOG_ACTION 状态。`);
+                    } else {
+                        currentGameState = GAME_STATE.IDLE;
+                        playDogVideo('standby', true);
+                        logGameEvent('DEBUG', 'StateRevert', `语音识别错误: 回滚到 IDLE 状态 (fallback)。`);
                     }
-                }, 200);
+                }
             };
 
             recognition.onend = () => {
                 isRecording = false;
                 recordButton.classList.remove('recording');
                 recordButton.classList.remove('stopping');
-                setTimeout(() => {
-                    if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) {
-                        feedbackDisplayedForCurrentRecognition = true;
-                        logGameEvent('WARN', 'SpeechNoResult', '语音识别结束但无结果。');
-                        displayMessageBox('没有听到声音', '请确保麦克风已连接并清晰地说话。');
-                        recordButton.disabled = false;
-                        if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
-                            currentGameState = GAME_STATE.IDLE;
-                            playDogVideo('standby', true);
-                            logGameEvent('DEBUG', 'StateRevert', `语音识别无结果: 回滚到 IDLE 状态。`);
-                        } else if (currentGameState === GAME_STATE.LISTENING_DOG_FEEDBACK) {
-                            currentGameState = GAME_STATE.DOG_ACTION;
-                            playDogVideo(currentDogAction, true);
-                            logGameEvent('DEBUG', 'StateRevert', `语音识别无结果: 回滚到 DOG_ACTION 状态。`);
-                        }
+                logGameEvent('INFO', 'SpeechEnded', '语音识别已结束。'); // 立即记录结束
+
+                // 只有在没有成功识别结果且未显示过反馈时才处理
+                if (!recognitionSuccess && !feedbackDisplayedForCurrentRecognition) {
+                    feedbackDisplayedForCurrentRecognition = true;
+                    logGameEvent('WARN', 'SpeechNoResult', '语音识别结束但无结果。');
+                    displayMessageBox('没有听到声音', '请确保麦克风已连接并清晰地说话。');
+                    // 按钮启用由 displayMessageBox 的点击事件处理
+                    if (currentGameState === GAME_STATE.LISTENING_LIGHT_COLOR) {
+                        currentGameState = GAME_STATE.IDLE;
+                        playDogVideo('standby', true);
+                        logGameEvent('DEBUG', 'StateRevert', `语音识别无结果: 回滚到 IDLE 状态。`);
+                    } else if (currentGameState === GAME_STATE.LISTENING_DOG_FEEDBACK) {
+                        currentGameState = GAME_STATE.DOG_ACTION;
+                        playDogVideo(currentDogAction, true);
+                        logGameEvent('DEBUG', 'StateRevert', `语音识别无结果: 回滚到 DOG_ACTION 状态。`);
                     }
-                    recordButton.disabled = false;
-                }, 200);
+                }
             };
+
+            // ... (其余代码不变)
         }
 
         /**
