@@ -5,208 +5,234 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seeing Dog HTML Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Ensure html and body take full viewport height and width */
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden; /* Prevent scrolling if content overflows */
-        }
+<style>
+    /* Ensure html and body take full viewport height and width */
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent scrolling if content overflows */
+    }
 
-        /* Apply background to the body */
-        body {
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-color: #1a202c; /* Fallback background color */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Inter', sans-serif; /* Use Inter font */
-            color: white; /* Default text color */
-        }
+    /* Apply background to the body */
+    body {
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: #1a202c; /* Fallback background color */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Inter', sans-serif; /* Use Inter font */
+        color: white; /* Default text color */
+    }
 
-        /* Game container now fills the available space */
-        .game-container {
-            position: relative;
-            width: 100%;
-            height: 100%; /* Take full height of the body */
-            /* aspect-ratio: 10/16; /* Remove fixed aspect ratio to allow full page fill */
-            /* max-width: 600px; /* Remove max-width */
-            margin: 0; /* Remove auto margin */
-            overflow: hidden;
-        }
-        
-        /* 所有模块的定位容器 */
-        .module-container {
-            position: absolute;
-        }
-        
-        /* 红绿灯模块 */
-        #traffic-light-module {
-            top: 5%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30%;
-        }
-        
-        /* 导盲犬模块 */
-        #guide-dog-module {
-            bottom: 15%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60%;
-        }
-        
-        /* 录音按钮模块 */
-        #record-button-module {
-            bottom: 5%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 15%;
-        }
-        
-        /* 计分模块 */
-        #score-module {
-            top: 5%;
-            right: 5%;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-            border-radius: 0.5rem; /* Rounded corners */
-            padding: 0.5rem 1rem;
-            background-color: rgba(0, 0, 0, 0.3); /* Slightly transparent background */
-        }
-        
-        /* 反馈模块 */
-        #feedback-module {
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 50%;
-            z-index: 10;
-            display: none;
-            border-radius: 1rem; /* Rounded corners */
-            overflow: hidden; /* Ensure image respects border-radius */
-        }
+    /* Game container now fills the available space */
+    .game-container {
+        position: relative;
+        width: 100%;
+        height: 100%; /* Take full height of the body */
+        margin: 0; /* Remove auto margin */
+        overflow: hidden;
+    }
+    
+    /* 红绿灯模块 */
+    #traffic-light-module {
+        position: absolute;
+        top: 2%; /* 顶部中央，距离顶部2% */
+        left: 50%;
+        transform: translateX(-50%);
+        height: 20vh; /* 高度为屏幕高度的20% */
+        width: auto; /* 宽度自适应高度，保持比例 */
+        display: flex; /* Use flex to center image inside */
+        justify-content: center;
+        align-items: center;
+    }
+    #traffic-light-module img {
+        height: 100%; /* Make image fill the module's height */
+        width: auto; /* Maintain aspect ratio */
+        border-radius: 0.5rem; /* Apply rounded corners */
+    }
+    
+    /* 导盲犬模块 */
+    #guide-dog-module {
+        position: absolute;
+        top: 50%; /* 屏幕中央 */
+        left: 50%;
+        transform: translate(-50%, -50%);
+        height: 40vh; /* 高度为屏幕高度的40% */
+        width: 40vh; /* 假设视频是正方形，宽度也为40vh */
+        display: flex; /* Use flex to center video inside */
+        justify-content: center;
+        align-items: center;
+    }
+    .dog-video-container {
+        width: 100%; /* Fill parent module's width */
+        height: 100%; /* Fill parent module's height */
+        padding-bottom: 0; /* No padding-bottom trick needed if height is set */
+        position: relative;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    .dog-video-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* Ensure video fits within container */
+        border-radius: 0.5rem;
+    }
+    
+    /* 底部控制容器 */
+    #bottom-controls {
+        position: absolute;
+        bottom: 2%; /* 底部中央，距离底部2% */
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center; /* Vertically align items in the flex container */
+        justify-content: center;
+        gap: 2vw; /* 元素间距，使用视口宽度单位 */
+        width: 90%; /* 允许元素在底部有一定宽度范围 */
+        max-width: 800px; /* Optional: limit max width for very wide screens */
+    }
 
-        #feedback-module img {
-            border-radius: 1rem; /* Apply rounded corners to the image inside */
-        }
-        
-        /* 胜利屏幕 */
-        #win-screen-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            display: none;
-            z-index: 20;
-            border-radius: 0.5rem; /* Rounded corners */
-        }
-        
-        /* 预加载遮罩 */
-        #preloader {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            color: white;
-            border-radius: 0.5rem; /* Rounded corners */
-        }
-        
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 4px solid #fff;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin-top: 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* 重置按钮 */
-        #reset-button {
-            position: absolute;
-            top: 5%;
-            left: 5%;
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            z-index: 5;
-            transition: background 0.3s ease; /* Smooth transition for hover */
-        }
+    /* 录音按钮容器 */
+    #record-button-container { /* New ID for the div holding the record button */
+        height: 20vh; /* 高度为屏幕高度的20% */
+        width: 20vh; /* 假设麦克风图标是正方形，宽度也为20vh */
+        flex-shrink: 0; /* Prevent shrinking */
+        display: flex; /* To center the button/image inside */
+        justify-content: center;
+        align-items: center;
+    }
+    #record-button img {
+        height: 100%; /* Make image fill the container's height */
+        width: auto; /* Maintain aspect ratio */
+        border-radius: 50%;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease-in-out;
+    }
+    #record-button:active img {
+        transform: scale(0.95);
+    }
+    
+    /* 重置按钮 */
+    #reset-button {
+        height: 10vh; /* 高度为屏幕高度的10% */
+        padding: 0.5rem 1rem; /* Adjust padding to fit height */
+        font-size: 1.2rem; /* Adjust font size */
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+        z-index: 5;
+        transition: background 0.3s ease;
+        flex-shrink: 0; /* Prevent shrinking */
+        display: flex; /* For vertical centering of text */
+        align-items: center;
+        justify-content: center;
+    }
 
-        #reset-button:hover {
-            background: rgba(0, 0, 0, 0.7);
-        }
-        
-        /* 录音动画效果 */
-        .recording-animation {
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        
-        /* 狗视频容器 */
-        .dog-video-container {
-            width: 100%;
-            height: 0;
-            padding-bottom: 100%; /* 正方形视频 */
-            position: relative;
-            border-radius: 0.5rem; /* Rounded corners */
-            overflow: hidden; /* Ensure video respects border-radius */
-        }
-        
-        .dog-video-container video {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 0.5rem; /* Apply rounded corners to the video inside */
-        }
-        
-        /* Removed .background-cover as background is now on body */
+    #reset-button:hover {
+        background: rgba(0, 0, 0, 0.7);
+    }
+    
+    /* 计分显示 */
+    #score-display { /* New ID for the score module */
+        height: 10vh; /* 高度为屏幕高度的10% */
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        border-radius: 0.5rem;
+        padding: 0.5rem 1rem; /* Adjust padding to fit height */
+        background-color: rgba(0, 0, 0, 0.3);
+        flex-shrink: 0; /* Prevent shrinking */
+        display: flex; /* For vertical centering of text */
+        align-items: center;
+        justify-content: center;
+    }
 
-        /* Styles for the record button image */
-        #record-button img {
-            border-radius: 50%; /* Make the microphone icon circular */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
-            transition: transform 0.2s ease-in-out; /* Smooth scale effect on click */
-        }
-
-        #record-button:active img {
-            transform: scale(0.95);
-        }
-    </style>
+    /* 预加载遮罩 */
+    #preloader {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        color: white;
+        border-radius: 0.5rem; /* Rounded corners */
+    }
+    
+    .loading-spinner {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 4px solid #fff;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-top: 20px;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* 反馈模块 */
+    #feedback-module {
+        position: absolute; /* Keep absolute */
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 50%;
+        z-index: 10;
+        display: none;
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+    #feedback-module img {
+        border-radius: 1rem;
+    }
+    
+    /* 胜利屏幕 */
+    #win-screen-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        /* Added styles for background to cover the screen */
+        background-size: cover; 
+        background-position: center;
+        background-repeat: no-repeat; /* Ensure it doesn't repeat */
+        display: none;
+        z-index: 20;
+        border-radius: 0.5rem;
+    }
+    
+    /* 录音动画效果 */
+    .recording-animation {
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+</style>
 </head>
 <body>
     <div id="game-container" class="game-container">
@@ -215,27 +241,28 @@
             <div class="loading-spinner"></div>
         </div>
         
-        <button id="reset-button" class="hidden">Restart</button>
+        <div id="traffic-light-module">
+            <img id="traffic-light" src="" alt="Traffic Light">
+        </div>
         
-        <div id="score-module" class="module-container">0/5</div>
-        
-        <div id="traffic-light-module" class="module-container">
-            <img id="traffic-light" src="" alt="Traffic Light" class="w-full rounded-lg"> </div>
-        
-        <div id="guide-dog-module" class="module-container">
+        <div id="guide-dog-module">
             <div class="dog-video-container">
                 <video id="dog-video" autoplay muted loop></video>
             </div>
         </div>
         
-        <div id="record-button-module" class="module-container">
-            <button id="record-button">
-                <img id="mic-icon" src="" alt="Microphone" class="w-full">
-            </button>
+        <div id="bottom-controls">
+            <button id="reset-button" class="hidden">Restart</button>
+            <div id="record-button-container">
+                <button id="record-button">
+                    <img id="mic-icon" src="" alt="Microphone">
+                </button>
+            </div>
+            <div id="score-display">0/5</div>
         </div>
         
-        <div id="feedback-module" class="module-container">
-            <img id="feedback-image" src="" alt="Feedback" class="w-full">
+        <div id="feedback-module">
+            <img id="feedback-image" src="" alt="Feedback">
         </div>
         
         <div id="win-screen-container"></div>
@@ -248,7 +275,7 @@
     <audio id="win-sound" src=""></audio>
     
     <script>
-        // 游戏状态常量
+        // Game state constants
         const GAME_STATES = {
             PRELOAD: 'preload',
             IDLE: 'idle',
@@ -258,7 +285,7 @@
             WIN: 'win'
         };
         
-        // 游戏配置
+        // Game configuration
         const GAME_CONFIG = {
             maxScore: 5,
             lightColors: ['red', 'yellow', 'green'],
@@ -268,7 +295,7 @@
             feedbackKeywords: ['good job']
         };
         
-        // 资源URL
+        // Resource URLs
         const RESOURCES = {
             images: {
                 background: 'https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_Background10-16.png',
@@ -297,7 +324,7 @@
             }
         };
         
-        // 游戏状态变量
+        // Game state variables
         let gameState = GAME_STATES.PRELOAD;
         let currentScore = 0;
         let currentLightColor = null;
@@ -306,13 +333,12 @@
         let recognition = null;
         let isRecording = false;
         
-        // DOM元素引用
+        // DOM element references
         const dom = {
             gameContainer: document.getElementById('game-container'),
-            // Removed backgroundLayer as it's no longer needed
             preloader: document.getElementById('preloader'),
             resetButton: document.getElementById('reset-button'),
-            scoreModule: document.getElementById('score-module'),
+            scoreDisplay: document.getElementById('score-display'), // Updated ID
             trafficLight: document.getElementById('traffic-light'),
             dogVideo: document.getElementById('dog-video'),
             recordButton: document.getElementById('record-button'),
@@ -327,69 +353,70 @@
             winSound: document.getElementById('win-sound')
         };
         
-        // 初始化游戏
+        // Initialize the game
         function initGame() {
-            // 设置背景到body
+            // Set background to body
             document.body.style.backgroundImage = `url('${RESOURCES.images.background}')`;
             
-            // 设置初始状态
+            // Set initial state
             resetGame();
             
-            // 请求麦克风权限
+            // Request microphone permission
             requestMicrophonePermission();
             
-            // 初始化语音识别
+            // Initialize speech recognition
             initSpeechRecognition();
             
-            // 设置事件监听器
+            // Set up event listeners
             setupEventListeners();
             
-            // 隐藏预加载器
+            // Hide preloader
             dom.preloader.style.display = 'none';
             dom.resetButton.classList.remove('hidden');
             
-            // 进入空闲状态
+            // Enter idle state
             setGameState(GAME_STATES.IDLE);
         }
         
-        // 重置游戏
+        // Reset the game
         function resetGame() {
             currentScore = 0;
             updateScore();
             
-            // 重置红绿灯
+            // Reset traffic light
             dom.trafficLight.src = RESOURCES.images.trafficLightGray;
             currentLightColor = null;
             
-            // 重置导盲犬
+            // Reset guide dog
             dom.dogVideo.src = RESOURCES.videos.dogStandby;
             dom.dogVideo.load();
             dom.dogVideo.play();
+            dom.dogVideo.loop = true; // Ensure standby video loops
             currentDogAction = null;
             targetDogAction = null;
             
-            // 隐藏胜利屏幕
+            // Hide win screen
             dom.winScreen.style.display = 'none';
             
-            // 隐藏反馈
+            // Hide feedback
             dom.feedbackModule.style.display = 'none';
             
-            // 激活录音按钮
+            // Activate record button
             dom.recordButton.disabled = false;
         }
         
-        // 更新分数显示
+        // Update score display
         function updateScore() {
-            dom.scoreModule.textContent = `${currentScore}/${GAME_CONFIG.maxScore}`;
+            dom.scoreDisplay.textContent = `${currentScore}/${GAME_CONFIG.maxScore}`;
         }
         
-        // 请求麦克风权限
+        // Request microphone permission
         function requestMicrophonePermission() {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(function(stream) {
                         console.log('Microphone access granted');
-                        // 停止所有轨道以释放资源
+                        // Stop all tracks to release resources
                         stream.getTracks().forEach(track => track.stop());
                     })
                     .catch(function(err) {
@@ -429,7 +456,7 @@
             });
         }
 
-        // 初始化语音识别
+        // Initialize speech recognition
         function initSpeechRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             
@@ -449,7 +476,7 @@
                 const transcript = event.results[0][0].transcript.toLowerCase();
                 console.log('Speech recognized:', transcript);
                 
-                // 根据当前游戏状态处理结果
+                // Process result based on current game state
                 switch (gameState) {
                     case GAME_STATES.LISTENING_LIGHT_COLOR:
                         processLightColor(transcript);
@@ -474,30 +501,30 @@
             };
         }
         
-        // 设置事件监听器
+        // Set up event listeners
         function setupEventListeners() {
-            // 录音按钮点击事件
+            // Record button click event
             dom.recordButton.addEventListener('click', function() {
                 if (gameState !== GAME_STATES.IDLE || isRecording) return;
                 
-                // 播放点击音效
+                // Play click sound
                 dom.recordClickSound.currentTime = 0;
                 dom.recordClickSound.play();
                 
-                // 开始录音
+                // Start recording
                 startRecording();
             });
             
-            // 重置按钮点击事件
+            // Reset button click event
             dom.resetButton.addEventListener('click', resetGame);
             
-            // 胜利屏幕点击事件
+            // Win screen click event
             dom.winScreen.addEventListener('click', resetGame);
             
-            // 导盲犬视频结束事件
+            // Guide dog video end event
             dom.dogVideo.addEventListener('ended', function() {
                 if (gameState === GAME_STATES.LISTENING_DOG_ACTION) {
-                    // 如果导盲犬动作视频结束，进入待机状态
+                    // If guide dog action video ends, enter standby state
                     dom.dogVideo.src = RESOURCES.videos.dogStandby;
                     dom.dogVideo.loop = true;
                     dom.dogVideo.play();
@@ -512,7 +539,7 @@
             });
         }
         
-        // 开始录音
+        // Start recording
         function startRecording() {
             if (!recognition) return;
             
@@ -521,7 +548,7 @@
                 isRecording = true;
                 dom.recordButton.classList.add('recording-animation');
                 
-                // 根据当前游戏状态设置状态
+                // Set state based on current game state
                 if (gameState === GAME_STATES.IDLE && !currentLightColor) {
                     setGameState(GAME_STATES.LISTENING_LIGHT_COLOR);
                 } else if (gameState === GAME_STATES.IDLE && currentLightColor) {
@@ -534,22 +561,22 @@
             }
         }
         
-        // 处理颜色识别
+        // Process color recognition
         function processLightColor(transcript) {
-            // 检查是否包含颜色关键词
+            // Check if color keyword is included
             const detectedColor = GAME_CONFIG.colorKeywords.find(color => 
                 transcript.includes(color)
             );
             
             if (detectedColor) {
-                // 识别成功
+                // Recognition successful
                 currentLightColor = detectedColor;
                 
-                // 播放灯光音效
+                // Play light sound
                 dom.lightSound.currentTime = 0;
                 dom.lightSound.play();
                 
-                // 更新红绿灯图片
+                // Update traffic light image
                 switch (detectedColor) {
                     case 'red':
                         dom.trafficLight.src = RESOURCES.images.trafficLightRed;
@@ -565,18 +592,18 @@
                         break;
                 }
                 
-                // 播放导盲犬注意动画
+                // Play guide dog attention animation
                 dom.dogVideo.src = RESOURCES.videos.dogAttention;
                 dom.dogVideo.loop = false;
                 dom.dogVideo.play();
                 
-                // 设置导盲犬动作完成后的事件
+                // Set event after guide dog action completes
                 dom.dogVideo.onended = function() {
-                    // 随机选择一个动作
+                    // Randomly select an action
                     const randomAction = GAME_CONFIG.dogActions[Math.floor(Math.random() * GAME_CONFIG.dogActions.length)];
                     currentDogAction = randomAction;
                     
-                    // 播放随机动作
+                    // Play random action
                     switch (randomAction) {
                         case 'stop':
                             dom.dogVideo.src = RESOURCES.videos.dogStop;
@@ -592,74 +619,106 @@
                     dom.dogVideo.loop = true;
                     dom.dogVideo.play();
                     
-                    // 进入阶段2
+                    // Enter phase 2
                     setGameState(GAME_STATES.IDLE);
                 };
             } else {
-                // 识别失败
+                // Recognition failed
                 showFeedback(false);
             }
         }
         
-        // 处理导盲犬动作反馈
+        // Process guide dog action feedback
         function processDogAction(transcript) {
-            // 检查是否包含反馈关键词
-            const isGoodJob = transcript.includes('good job');
+            const isGoodJobPhrase = transcript.includes('good job');
+            // Split by non-alphanumeric characters and filter out empty strings
+            const wordsInTranscript = transcript.split(/[^a-z0-9]+/).filter(word => word.length > 0); 
+
+            let actionWordSpoken = null;
+            // Check if any *whole word* in the transcript is an action keyword
+            for (const word of wordsInTranscript) {
+                if (GAME_CONFIG.actionKeywords.includes(word)) {
+                    actionWordSpoken = word;
+                    break; // Found an action word, no need to check further
+                }
+            }
+
+            console.log('--- Processing Dog Action ---');
+            console.log('Raw Transcript:', transcript);
+            console.log('Words in transcript (sanitized):', wordsInTranscript); // Log sanitized words
+            console.log('Current Light Color (set by game):', currentLightColor);
+            console.log('Target Dog Action (expected from light):', targetDogAction);
+            console.log('Actual Dog Action (video played by game):', currentDogAction);
+            console.log('Is "good job" phrase detected:', isGoodJobPhrase);
+            console.log('Explicit action word spoken:', actionWordSpoken); 
+
+            let isCorrect = false;
+
+            // Rule 1 for YES: 灯颜色和小狗动作一致，且学生反馈为“Good job！”
+            // (Light color and dog action match AND student says "Good job!")
+            if (currentDogAction === targetDogAction && isGoodJobPhrase) {
+                isCorrect = true;
+                console.log('Condition met: Dog action matches AND "good job" detected.');
+            } 
+            // Rule 2 for YES: 灯颜色和小狗动作不一致，但是学生反馈和灯颜色一致 (meaning student said the target action)
+            // (Light color and dog action do NOT match BUT student feedback matches the light color's expected action)
+            else if (currentDogAction !== targetDogAction && actionWordSpoken === targetDogAction) {
+                isCorrect = true;
+                console.log('Condition met: Dog action MISMATCH BUT student correctly identified target action.');
+            }
+            // All other cases are TRY AGAIN
+            else {
+                isCorrect = false;
+                console.log('Conditions for YES not met. Result is TRY AGAIN.');
+            }
             
-            // 检查是否包含动作关键词
-            const detectedAction = GAME_CONFIG.actionKeywords.find(action => 
-                transcript.includes(action)
-            );
-            
-            // 判断是否正确
-            const isCorrect = (isGoodJob && currentDogAction === targetDogAction) || 
-                             (detectedAction && detectedAction === targetDogAction);
-            
+            console.log('Final isCorrect decision:', isCorrect);
+
             if (isCorrect) {
-                // 正确反馈
+                // Correct feedback
                 currentScore++;
                 updateScore();
                 
-                // 播放正确音效
+                // Play correct sound
                 dom.yesSound.currentTime = 0;
                 dom.yesSound.play();
                 
-                // 显示正确反馈
+                // Show correct feedback
                 dom.feedbackImage.src = RESOURCES.images.yes;
                 dom.feedbackModule.style.display = 'block';
                 
-                // 检查是否胜利
+                // Check if won
                 if (currentScore >= GAME_CONFIG.maxScore) {
                     setTimeout(enterWinScreen, 2000);
                 } else {
-                    // 进入下一轮
+                    // Enter next round
                     setTimeout(() => {
                         dom.feedbackModule.style.display = 'none';
                         
-                        // 重置当前状态
+                        // Reset current state for next round
                         currentLightColor = null;
                         currentDogAction = null;
                         targetDogAction = null;
                         
-                        // 重置红绿灯
+                        // Reset traffic light to gray
                         dom.trafficLight.src = RESOURCES.images.trafficLightGray;
                         
-                        // 重置导盲犬
+                        // Reset guide dog to standby
                         dom.dogVideo.src = RESOURCES.videos.dogStandby;
                         dom.dogVideo.loop = true;
                         dom.dogVideo.play();
                         
-                        // 回到阶段1
+                        // Return to phase 1 (listening for light color)
                         setGameState(GAME_STATES.IDLE);
                     }, 2000);
                 }
             } else {
-                // 错误反馈
+                // Incorrect feedback
                 showFeedback(false);
             }
         }
         
-        // 显示反馈
+        // Show feedback (true for YES, false for TRY AGAIN)
         function showFeedback(isPositive) {
             if (isPositive) {
                 dom.feedbackImage.src = RESOURCES.images.yes;
@@ -673,18 +732,18 @@
             
             dom.feedbackModule.style.display = 'block';
             
-            // 隐藏反馈并返回适当状态
+            // Hide feedback and return to appropriate state after a delay
             setTimeout(() => {
                 dom.feedbackModule.style.display = 'none';
                 
                 if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR) {
-                    // 返回阶段1
+                    // If we were listening for light color, go back to idle to try again
                     setGameState(GAME_STATES.IDLE);
                 } else if (gameState === GAME_STATES.LISTENING_DOG_ACTION) {
-                    // 返回阶段2
+                    // If we were listening for dog action, go back to idle to try again
                     setGameState(GAME_STATES.IDLE);
                     
-                    // 重新播放导盲犬动作
+                    // Replay guide dog action if it was set, so student can try again with context
                     if (currentDogAction) {
                         switch (currentDogAction) {
                             case 'stop':
@@ -704,25 +763,25 @@
             }, 2000);
         }
         
-        // 进入胜利屏幕
+        // Enter win screen
         function enterWinScreen() {
             setGameState(GAME_STATES.WIN);
             
-            // 设置胜利背景
+            // Set win background
             dom.winScreen.style.backgroundImage = `url('${RESOURCES.images.winBackground}')`;
             dom.winScreen.style.display = 'block';
             
-            // 播放胜利音效
+            // Play win sound
             dom.winSound.currentTime = 0;
             dom.winSound.play();
         }
         
-        // 设置游戏状态
+        // Set game state
         function setGameState(newState) {
             gameState = newState;
             console.log('Game state changed to:', newState);
             
-            // 根据状态更新UI
+            // Update UI based on state
             switch (newState) {
                 case GAME_STATES.IDLE:
                     dom.recordButton.disabled = false;
@@ -737,7 +796,7 @@
             }
         }
         
-        // 预加载所有资源
+        // Preload all resources
         function preloadResources() {
             const imageUrls = Object.values(RESOURCES.images);
             const videoUrls = Object.values(RESOURCES.videos);
@@ -752,7 +811,7 @@
                 document.querySelector('#preloader h2').textContent = `Loading Game Resources... ${progress}%`;
             }
             
-            // 预加载图片
+            // Preload images
             imageUrls.forEach(url => {
                 const img = new Image();
                 img.src = url;
@@ -760,7 +819,7 @@
                 img.onerror = updateProgress;
             });
             
-            // 预加载视频
+            // Preload videos
             videoUrls.forEach(url => {
                 const video = document.createElement('video');
                 video.src = url;
@@ -768,7 +827,7 @@
                 video.onerror = updateProgress;
             });
             
-            // 预加载音频
+            // Preload audio
             audioUrls.forEach(url => {
                 const audio = new Audio();
                 audio.src = url;
@@ -776,20 +835,20 @@
                 audio.onerror = updateProgress;
             });
             
-            // 设置超时，确保游戏启动
+            // Set timeout to ensure game starts
             setTimeout(initGame, 3000);
         }
         
-        // 设置资源
+        // Assign resources
         function assignResources() {
-            // 设置初始图片
+            // Set initial images
             dom.trafficLight.src = RESOURCES.images.trafficLightGray;
             dom.micIcon.src = RESOURCES.images.micIcon;
             
-            // 设置初始视频
+            // Set initial video
             dom.dogVideo.src = RESOURCES.videos.dogStandby;
             
-            // 设置音频
+            // Set audio
             dom.recordClickSound.src = RESOURCES.audio.recordClick;
             dom.lightSound.src = RESOURCES.audio.light;
             dom.tryAgainSound.src = RESOURCES.audio.tryAgain;
@@ -797,7 +856,7 @@
             dom.winSound.src = RESOURCES.audio.win;
         }
         
-        // 页面加载完成后初始化
+        // Initialize after page loads
         window.addEventListener('DOMContentLoaded', function() {
             assignResources();
             preloadResources();
