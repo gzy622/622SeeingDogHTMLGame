@@ -628,96 +628,87 @@
             }
         }
         
-        // Process guide dog action feedback
         function processDogAction(transcript) {
             const isGoodJobPhrase = transcript.includes('good job');
-            // Split by non-alphanumeric characters and filter out empty strings
+            
+            // ... (保留之前处理 wordsInTranscript 和 actionWordSpoken 的逻辑，确保正确识别动作词)
             const wordsInTranscript = transcript.split(/[^a-z0-9]+/).filter(word => word.length > 0); 
-
             let actionWordSpoken = null;
-            // Check if any *whole word* in the transcript is an action keyword
             for (const word of wordsInTranscript) {
                 if (GAME_CONFIG.actionKeywords.includes(word)) {
                     actionWordSpoken = word;
-                    break; // Found an action word, no need to check further
+                    break; 
                 }
             }
 
+            // --- 日志输出（保持不变） ---
             console.log('--- Processing Dog Action ---');
             console.log('Raw Transcript:', transcript);
-            console.log('Words in transcript (sanitized):', wordsInTranscript); // Log sanitized words
+            console.log('Words in transcript (sanitized):', wordsInTranscript);
             console.log('Current Light Color (set by game):', currentLightColor);
             console.log('Target Dog Action (expected from light):', targetDogAction);
             console.log('Actual Dog Action (video played by game):', currentDogAction);
             console.log('Is "good job" phrase detected:', isGoodJobPhrase);
             console.log('Explicit action word spoken:', actionWordSpoken); 
+            // --- 日志输出结束 ---
 
             let isCorrect = false;
 
-            // Rule 1 for YES: 灯颜色和小狗动作一致，且学生反馈为“Good job！”
-            // (Light color and dog action match AND student says "Good job!")
-            if (currentDogAction === targetDogAction && isGoodJobPhrase) {
-                isCorrect = true;
-                console.log('Condition met: Dog action matches AND "good job" detected.');
+            // 情况1：小狗动作与红绿灯预期一致
+            if (currentDogAction === targetDogAction) {
+                // 如果学生语音只包含 "good job"，则正确
+                if (isGoodJobPhrase && actionWordSpoken === null) {
+                    isCorrect = true;
+                    console.log('Condition met: Dog action matches, AND ONLY "good job" detected.');
+                } else {
+                    isCorrect = false; // 否则不正确
+                    console.log('Conditions for YES not met (Dog action matches, but feedback not ONLY "good job").');
+                }
             } 
-            // Rule 2 for YES: 灯颜色和小狗动作不一致，但是学生反馈和灯颜色一致 (meaning student said the target action)
-            // (Light color and dog action do NOT match BUT student feedback matches the light color's expected action)
-            else if (currentDogAction !== targetDogAction && actionWordSpoken === targetDogAction) {
-                isCorrect = true;
-                console.log('Condition met: Dog action MISMATCH BUT student correctly identified target action.');
-            }
-            // All other cases are TRY AGAIN
-            else {
-                isCorrect = false;
-                console.log('Conditions for YES not met. Result is TRY AGAIN.');
+            // 情况2：小狗动作与红绿灯预期不一致
+            else { // currentDogAction !== targetDogAction
+                // 如果学生语音只包含对应灯的动作指令，则正确
+                if (actionWordSpoken === targetDogAction && !isGoodJobPhrase) { // 确保没有同时说good job
+                    isCorrect = true;
+                    console.log('Condition met: Dog action MISMATCH, BUT ONLY student correctly identified target action.');
+                } else {
+                    isCorrect = false; // 否则不正确
+                    console.log('Conditions for YES not met (Dog action MISMATCH, and feedback not ONLY target action).');
+                }
             }
             
             console.log('Final isCorrect decision:', isCorrect);
 
+            // ... (后续根据 isCorrect 播放 YES 或 Try Again 的音效和图片逻辑保持不变)
             if (isCorrect) {
-                // Correct feedback
+                // 更新分数，播放 YES 音效和图片
                 currentScore++;
                 updateScore();
-                
-                // Play correct sound
                 dom.yesSound.currentTime = 0;
                 dom.yesSound.play();
-                
-                // Show correct feedback
                 dom.feedbackImage.src = RESOURCES.images.yes;
                 dom.feedbackModule.style.display = 'block';
-                
-                // Check if won
+
                 if (currentScore >= GAME_CONFIG.maxScore) {
                     setTimeout(enterWinScreen, 2000);
                 } else {
-                    // Enter next round
                     setTimeout(() => {
                         dom.feedbackModule.style.display = 'none';
-                        
-                        // Reset current state for next round
                         currentLightColor = null;
                         currentDogAction = null;
                         targetDogAction = null;
-                        
-                        // Reset traffic light to gray
                         dom.trafficLight.src = RESOURCES.images.trafficLightGray;
-                        
-                        // Reset guide dog to standby
                         dom.dogVideo.src = RESOURCES.videos.dogStandby;
                         dom.dogVideo.loop = true;
                         dom.dogVideo.play();
-                        
-                        // Return to phase 1 (listening for light color)
                         setGameState(GAME_STATES.IDLE);
                     }, 2000);
                 }
             } else {
-                // Incorrect feedback
+                // 播放 Try Again 音效和图片
                 showFeedback(false);
             }
         }
-        
         // Show feedback (true for YES, false for TRY AGAIN)
         function showFeedback(isPositive) {
             if (isPositive) {
