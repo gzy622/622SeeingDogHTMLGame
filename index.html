@@ -127,7 +127,8 @@
     #reset-button {
         height: 10vh; 
         padding: 0.5rem 1rem; 
-        /* font-size 移除，因为它现在是一个图片图标 */
+        /* 恢复字体大小设置，使其文本可见 */
+        font-size: max(1.2rem, 2.5vw); /* 字体大小也响应式调整，最小 1.2rem，最大 2.5vw */
         background: rgba(0, 0, 0, 0.5);
         color: white;
         border: none;
@@ -137,7 +138,7 @@
         z-index: 5;
         transition: background 0.3s ease;
         flex-shrink: 0; 
-        display: flex; /* 确保 flex 布局以居中图片 */
+        display: flex; 
         align-items: center;
         justify-content: center;
         
@@ -282,7 +283,7 @@
         </div>
         
         <div id="bottom-controls">
-            <button id="reset-button" class="hidden"><img src="https://raw.githubusercontent.com/google/material-design-icons/master/png/navigation/refresh_black_48dp.png" alt="Restart" style="height: 100%; object-fit: contain; filter: invert(1);"></button>
+            <button id="reset-button" class="hidden">Restart</button>
             <div id="record-button-container">
                 <button id="record-button">
                     <img id="mic-icon" src="" alt="Microphone">
