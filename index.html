@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seeing Dog HTML Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
 <style>
-    /* Ensure html and body take full viewport height and width */
+/* Ensure html and body take full viewport height and width */
     html, body {
         height: 100%;
         margin: 0;
@@ -36,7 +37,7 @@
         margin: 0; /* Remove auto margin */
         overflow: hidden;
     }
-    
+
     /* 红绿灯模块 - 调整大小和定位 */
     #traffic-light-module {
         position: absolute;
@@ -44,8 +45,9 @@
         left: 50%;
         transform: translateX(-50%);
         
-        /* 调整宽度，使其占据视口宽度的30%，并自动留出左右边距 */
-        width: 30vw; /* 调整此值以控制红绿灯的宽度 */
+        /* 使用 min() 函数来动态调整宽度，使其在不同屏幕比例下更合适 */
+        /* 宽度将是 (视口宽度的 25%) 和 (视口高度的 35%) 中的较小值 */
+        width: min(25vw, 35vh); /* 您可以根据实际效果调整这些值 */
         height: auto; /* 高度根据内容自动调整 */
         
         display: flex; /* Use flex to center image inside */
@@ -55,10 +57,10 @@
     #traffic-light-module img {
         width: 100%; /* 图片宽度填充父容器 */
         height: auto; /* 图片高度自适应以保持宽高比 */
-        max-height: 40vh; /* 限制图片的最大高度，防止在某些屏幕上过高 */
+        /* max-height 不再需要，因为父容器的 min() 已经控制了最大尺寸 */
         border-radius: 0.5rem; 
     }
-    
+
     /* 导盲犬模块 */
     #guide-dog-module {
         position: absolute;
@@ -88,7 +90,7 @@
         object-fit: contain; /* Ensure video fits within container */
         border-radius: 0.5rem;
     }
-    
+
     /* 底部控制容器 - 调整宽度和间距 */
     #bottom-controls {
         position: absolute;
@@ -122,12 +124,13 @@
     #record-button:active img {
         transform: scale(0.95);
     }
-    
-    /* 重置按钮 - 调整宽度 */
+
+    /* 重置按钮 - 调整宽度和字体大小 */
     #reset-button {
         height: 10vh; 
         padding: 0.5rem 1rem; 
-        font-size: 1.2rem; 
+        /* 字体大小也响应式调整，最小 1.2rem，最大 2.5vw */
+        font-size: max(1.2rem, 2.5vw); 
         background: rgba(0, 0, 0, 0.5);
         color: white;
         border: none;
@@ -143,18 +146,19 @@
         
         /* 让其在flex容器中填充可用空间 */
         flex-grow: 1; 
-        /* 限制最大宽度，防止在大屏幕上过宽，可以调整 */
-        max-width: 30%; 
+        /* 允许其最大占据 35% 的空间（可以调整）*/
+        max-width: 35%; 
     }
 
     #reset-button:hover {
         background: rgba(0, 0, 0, 0.7);
     }
-    
-    /* 计分显示 - 调整宽度 */
+
+    /* 计分显示 - 调整宽度和字体大小 */
     #score-display { 
         height: 10vh; 
-        font-size: 1.5rem;
+        /* 字体大小也响应式调整，最小 1.5rem，最大 3vw */
+        font-size: max(1.5rem, 3vw);
         font-weight: bold;
         color: white;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
@@ -168,8 +172,8 @@
         
         /* 让其在flex容器中填充可用空间 */
         flex-grow: 1; 
-        /* 限制最大宽度，防止在大屏幕上过宽，可以调整 */
-        max-width: 30%; 
+        /* 允许其最大占据 35% 的空间（可以调整）*/
+        max-width: 35%; 
     }
 
     /* 预加载遮罩 */
@@ -188,7 +192,7 @@
         color: white;
         border-radius: 0.5rem; 
     }
-    
+
     .loading-spinner {
         border: 4px solid rgba(255, 255, 255, 0.3);
         border-radius: 50%;
@@ -198,12 +202,12 @@
         animation: spin 1s linear infinite;
         margin-top: 20px;
     }
-    
+
     @keyframes spin {
         0% { transform: rotate(0deg); }
-        50% { transform: rotate(360deg); } /* Changed to 360deg for continuous spin */
+        100% { transform: rotate(360deg); }
     }
-    
+
     /* 反馈模块 */
     #feedback-module {
         position: absolute; 
@@ -219,7 +223,7 @@
     #feedback-module img {
         border-radius: 1rem;
     }
-    
+
     /* 胜利屏幕 */
     #win-screen-container {
         position: absolute;
@@ -234,18 +238,19 @@
         z-index: 20;
         border-radius: 0.5rem;
     }
-    
+
     /* 录音动画效果 */
     .recording-animation {
         animation: pulse 1.5s infinite;
     }
-    
+
     @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.1); }
         100% { transform: scale(1); }
     }
 </style>
+
 </head>
 <body>
     <div id="game-container" class="game-container">
