@@ -536,17 +536,16 @@
                 // Ensure recording state is reset even on error
                 isRecording = false;
                 dom.recordButton.classList.remove('recording-animation');
-                dom.recordButton.disabled = false; // Re-enable button
+                // dom.recordButton.disabled = false; // 移除此行
                 setGameState(GAME_STATES.IDLE); // Return to idle
             };
-            
             recognition.onend = function() {
                 // This event fires when the speech recognition service has disconnected.
                 // It's the final cleanup after a stop() or auto-timeout.
                 console.log('Speech recognition session ended.');
                 isRecording = false;
                 dom.recordButton.classList.remove('recording-animation');
-                dom.recordButton.disabled = false; // Re-enable button after recognition ends
+                // dom.recordButton.disabled = false; // 移除此行
                 
                 // If game state is still listening, transition back to idle after recognition
                 if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR || 
@@ -554,7 +553,6 @@
                     setGameState(GAME_STATES.IDLE);
                 }
             };
-
             // Optional: for debugging audio start/end
             // recognition.onaudiostart = () => console.log('Audio capture started.');
             // recognition.onaudioend = () => console.log('Audio capture ended.');
@@ -571,15 +569,19 @@
                 dom.recordClickSound.play();
 
                 if (isRecording) {
-                    // If already recording, stop it manually
+                    // 如果已经在录制，则手动停止它
                     console.log("Manual stop recording.");
                     recognition.stop(); 
+                    // 立即移除录制动画，以便用户知道已停止录制
+                    dom.recordButton.classList.remove('recording-animation');
+                    isRecording = false; // 手动停止时也更新状态
+                    setGameState(GAME_STATES.IDLE); // 返回空闲状态，等待识别结果
                 } else if (gameState === GAME_STATES.IDLE) {
-                    // If not recording and in IDLE state, start recording
+                    // 如果不在录制且处于 IDLE 状态，则开始录制
                     console.log("Start recording.");
                     startRecording();
                 }
-                // If not in IDLE state and not recording (e.g., during feedback), do nothing.
+                // 如果不在 IDLE 状态且不在录制（例如，在反馈期间），则不执行任何操作。
             });
             
             // Reset button click event
@@ -605,7 +607,6 @@
                 // while filling the screen, more complex logic would be needed.
             });
         }
-        
         // Start recording
         function startRecording() {
             if (!recognition) return;
@@ -614,7 +615,7 @@
                 recognition.start();
                 isRecording = true;
                 dom.recordButton.classList.add('recording-animation');
-                dom.recordButton.disabled = true; // Disable button while actively recording
+                // dom.recordButton.disabled = true; // 移除此行，允许再次点击以停止录制
 
                 // Set state based on current game phase
                 if (!currentLightColor) { // Phase 1: Listening for light color
@@ -627,11 +628,10 @@
                 // If start() fails (e.g., already started), ensure state is reset
                 isRecording = false;
                 dom.recordButton.classList.remove('recording-animation');
-                dom.recordButton.disabled = false; // Re-enable button
+                // dom.recordButton.disabled = false; // 移除此行
                 setGameState(GAME_STATES.IDLE);
             }
         }
-        
         // Process color recognition
         function processLightColor(transcript) {
             // Check if color keyword is included
@@ -863,7 +863,9 @@
             gameState = newState;
             console.log('Game state changed to:', newState);
             
-            // Update UI based on state
+            // 按钮的启用/禁用状态将由点击事件和识别生命周期自行管理
+            // 因此，从这里移除直接的按钮禁用逻辑
+            /*
             switch (newState) {
                 case GAME_STATES.IDLE:
                     dom.recordButton.disabled = false; // Enable when idle
@@ -879,8 +881,8 @@
                     dom.recordButton.disabled = true;
                     break;
             }
+            */
         }
-        
         // Preload all resources
         function preloadResources() {
             const imageUrls = Object.values(RESOURCES.images);
