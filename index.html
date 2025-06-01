@@ -574,14 +574,12 @@
 
                 if (isRecording) {
                     // 如果已经在录制，则手动停止它
-                    console.log("Manual stop recording. Awaiting recognition.onend for full cleanup.");
+                    console.log("Manual stop recording. Awaiting recognition.onend for full cleanup and result processing.");
                     recognition.stop(); 
-                    // 移除下面两行，让 recognition.onend 负责最终的 isRecording 状态和动画移除
-                    // dom.recordButton.classList.remove('recording-animation'); 
-                    // isRecording = false; 
-                    
-                    // 立即返回空闲状态，以便在识别结果出来后可以重新开始
-                    setGameState(GAME_STATES.IDLE); 
+                    // 移除将 gameState 立即设置为 IDLE 的代码
+                    // dom.recordButton.classList.remove('recording-animation'); // 此行已在上次修复中移除
+                    // isRecording = false; // 此行已在上次修复中移除
+                    // setGameState(GAME_STATES.IDLE); // <<<< 移除此行！让 recognition.onend 处理状态重置
                 } else if (gameState === GAME_STATES.IDLE) {
                     // 如果不在录制且处于 IDLE 状态，则开始录制
                     console.log("Start recording.");
