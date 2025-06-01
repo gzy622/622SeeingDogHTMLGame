@@ -217,25 +217,26 @@
         background-color: rgba(0, 0, 0, 0.7); /* 半透明黑色遮罩 */
         
         z-index: 10;
-        display: none; /* 由 JS 控制显示/隐藏 */
-        border-radius: 0; /* 全屏遮罩无需圆角 */
-        overflow: hidden; /* 防止内容溢出 */
+        /* 初始状态为完全透明且不可见 */
+        opacity: 0; 
+        visibility: hidden; 
+        /* 添加渐变效果 */
+        transition: opacity 0.5s ease; 
 
         /* 在遮罩内居中反馈图片 */
         display: flex; 
-        flex-direction: column; /* 允许垂直居中图片 */
+        flex-direction: column; 
         justify-content: center;
         align-items: center;
     }
     #feedback-module img {
-        /* 调整图片在遮罩内的尺寸 */
-        max-width: 80%; /* 图片最大宽度为遮罩宽度的 80% */
-        max-height: 80%; /* 图片最大高度为遮罩高度的 80% */
+        /* 调整图片在遮罩内的尺寸，使其大小合适并居中 */
+        max-width: 60%; /* 图片最大宽度为遮罩宽度的 60% */
+        max-height: 60%; /* 图片最大高度为遮罩高度的 60% */
         height: auto; /* 保持宽高比 */
         object-fit: contain; /* 确保图片完整显示不裁剪 */
         border-radius: 1rem; /* 保持图片自身的圆角 */
     }
-
     /* 胜利屏幕 */
     #win-screen-container {
         position: absolute;
@@ -760,15 +761,21 @@
                 
                 // Show correct feedback
                 dom.feedbackImage.src = RESOURCES.images.yes;
-                dom.feedbackModule.style.display = 'block';
+                // 渐入反馈模块
+                dom.feedbackModule.style.visibility = 'visible';
+                dom.feedbackModule.style.opacity = '1';
                 
                 // Check if won
                 if (currentScore >= GAME_CONFIG.maxScore) {
                     setTimeout(enterWinScreen, 2000);
                 } else {
-                    // Enter next round
+                    // 进入下一轮
                     setTimeout(() => {
-                        dom.feedbackModule.style.display = 'none';
+                        // 渐出反馈模块
+                        dom.feedbackModule.style.opacity = '0';
+                        setTimeout(() => {
+                            dom.feedbackModule.style.visibility = 'hidden';
+                        }, 500); // 确保与 CSS transition 持续时间一致
                         
                         // Reset current state for next round
                         currentLightColor = null;
@@ -792,7 +799,6 @@
                 showFeedback(false);
             }
         }
-        
         // Show feedback (true for YES, false for TRY AGAIN)
         // This function is now only called for "Try Again" feedback
         function showFeedback(isPositive) {
