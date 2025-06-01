@@ -809,14 +809,20 @@
                 dom.tryAgainSound.play();
             }
             
-            dom.feedbackModule.style.display = 'block';
+            // 渐入反馈模块：先设置为可见，然后设置不透明度为1
+            dom.feedbackModule.style.visibility = 'visible';
+            dom.feedbackModule.style.opacity = '1';
             
             // Hide feedback and return to appropriate state after a delay
             setTimeout(() => {
-                dom.feedbackModule.style.display = 'none';
-                
+                // 渐出反馈模块：先设置不透明度为0，然后设置为不可见
+                dom.feedbackModule.style.opacity = '0';
+                setTimeout(() => {
+                    dom.feedbackModule.style.visibility = 'hidden';
+                }, 500); // 确保与 CSS transition 持续时间一致
+
                 // After feedback, always return to IDLE so player can click to restart or try again.
-                // The actual game state transition happens within processLightColor or processDogAction.
+                // The actual game state transition happens within processDogAction or processLightColor.
                 // Here, we just ensure the button is re-enabled and state is IDLE.
                 setGameState(GAME_STATES.IDLE);
 
@@ -842,9 +848,8 @@
                     dom.dogVideo.loop = true;
                     dom.dogVideo.play();
                 }
-            }, 2000);
+            }, 2000); // 此延迟时间是反馈图片显示的时间
         }
-        
         // Enter win screen
         function enterWinScreen() {
             setGameState(GAME_STATES.WIN);
