@@ -40,18 +40,26 @@
     /* 红绿灯模块 */
     #traffic-light-module {
         position: absolute;
-        top: 2%; /* 顶部中央，距离顶部2% */
+        top: 2%;
         left: 50%;
         transform: translateX(-50%);
-        height: 20vh; /* 高度为屏幕高度的20% */
-        width: auto; /* 宽度自适应高度，保持比例 */
+        /* 移除固定的高度，让其高度自适应内容 */
+        /* height: 20vh; */ /* 移除或注释掉此行 */
+        
+        /* 设定一个基于视口宽度的百分比宽度 */
+        width: 15vw; /* 示例值，您可以根据实际效果调整此百分比（如 10vw, 20vw 等）*/
+        
+        height: auto; /* 让容器的高度根据图片内容自适应 */
+    
         display: flex; /* Use flex to center image inside */
         justify-content: center;
         align-items: center;
     }
     #traffic-light-module img {
-        height: 100%; /* Make image fill the module's height */
-        width: auto; /* Maintain aspect ratio */
+        /* 让图片宽度填充其父容器 */
+        width: 100%; 
+        /* 让图片高度自适应，以保持原始宽高比 */
+        height: auto; 
         border-radius: 0.5rem; /* Apply rounded corners */
     }
     
