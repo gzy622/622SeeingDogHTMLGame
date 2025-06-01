@@ -128,8 +128,7 @@
     #reset-button {
         height: 10vh; 
         padding: 0.5rem 1rem; 
-        /* 字体大小也响应式调整，最小 1.2rem，最大 2.5vw */
-        font-size: max(1.2rem, 2.5vw); 
+        /* font-size 移除，因为它现在是一个图片图标 */
         background: rgba(0, 0, 0, 0.5);
         color: white;
         border: none;
@@ -139,7 +138,7 @@
         z-index: 5;
         transition: background 0.3s ease;
         flex-shrink: 0; 
-        display: flex; 
+        display: flex; /* 确保 flex 布局以居中图片 */
         align-items: center;
         justify-content: center;
         
@@ -207,20 +206,34 @@
         100% { transform: rotate(360deg); }
     }
 
-    /* 反馈模块 */
+    /* 反馈模块 - 作为全屏半透明遮罩 */
     #feedback-module {
         position: absolute; 
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 50%;
+        top: 0; /* 覆盖整个屏幕 */
+        left: 0; /* 覆盖整个屏幕 */
+        width: 100%; /* 覆盖整个屏幕 */
+        height: 100%; /* 覆盖整个屏幕 */
+        
+        background-color: rgba(0, 0, 0, 0.7); /* 半透明黑色遮罩 */
+        
         z-index: 10;
-        display: none;
-        border-radius: 1rem;
-        overflow: hidden;
+        display: none; /* 由 JS 控制显示/隐藏 */
+        border-radius: 0; /* 全屏遮罩无需圆角 */
+        overflow: hidden; /* 防止内容溢出 */
+
+        /* 在遮罩内居中反馈图片 */
+        display: flex; 
+        flex-direction: column; /* 允许垂直居中图片 */
+        justify-content: center;
+        align-items: center;
     }
     #feedback-module img {
-        border-radius: 1rem;
+        /* 调整图片在遮罩内的尺寸 */
+        max-width: 80%; /* 图片最大宽度为遮罩宽度的 80% */
+        max-height: 80%; /* 图片最大高度为遮罩高度的 80% */
+        height: auto; /* 保持宽高比 */
+        object-fit: contain; /* 确保图片完整显示不裁剪 */
+        border-radius: 1rem; /* 保持图片自身的圆角 */
     }
 
     /* 胜利屏幕 */
