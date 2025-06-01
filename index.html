@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seeing Dog HTML Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
-
 <style>
     /* Ensure html and body take full viewport height and width */
     html, body {
@@ -237,6 +236,7 @@
         object-fit: contain; /* 确保图片完整显示不裁剪 */
         border-radius: 1rem; /* 保持图片自身的圆角 */
     }
+
     /* 胜利屏幕 */
     #win-screen-container {
         position: absolute;
@@ -282,7 +282,7 @@
         </div>
         
         <div id="bottom-controls">
-            <button id="reset-button" class="hidden">Restart</button>
+            <button id="reset-button" class="hidden"><img src="https://raw.githubusercontent.com/google/material-design-icons/master/png/navigation/refresh_black_48dp.png" alt="Restart" style="height: 100%; object-fit: contain; filter: invert(1);"></button>
             <div id="record-button-container">
                 <button id="record-button">
                     <img id="mic-icon" src="" alt="Microphone">
@@ -428,11 +428,12 @@
             // Hide win screen
             dom.winScreen.style.display = 'none';
             
-            // Hide feedback
-            dom.feedbackModule.style.display = 'none';
+            // Hide feedback - FIX: Use opacity and visibility for transitions
+            dom.feedbackModule.style.opacity = '0';
+            dom.feedbackModule.style.visibility = 'hidden';
             
             // Activate record button
-            dom.recordButton.disabled = false;
+            // Button's enabled/disabled state is now managed by click handler and recognition lifecycle
         }
         
         // Update score display
@@ -536,16 +537,17 @@
                 // Ensure recording state is reset even on error
                 isRecording = false;
                 dom.recordButton.classList.remove('recording-animation');
-                // dom.recordButton.disabled = false; // 移除此行
+                // dom.recordButton.disabled = false; // Removed as button state is handled by click
                 setGameState(GAME_STATES.IDLE); // Return to idle
             };
+            
             recognition.onend = function() {
                 // This event fires when the speech recognition service has disconnected.
                 // It's the final cleanup after a stop() or auto-timeout.
                 console.log('Speech recognition session ended.');
                 isRecording = false;
                 dom.recordButton.classList.remove('recording-animation');
-                // dom.recordButton.disabled = false; // 移除此行
+                // dom.recordButton.disabled = false; // Removed as button state is handled by click
                 
                 // If game state is still listening, transition back to idle after recognition
                 if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR || 
@@ -553,6 +555,7 @@
                     setGameState(GAME_STATES.IDLE);
                 }
             };
+
             // Optional: for debugging audio start/end
             // recognition.onaudiostart = () => console.log('Audio capture started.');
             // recognition.onaudioend = () => console.log('Audio capture ended.');
@@ -607,6 +610,7 @@
                 // while filling the screen, more complex logic would be needed.
             });
         }
+        
         // Start recording
         function startRecording() {
             if (!recognition) return;
@@ -628,10 +632,11 @@
                 // If start() fails (e.g., already started), ensure state is reset
                 isRecording = false;
                 dom.recordButton.classList.remove('recording-animation');
-                // dom.recordButton.disabled = false; // 移除此行
+                // dom.recordButton.disabled = false; // Removed as button state is handled by click
                 setGameState(GAME_STATES.IDLE);
             }
         }
+        
         // Process color recognition
         function processLightColor(transcript) {
             // Check if color keyword is included
@@ -799,6 +804,7 @@
                 showFeedback(false);
             }
         }
+        
         // Show feedback (true for YES, false for TRY AGAIN)
         // This function is now only called for "Try Again" feedback
         function showFeedback(isPositive) {
@@ -809,13 +815,13 @@
                 dom.tryAgainSound.play();
             }
             
-            // 渐入反馈模块：先设置为可见，然后设置不透明度为1
+            // 渐入反馈模块
             dom.feedbackModule.style.visibility = 'visible';
             dom.feedbackModule.style.opacity = '1';
             
             // Hide feedback and return to appropriate state after a delay
             setTimeout(() => {
-                // 渐出反馈模块：先设置不透明度为0，然后设置为不可见
+                // 渐出反馈模块
                 dom.feedbackModule.style.opacity = '0';
                 setTimeout(() => {
                     dom.feedbackModule.style.visibility = 'hidden';
@@ -850,18 +856,6 @@
                 }
             }, 2000); // 此延迟时间是反馈图片显示的时间
         }
-        // Enter win screen
-        function enterWinScreen() {
-            setGameState(GAME_STATES.WIN);
-            
-            // Set win background
-            dom.winScreen.style.backgroundImage = `url('${RESOURCES.images.winBackground}')`;
-            dom.winScreen.style.display = 'block';
-            
-            // Play win sound
-            dom.winSound.currentTime = 0;
-            dom.winSound.play();
-        }
         
         // Set game state
         function setGameState(newState) {
@@ -888,6 +882,7 @@
             }
             */
         }
+        
         // Preload all resources
         function preloadResources() {
             const imageUrls = Object.values(RESOURCES.images);
