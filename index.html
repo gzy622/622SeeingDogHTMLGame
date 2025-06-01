@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-/* Ensure html and body take full viewport height and width */
+    /* Ensure html and body take full viewport height and width */
     html, body {
         height: 100%;
         margin: 0;
@@ -37,7 +37,7 @@
         margin: 0; /* Remove auto margin */
         overflow: hidden;
     }
-
+    
     /* 红绿灯模块 - 调整大小和定位 */
     #traffic-light-module {
         position: absolute;
@@ -45,9 +45,8 @@
         left: 50%;
         transform: translateX(-50%);
         
-        /* 使用 min() 函数来动态调整宽度，使其在不同屏幕比例下更合适 */
-        /* 宽度将是 (视口宽度的 25%) 和 (视口高度的 35%) 中的较小值 */
-        width: min(25vw, 35vh); /* 您可以根据实际效果调整这些值 */
+        /* 让红绿灯宽度占据视口宽度的80%，从而在两边留下10%的空隙 */
+        width: 80vw; /* 调整此值以控制红绿灯的宽度和左右边距 */
         height: auto; /* 高度根据内容自动调整 */
         
         display: flex; /* Use flex to center image inside */
@@ -57,10 +56,10 @@
     #traffic-light-module img {
         width: 100%; /* 图片宽度填充父容器 */
         height: auto; /* 图片高度自适应以保持宽高比 */
-        /* max-height 不再需要，因为父容器的 min() 已经控制了最大尺寸 */
+        /* max-height: 40vh; 如果在极宽屏幕上图片过高，可以重新添加此行并调整值 */
         border-radius: 0.5rem; 
     }
-
+    
     /* 导盲犬模块 */
     #guide-dog-module {
         position: absolute;
@@ -90,7 +89,7 @@
         object-fit: contain; /* Ensure video fits within container */
         border-radius: 0.5rem;
     }
-
+    
     /* 底部控制容器 - 调整宽度和间距 */
     #bottom-controls {
         position: absolute;
@@ -124,7 +123,7 @@
     #record-button:active img {
         transform: scale(0.95);
     }
-
+    
     /* 重置按钮 - 调整宽度和字体大小 */
     #reset-button {
         height: 10vh; 
@@ -153,7 +152,7 @@
     #reset-button:hover {
         background: rgba(0, 0, 0, 0.7);
     }
-
+    
     /* 计分显示 - 调整宽度和字体大小 */
     #score-display { 
         height: 10vh; 
@@ -250,7 +249,6 @@
         100% { transform: scale(1); }
     }
 </style>
-
 </head>
 <body>
     <div id="game-container" class="game-container">
