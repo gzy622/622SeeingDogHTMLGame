@@ -89,6 +89,11 @@
             box-shadow: 0 0 30px rgba(46, 229, 157, 0.5);
         }
         
+        .mic-button.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
         .mic-icon {
             font-size: 50px;
             color: white;
@@ -272,6 +277,17 @@
             font-size: 1.5rem;
         }
         
+        .debug-info {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
         footer {
             text-align: center;
             margin-top: 30px;
@@ -340,7 +356,13 @@
                 <li>停止说话后，系统会显示最终识别结果（白色文字）</li>
                 <li>所有识别结果会自动保存到识别历史区域</li>
                 <li>再次点击麦克风按钮可停止识别</li>
+                <li><strong>注意：</strong>如果第一次无法激活麦克风，请尝试刷新页面或重启浏览器</li>
             </ul>
+        </div>
+        
+        <div class="debug-info" id="debug-info">
+            <div><strong>调试信息：</strong></div>
+            <div id="debug-messages">正在初始化...</div>
         </div>
         
         <div class="compatibility">
@@ -362,6 +384,17 @@
             const interimResult = document.getElementById('interim-result');
             const finalResult = document.getElementById('final-result');
             const historyList = document.getElementById('history-list');
+            const debugMessages = document.getElementById('debug-messages');
+            
+            // 添加调试信息
+            function addDebugMessage(message) {
+                const messageElement = document.createElement('div');
+                messageElement.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                debugMessages.appendChild(messageElement);
+                debugMessages.scrollTop = debugMessages.scrollHeight;
+            }
+            
+            addDebugMessage('页面加载完成，正在检查Web Speech API支持...');
             
             // 检查浏览器是否支持Web Speech API
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -369,78 +402,145 @@
             let isListening = false;
             
             if (SpeechRecognition) {
-                recognition = new SpeechRecognition();
-                recognition.continuous = true;
-                recognition.interimResults = true;
-                recognition.lang = 'zh-CN'; // 设置中文识别
+                addDebugMessage('浏览器支持Web Speech API');
                 
-                recognition.onstart = () => {
-                    isListening = true;
-                    micButton.classList.add('listening');
-                    waves.forEach(wave => wave.classList.add('animate'));
-                    micIcon.classList.remove('fa-microphone-alt');
-                    micIcon.classList.add('fa-stop');
-                    status.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 正在聆听中...';
-                    status.classList.add('listening');
-                    status.classList.remove('error');
-                    interimResult.textContent = '';
-                    finalResult.textContent = '请开始说话...';
-                };
-                
-                recognition.onend = () => {
-                    isListening = false;
-                    micButton.classList.remove('listening');
-                    waves.forEach(wave => wave.classList.remove('animate'));
-                    micIcon.classList.remove('fa-stop');
-                    micIcon.classList.add('fa-microphone-alt');
-                    status.innerHTML = '<i class="fas fa-info-circle"></i> 点击麦克风按钮开始语音识别';
-                    status.classList.remove('listening');
-                };
-                
-                recognition.onresult = (event) => {
-                    let interimTranscript = '';
-                    let finalTranscript = '';
+                try {
+                    recognition = new SpeechRecognition();
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
+                    recognition.lang = 'zh-CN'; // 设置中文识别
                     
-                    for (let i = event.resultIndex; i < event.results.length; i++) {
-                        const transcript = event.results[i][0].transcript;
-                        if (event.results[i].isFinal) {
-                            finalTranscript += transcript;
-                        } else {
-                            interimTranscript += transcript;
-                        }
-                    }
+                    addDebugMessage(`SpeechRecognition初始化完成，语言设置为: ${recognition.lang}`);
                     
-                    interimResult.textContent = interimTranscript;
-                    
-                    if (finalTranscript) {
-                        finalResult.textContent = finalTranscript;
-                        addToHistory(finalTranscript);
+                    recognition.onstart = () => {
+                        isListening = true;
+                        micButton.classList.add('listening');
+                        waves.forEach(wave => wave.classList.add('animate'));
+                        micIcon.classList.remove('fa-microphone-alt');
+                        micIcon.classList.add('fa-stop');
+                        status.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 正在聆听中...';
+                        status.classList.add('listening');
+                        status.classList.remove('error');
                         interimResult.textContent = '';
-                    }
-                };
-                
-                recognition.onerror = (event) => {
-                    status.innerHTML = `<i class="fas fa-exclamation-circle"></i> 识别错误: ${event.error}`;
+                        finalResult.textContent = '请开始说话...';
+                        addDebugMessage('语音识别已启动');
+                    };
+                    
+                    recognition.onend = () => {
+                        isListening = false;
+                        micButton.classList.remove('listening');
+                        waves.forEach(wave => wave.classList.remove('animate'));
+                        micIcon.classList.remove('fa-stop');
+                        micIcon.classList.add('fa-microphone-alt');
+                        status.innerHTML = '<i class="fas fa-info-circle"></i> 点击麦克风按钮开始语音识别';
+                        status.classList.remove('listening');
+                        addDebugMessage('语音识别已停止');
+                    };
+                    
+                    recognition.onresult = (event) => {
+                        let interimTranscript = '';
+                        let finalTranscript = '';
+                        
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            const transcript = event.results[i][0].transcript;
+                            if (event.results[i].isFinal) {
+                                finalTranscript += transcript;
+                                addDebugMessage(`最终识别结果: ${transcript}`);
+                            } else {
+                                interimTranscript += transcript;
+                                addDebugMessage(`临时识别结果: ${transcript}`);
+                            }
+                        }
+                        
+                        interimResult.textContent = interimTranscript;
+                        
+                        if (finalTranscript) {
+                            finalResult.textContent = finalTranscript;
+                            addToHistory(finalTranscript);
+                            interimResult.textContent = '';
+                        }
+                    };
+                    
+                    recognition.onerror = (event) => {
+                        let errorMessage = `识别错误: ${event.error}`;
+                        if (event.error === 'not-allowed') {
+                            errorMessage += ' (麦克风权限被拒绝)';
+                        } else if (event.error === 'service-not-allowed') {
+                            errorMessage += ' (浏览器未启用语音识别服务)';
+                        }
+                        
+                        status.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${errorMessage}`;
+                        status.classList.add('error');
+                        addDebugMessage(`错误: ${errorMessage}`);
+                        
+                        // 禁用麦克风按钮
+                        micButton.classList.add('disabled');
+                        micButton.disabled = true;
+                    };
+                    
+                    // 添加权限请求按钮
+                    const permissionButton = document.createElement('button');
+                    permissionButton.textContent = '手动请求麦克风权限';
+                    permissionButton.style.marginTop = '10px';
+                    permissionButton.style.padding = '10px 15px';
+                    permissionButton.style.borderRadius = '5px';
+                    permissionButton.style.border = 'none';
+                    permissionButton.style.background = '#4CAF50';
+                    permissionButton.style.color = 'white';
+                    permissionButton.style.cursor = 'pointer';
+                    
+                    permissionButton.addEventListener('click', async () => {
+                        addDebugMessage('正在手动请求麦克风权限...');
+                        try {
+                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                            addDebugMessage('麦克风权限已授予');
+                            stream.getTracks().forEach(track => track.stop());
+                            micButton.disabled = false;
+                            micButton.classList.remove('disabled');
+                            status.innerHTML = '<i class="fas fa-check-circle"></i> 麦克风权限已授予，请点击麦克风按钮开始';
+                            status.classList.remove('error');
+                        } catch (error) {
+                            addDebugMessage(`麦克风权限请求失败: ${error.message}`);
+                            status.innerHTML = `<i class="fas fa-exclamation-circle"></i> 麦克风权限请求失败: ${error.message}`;
+                            status.classList.add('error');
+                        }
+                    });
+                    
+                    const debugInfo = document.querySelector('.debug-info');
+                    debugInfo.parentNode.insertBefore(permissionButton, debugInfo);
+                    
+                } catch (error) {
+                    addDebugMessage(`初始化失败: ${error.message}`);
+                    status.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 初始化语音识别失败: ${error.message}`;
                     status.classList.add('error');
-                };
+                    micButton.disabled = true;
+                    micButton.classList.add('disabled');
+                }
                 
                 micButton.addEventListener('click', () => {
                     if (isListening) {
                         recognition.stop();
                     } else {
                         try {
+                            addDebugMessage('尝试启动语音识别...');
                             recognition.start();
                         } catch (error) {
+                            addDebugMessage(`启动失败: ${error.message}`);
                             status.innerHTML = `<i class="fas fa-exclamation-circle"></i> 错误: ${error.message}`;
                             status.classList.add('error');
+                            
+                            if (error.message.includes('permission') || error.name === 'NotAllowedError') {
+                                status.innerHTML += '<br>请检查浏览器麦克风权限设置';
+                            }
                         }
                     }
                 });
             } else {
+                addDebugMessage('浏览器不支持Web Speech API');
                 status.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 您的浏览器不支持Web Speech API';
                 status.classList.add('error');
                 micButton.disabled = true;
-                micButton.style.opacity = '0.6';
+                micButton.classList.add('disabled');
             }
             
             function addToHistory(text) {
@@ -466,6 +566,26 @@
                     historyList.removeChild(historyList.lastChild);
                 }
             }
+            
+            // 检查麦克风权限状态
+            async function checkMicrophonePermission() {
+                try {
+                    const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+                    addDebugMessage(`麦克风权限状态: ${permissionStatus.state}`);
+                    
+                    permissionStatus.onchange = () => {
+                        addDebugMessage(`麦克风权限状态变更: ${permissionStatus.state}`);
+                    };
+                    
+                    return permissionStatus.state;
+                } catch (error) {
+                    addDebugMessage(`无法检查麦克风权限: ${error.message}`);
+                    return 'unknown';
+                }
+            }
+            
+            // 初始化时检查权限
+            checkMicrophonePermission();
         });
     </script>
 </body>
