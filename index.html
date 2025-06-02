@@ -363,7 +363,15 @@
         let targetDogAction = null;
         let recognition = null;
         let isRecording = false; // Tracks if recording is currently active
-        
+        // Game state variables
+        let gameState = GAME_STATES.PRELOAD;
+        let currentScore = 0;
+        let currentLightColor = null;
+        let currentDogAction = null;
+        let targetDogAction = null;
+        let recognition = null;
+        let isRecording = false; // Tracks if recording is currently active
+        let listeningPhaseState = null; // <<<< 新增：记录识别开始时的游戏阶段状态
         // DOM element references
         const dom = {
             gameContainer: document.getElementById('game-container'),
@@ -512,22 +520,27 @@
                     recognition.stop(); 
                 }
             };
-
             recognition.onresult = function(event) {
                 const transcript = event.results[0][0].transcript.toLowerCase();
                 console.log('Speech recognized:', transcript);
                 
-                // Process result based on current game state
-                switch (gameState) {
+                // 使用捕获的监听阶段状态来处理结果
+                switch (listeningPhaseState) { // <<<< 修改：使用 listeningPhaseState
                     case GAME_STATES.LISTENING_LIGHT_COLOR:
                         processLightColor(transcript);
                         break;
                     case GAME_STATES.LISTENING_DOG_ACTION:
                         processDogAction(transcript);
                         break;
+                    default:
+                        // 如果捕获的状态不是预期的监听状态，说明发生了意外或时序问题
+                        console.warn("Speech recognized but no active listening phase detected. State:", listeningPhaseState, "Current Game State:", gameState);
+                        // 此时可以根据需要选择性地显示“Try Again”反馈或直接回到 IDLE
+                        // showFeedback(false); // 如果想对意外识别也给出反馈
+                        setGameState(GAME_STATES.IDLE); // 确保回到 IDLE 状态
                 }
+                // 识别结果处理后，listeningPhaseState 将在 onend 中被重置
             };
-            
             recognition.onerror = function(event) {
                 console.error('Speech recognition error:', event.error);
                 if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR || 
@@ -548,11 +561,14 @@
                 console.log('Speech recognition session ended.');
                 isRecording = false;
                 dom.recordButton.classList.remove('recording-animation');
-                // dom.recordButton.disabled = false; // Removed as button state is handled by click
+                
+                listeningPhaseState = null; // <<<< 修改：会话结束时重置捕获状态
                 
                 // If game state is still listening, transition back to idle after recognition
+                // (This check is now mostly for cases where onresult didn't get called, or other timeouts)
                 if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR || 
-                    gameState === GAME_STATES.LISTENING_DOG_ACTION) {
+                    gameState === GAME_STATES.LISTENING_DOG_ACTION ||
+                    gameState === GAME_STATES.FEEDBACK) { // 如果在反馈状态也确保能回到IDLE
                     setGameState(GAME_STATES.IDLE);
                 }
             };
@@ -616,12 +632,15 @@
             if (!recognition) return;
             
             try {
+                // 捕获当前的监听阶段状态，以便在 onresult 中使用
+                listeningPhaseState = gameState; // <<<< 修改：在识别开始前捕获状态
+                
                 recognition.start();
                 isRecording = true;
                 dom.recordButton.classList.add('recording-animation');
-                // dom.recordButton.disabled = true; // 移除此行，允许再次点击以停止录制
 
                 // Set state based on current game phase
+                // 这里只是更新游戏状态，实际处理逻辑在 onresult 中根据 listeningPhaseState 决定
                 if (!currentLightColor) { // Phase 1: Listening for light color
                     setGameState(GAME_STATES.LISTENING_LIGHT_COLOR);
                 } else { // Phase 2: Listening for dog action feedback
@@ -629,14 +648,12 @@
                 }
             } catch (error) {
                 console.error('Speech recognition start error:', error);
-                // If start() fails (e.g., already started), ensure state is reset
                 isRecording = false;
                 dom.recordButton.classList.remove('recording-animation');
-                // dom.recordButton.disabled = false; // Removed as button state is handled by click
+                listeningPhaseState = null; // <<<< 修改：错误时重置捕获状态
                 setGameState(GAME_STATES.IDLE);
             }
         }
-        
         // Process color recognition
         function processLightColor(transcript) {
             // Check if color keyword is included
