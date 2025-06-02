@@ -36,7 +36,7 @@
         margin: 0; /* Remove auto margin */
         overflow: hidden;
     }
-    
+
     /* 红绿灯模块 - 调整大小和定位 */
     #traffic-light-module {
         position: absolute;
@@ -55,10 +55,10 @@
     #traffic-light-module img {
         width: 100%; /* 图片宽度填充父容器 */
         height: auto; /* 图片高度自适应以保持宽高比 */
-        /* max-height: 40vh; 如果在极宽屏幕上图片过高，可以重新添加此行并调整值 */
+        max-height: 40vh; /* 如果在极宽屏幕上图片过高，可以重新添加此行并调整值 */
         border-radius: 0.5rem; 
     }
-    
+
     /* 导盲犬模块 */
     #guide-dog-module {
         position: absolute;
@@ -88,202 +88,118 @@
         object-fit: contain; /* Ensure video fits within container */
         border-radius: 0.5rem;
     }
-    /* 底部控制模块 - 作为相对定位的容器，并居中显示录制按钮 */
+
+    /* 底部控制容器 - 调整宽度和间距 */
     #bottom-controls {
-        /* 保持现有内联样式中的 position, bottom, width, box-sizing */
-        /* Tailwind CSS 类: flex justify-center items-center p-4 z-10 */
-        position: absolute; /* 确保它相对于父容器进行绝对定位 */
-        bottom: 0;
-        width: 100%;
-        box-sizing: border-box;
+        position: absolute;
+        bottom: 2%; /* 固定在视口底部 2% 的位置 */
+        left: 50%;
+        transform: translateX(-50%); /* 水平居中 */
         display: flex;
-        justify-content: center; /* <<<< 恢复：使录制按钮居中 */
-        align-items: center;
-        padding: 1rem; /* 根据 Tailwind 的 p-4 类，默认是 1rem */
-        z-index: 10;
-        position: relative; /* <<<< 关键：设置为相对定位，以便其子元素可以绝对定位 */
+        align-items: center; 
+        justify-content: center;
+        gap: 2vw; /* 元素间距，使用视口宽度单位 */
+        width: 90%; /* 容器宽度为视口宽度的90% */
+        max-width: 900px; /* 可选：限制最大宽度 */
     }
 
-        /* 底部控制模块 - 作为相对定位的容器 */
-        #bottom-controls {
-            /* 保持现有内联样式中的 position, bottom, width, box-sizing */
-            /* Tailwind CSS 类: flex justify-center items-center p-4 z-10 */
-            position: absolute; /* 确保它相对于父容器进行绝对定位 */
-            bottom: 0; /* 确保底部边缘固定在视口底部 */
-            width: 100%;
-            box-sizing: border-box;
-            display: flex;
-            justify-content: center; /* 使录制按钮居中 */
-            align-items: center; /* 垂直居中按钮内容 */
-            padding: 1rem; /* 根据 Tailwind 的 p-4 类，默认是 1rem */
-            z-index: 10;
-            position: relative; /* 关键：设置为相对定位，以便其子元素可以绝对定位 */
-        }
+    /* 录音按钮 - 样式应用于 #record-button */
+    /* 将原 #record-button-container 的尺寸和布局属性应用到此 */
+    #record-button { 
+        height: 20vh; /* 高度为屏幕高度的20% */
+        width: 20vh; /* 宽度也为20vh，使其保持正方形 */
+        flex-shrink: 0; /* 防止缩小 */
+        display: flex; 
+        justify-content: center;
+        align-items: center;
+        /* 确保按钮背景透明，无边框，以便只显示图标样式 */
+        background: transparent; 
+        border: none;
+        color: transparent; /* 如果按钮内有文本，将其透明化 */
+        padding: 0; /* 移除按钮默认内边距 */
+    }
+    #record-button img { /* 录制按钮内部的图片（麦克风图标）样式 */
+        height: 100%; /* 图片高度填充其父元素（录制按钮） */
+        width: auto; /* 宽度自适应，保持纵横比 */
+        border-radius: 50%; /* 使图片变为圆形 */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
+        transition: transform 0.2s ease-in-out;
+        object-fit: contain; /* 确保图片完整显示在容器内 */
+    }
+    #record-button:active img {
+        transform: scale(0.95); /* 点击时图片缩小效果 */
+    }
 
-        /* 录制按钮 - 调整大小，中点不变 */
-        #record-button {
-            height: 50vh; /* <<<< 修改：高度调整为 40vh */
-            width: clamp(150px, 50vw, 300px); /* <<<< 修改：宽度调整为 clamp(100px, 40vw, 180px) */
-            
-            background: transparent; /* 保持：透明背景 */
-            color: white;
-            border: none; 
-            border-radius: 8px; 
-            box-shadow: none; 
-            cursor: pointer;
-            font-weight: bold;
-            z-index: 5;
-            transition: background 0.3s ease;
-            
-            flex-grow: 0; /* <<<< 保持：不再允许它扩展，防止占用过多横向空间 */
-            /* 移除之前可能存在的 margin-left/right，因为现在是绝对定位的元素 */
-            
-            display: flex; 
-            align-items: center;
-            justify-content: center;
+    /* 重置按钮 - 调整宽度和字体大小 */
+    #reset-button {
+        height: 10vh; 
+        padding: 0.5rem 1rem; 
+        font-size: max(1.2rem, 2.5vw); /* 字体大小响应式调整 */
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+        z-index: 5;
+        transition: background 0.3s ease;
+        flex-shrink: 0; 
+        display: flex; 
+        align-items: center;
+        justify-content: center;
+        
+        flex-grow: 1; /* 在flex容器中填充可用空间 */
+        max-width: 35%; /* 允许其最大占据 35% 的空间 */
+    }
 
-            /* <<<< 新增：将按钮的垂直中点固定在底部控制栏的某个位置 */
-            /* 假设我们希望按钮的视觉中点距离 bottom-controls 底部边缘 1rem + 10vh (原始按钮中心位置) */
-            /* 那么按钮的 bottom 边缘应该在： (1rem + 10vh) - (当前按钮高度 / 2) */
-            bottom: calc(1rem + 10vh - (40vh / 2)); /* 1rem (bottom-controls padding) + 10vh (原始按钮中心点) - 20vh (新按钮一半高) */
-            position: absolute; /* 确保它相对于 #bottom-controls 进行绝对定位 */
-            left: 50%; /* 水平居中 */
-            transform: translateX(-50%); /* 微调水平居中 */
-        }
+    #reset-button:hover {
+        background: rgba(0, 0, 0, 0.7);
+    }
 
-        /* 重置按钮 - 自适应调整位置，固定在底部 */
-        #reset-button {
-            height: 10vh; 
-            padding: 0.5rem 1rem;
-            font-size: max(1.2rem, 2.5vw);
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            z-index: 5;
-            transition: background 0.3s ease;
-            flex-shrink: 0; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+    /* 计分显示 - 调整宽度和字体大小 */
+    #score-display { 
+        height: 10vh; 
+        font-size: max(1.5rem, 3vw); /* 字体大小响应式调整 */
+        font-weight: bold;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        border-radius: 0.5rem;
+        padding: 0.5rem 1rem; 
+        background-color: rgba(0, 0, 0, 0.3);
+        flex-shrink: 0; 
+        display: flex; 
+        align-items: center;
+        justify-content: center;
+        
+        flex-grow: 1; /* 在flex容器中填充可用空间 */
+        max-width: 35%; /* 允许其最大占据 35% 的空间 */
+    }
 
-            /* <<<< 修改：绝对定位，固定在 #bottom-controls 的左下角 */
-            position: absolute;
-            left: 1rem; /* 距离左边缘 1rem */
-            bottom: 1rem; /* <<<< 关键：固定在底部边缘 1rem */
-            /* 移除 top: 50% 和 transform: translateY(-50%) */
-        }
-
-        /* 计分区模块 - 自适应调整位置，固定在底部 */
-        #score-display {
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: 20px;
-            font-size: max(1.5rem, 3vw);
-            font-weight: bold;
-            z-index: 10;
-            min-width: 90px;
-            text-align: center;
-            box-sizing: border-box;
-            flex-shrink: 0; 
-
-            /* <<<< 修改：绝对定位，固定在 #bottom-controls 的右下角 */
-            position: absolute;
-            right: 1rem; /* 距离右边缘 1rem */
-            bottom: 1rem; /* <<<< 关键：固定在底部边缘 1rem */
-            /* 移除 top: 50% 和 transform: translateY(-50%) */
-        }
-        /* 预加载遮罩 */
-        #preloader {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            color: white;
-            border-radius: 0.5rem; 
-        }
-
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 4px solid #fff;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin-top: 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* 反馈模块 - 作为全屏半透明遮罩 */
-        #feedback-module {
-            position: absolute; 
-            top: 0; /* 覆盖整个屏幕 */
-            left: 0; /* 覆盖整个屏幕 */
-            width: 100%; /* 覆盖整个屏幕 */
-            height: 100%; /* 覆盖整个屏幕 */
-            
-            background-color: rgba(0, 0, 0, 0.7); /* 半透明黑色遮罩 */
-            
-            z-index: 10;
-            /* 初始状态为完全透明且不可见 */
-            opacity: 0; 
-            visibility: hidden; 
-            /* 添加渐变效果 */
-            transition: opacity 0.5s ease; 
-
-            /* 在遮罩内居中反馈图片 */
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center;
-            align-items: center;
-        }
-        #feedback-module img {
-            /* 调整图片在遮罩内的尺寸，使其大小合适并居中 */
-            max-width: 60%; /* 图片最大宽度为遮罩宽度的 60% */
-            max-height: 60%; /* 图片最大高度为遮罩高度的 60% */
-            height: auto; /* 保持宽高比 */
-            object-fit: contain; /* 确保图片完整显示不裁剪 */
-            border-radius: 1rem; /* 保持图片自身的圆角 */
-        }
-
-    /* 胜利屏幕 */
-    #win-screen-container {
+    /* 预加载遮罩 */
+    #preloader {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background-size: cover; 
-        background-position: center;
-        background-repeat: no-repeat; 
-        display: none;
-        z-index: 20;
-        border-radius: 0.5rem;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        color: white;
+        border-radius: 0.5rem; 
     }
 
-    /* 录音动画效果 */
-    .recording-animation {
-        animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
+    .loading-spinner {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 4px solid #fff;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-top: 20px;
     }
 </style>
 </head>
@@ -304,13 +220,11 @@
             </div>
         </div>
         
-        <div id="bottom-controls" class="flex justify-center items-center p-4 z-10" style="position: absolute; bottom: 0; width: 100%; box-sizing: border-box;">
-            <button id="record-button" class="flex-grow max-w-[35%] ml-4 mr-4 bg-gray-700 hover:bg-gray-600 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-all duration-300 transform scale-100 active:scale-95 text-white font-bold py-3 px-6 flex items-center justify-center">
-                <img id="mic-icon" src="assets/mic-icon.png" alt="Record" style="height: 100%; object-fit: contain;">
-            </button>
-            
+        <div id="bottom-controls" class="flex justify-center items-center p-4 z-10">
             <button id="reset-button" class="hidden">Restart</button>
-            
+            <button id="record-button" class="bg-gray-700 hover:bg-gray-600 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-all duration-300 transform scale-100 active:scale-95 text-white font-bold py-3 px-6">
+                <img id="mic-icon" src="assets/mic-icon.png" alt="Record" style="object-fit: contain;">
+            </button>
             <div id="score-display"></div>
         </div>
         <div id="feedback-module">
