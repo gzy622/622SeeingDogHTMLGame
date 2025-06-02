@@ -421,9 +421,10 @@
         
         // This function is called by the HTML button to trigger Android speech recognition
         function startSpeechRecognition() {
+            // 检查Android对象是否存在，并且其startSpeechRecognition方法是否可用
             if (typeof Android !== "undefined" && Android.startSpeechRecognition) {
-                Android.startSpeechRecognition();
-                
+                Android.startSpeechRecognition(); // 调用Android原生方法
+
                 isRecording = true;
                 dom.recordButton.classList.add('recording-animation');
 
@@ -437,7 +438,12 @@
                 dom.recordClickSound.play();
             } else {
                 console.warn("Android object or startSpeechRecognition method not found. Speech recognition will not work.");
-                showMessageBox("Speech recognition feature requires the Android app to function correctly. Please ensure you are running this in the compiled Android app.");
+                // 如果Android接口不可用，则显示一个原生消息框（如果已实现）
+                if (typeof Android !== "undefined" && Android.showMessageBox) {
+                    Android.showMessageBox("Speech recognition feature requires the Android app to function correctly. Please ensure you are running this in the compiled Android app.");
+                } else {
+                    alert("Speech recognition feature requires the Android app to function correctly. Please ensure you are running this in the compiled Android app.");
+                }
                 setGameState(GAME_STATES.IDLE);
             }
         }
@@ -445,7 +451,7 @@
         // This function will be called by the Android app after speech recognition is done
         function processSpeechResult(result) {
             console.log("Speech result from Android:", result);
-            
+
             isRecording = false;
             dom.recordButton.classList.remove('recording-animation');
 
@@ -465,6 +471,15 @@
             listeningPhaseState = null;
         }
 
+        // 新增或修改此函数，使其调用Android原生消息框
+        function showMessageBox(message) {
+            if (typeof Android !== "undefined" && Android.showMessageBox) {
+                Android.showMessageBox(message);
+            } else {
+                // 如果Android接口不可用，则回退到浏览器默认的alert
+                alert(message);
+            }
+        }
         // Setup only non-speech-related event listeners
         function setupEventListeners() {
             dom.resetButton.addEventListener('click', resetGame);
