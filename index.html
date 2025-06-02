@@ -1,887 +1,471 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seeing Dog HTML Game</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-<style>
-    html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-    }
-
-    body {
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-color: #1a202c;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-family: 'Inter', sans-serif;
-        color: white;
-    }
-
-    .game-container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        overflow: hidden;
-    }
-
-    #traffic-light-module {
-        position: absolute;
-        top: 2%;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 80vw;
-        height: auto;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    #traffic-light-module img {
-        width: 100%;
-        height: auto;
-        max-height: 40vh;
-        border-radius: 0.5rem;
-    }
-
-    #guide-dog-module {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        height: 40vh;
-        width: 40vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    .dog-video-container {
-        width: 100%;
-        height: 100%;
-        padding-bottom: 0;
-        position: relative;
-        border-radius: 0.5rem;
-        overflow: hidden;
-    }
-    .dog-video-container video {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        border-radius: 0.5rem;
-    }
-
-    #bottom-controls {
-        position: absolute;
-        bottom: 2%;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 2vw;
-        width: 90%;
-        max-width: 900px;
-    }
-
-    #record-button {
-        height: 20vh;
-        width: 20vh;
-        flex-shrink: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: transparent;
-        border: none;
-        color: transparent;
-        padding: 0;
-    }
-    #record-button img {
-        height: 100%;
-        width: auto;
-        border-radius: 50%;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s ease-in-out;
-        object-fit: contain;
-    }
-    #record-button:active img {
-        transform: scale(0.95);
-    }
-
-    #reset-button {
-        height: 10vh;
-        padding: 0.5rem 1rem;
-        font-size: max(1.2rem, 2.5vw);
-        background: rgba(0, 0, 0, 0.5);
-        color: white;
-        border: none;
-        border-radius: 20px;
-        cursor: pointer;
-        font-weight: bold;
-        z-index: 5;
-        transition: background 0.3s ease;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-grow: 1;
-        max-width: 35%;
-    }
-
-    #reset-button:hover {
-        background: rgba(0, 0, 0, 0.7);
-    }
-
-    #score-display {
-        height: 10vh;
-        font-size: max(3rem, 6vw, 6vh);
-        overflow: hidden;
-        line-height: 1;
-        font-weight: bold;
-        color: white;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-        border-radius: 0.5rem;
-        padding: 0.5rem 1rem;
-        background-color: rgba(0, 0, 0, 0.3);
-        flex-shrink: 0;
-        display: grid;
-        place-items: center;
-        flex-grow: 1;
-        max-width: 35%;
-    }
-
-    #preloader {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 100;
-        color: white;
-        border-radius: 0.5rem;
-    }
-
-    .loading-spinner {
-        border: 4px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        border-top: 4px solid #fff;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin-top: 20px;
-    }
-
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    #feedback-module {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.7);
-        z-index: 10;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.5s ease;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-    #feedback-module img {
-        max-width: 60%;
-        max-height: 60%;
-        height: auto;
-        object-fit: contain;
-        border-radius: 1rem;
-    }
-
-    #win-screen-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        display: none;
-        z-index: 20;
-        border-radius: 0.5rem;
-    }
-
-    .recording-animation {
-        animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-    }
-</style>
+    <title>Edge浏览器语音识别测试</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #ff8a00, #da1b60);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+        
+        .mic-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .mic-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mic-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .mic-button.listening {
+            background: linear-gradient(135deg, #00c9ff, #92fe9d);
+            box-shadow: 0 0 30px rgba(46, 229, 157, 0.5);
+        }
+        
+        .mic-icon {
+            font-size: 50px;
+            color: white;
+        }
+        
+        .waves {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            opacity: 0;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            animation: pulse 2s infinite;
+        }
+        
+        .waves.animate {
+            opacity: 1;
+        }
+        
+        .waves:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .waves:nth-child(2) {
+            animation-delay: 0.5s;
+        }
+        
+        .waves:nth-child(3) {
+            animation-delay: 1s;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+        
+        .result-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 200px;
+        }
+        
+        .result-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .result-title i {
+            margin-right: 10px;
+            color: #00c9ff;
+        }
+        
+        #interim-result {
+            min-height: 30px;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #ffd700;
+            font-style: italic;
+        }
+        
+        #final-result {
+            min-height: 60px;
+            font-size: 1.5rem;
+            line-height: 1.5;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .history-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .history-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .history-title i {
+            margin-right: 10px;
+            color: #ff8a00;
+        }
+        
+        #history-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #ff416c;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .status i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .status.listening {
+            background: rgba(0, 200, 100, 0.2);
+        }
+        
+        .status.error {
+            background: rgba(255, 50, 50, 0.2);
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 15px;
+            color: #00c9ff;
+            display: flex;
+            align-items: center;
+        }
+        
+        .instructions h3 i {
+            margin-right: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .compatibility {
+            background: rgba(255, 100, 100, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .compatibility i {
+            margin-right: 10px;
+            font-size: 1.5rem;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .mic-button {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .mic-icon {
+                font-size: 40px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div id="game-container" class="game-container">
-        <div id="preloader">
-            <h2 class="text-2xl font-bold mb-4">Loading Game Resources...</h2>
-            <div class="loading-spinner"></div>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-microphone-alt"></i> Edge浏览器语音识别测试</h1>
+            <p class="subtitle">测试安卓平板上的语音识别功能 - 基于Web Speech API</p>
+        </header>
+        
+        <div class="status" id="status">
+            <i class="fas fa-info-circle"></i> 点击下方麦克风按钮开始语音识别
         </div>
         
-        <div id="traffic-light-module">
-            <img id="traffic-light" src="" alt="Traffic Light">
-        </div>
-        
-        <div id="guide-dog-module">
-            <div class="dog-video-container">
-                <video id="dog-video" autoplay muted loop></video>
-            </div>
-        </div>
-        
-        <div id="bottom-controls" class="flex justify-center items-center p-4 z-10">
-            <button id="reset-button" class="hidden">Restart</button>
-            <button id="record-button" class="bg-gray-700 hover:bg-gray-600 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-all duration-300 transform scale-100 active:scale-95 text-white font-bold py-3 px-6">
-                <img id="mic-icon" src="./SDHG_MicrophoneIcon.png" alt="Record" style="object-fit: contain;">
+        <div class="mic-container">
+            <div class="waves"></div>
+            <div class="waves"></div>
+            <div class="waves"></div>
+            <button class="mic-button" id="mic-button">
+                <i class="fas fa-microphone-alt mic-icon"></i>
             </button>
-            <div id="score-display">0/5</div>
         </div>
         
-        <div id="feedback-module">
-            <img id="feedback-image" src="" alt="Feedback">
+        <div class="result-container">
+            <h2 class="result-title"><i class="fas fa-comment-dots"></i> 识别结果</h2>
+            <div id="interim-result"></div>
+            <div id="final-result">识别结果将显示在这里...</div>
         </div>
         
-        <div id="win-screen-container"></div>
+        <div class="history-container">
+            <h2 class="history-title"><i class="fas fa-history"></i> 识别历史</h2>
+            <div id="history-list"></div>
+        </div>
+        
+        <div class="instructions">
+            <h3><i class="fas fa-lightbulb"></i> 使用说明</h3>
+            <ul>
+                <li>点击麦克风按钮开始语音识别（需要授予麦克风权限）</li>
+                <li>说话时，系统会实时显示临时识别结果（黄色文字）</li>
+                <li>停止说话后，系统会显示最终识别结果（白色文字）</li>
+                <li>所有识别结果会自动保存到识别历史区域</li>
+                <li>再次点击麦克风按钮可停止识别</li>
+            </ul>
+        </div>
+        
+        <div class="compatibility">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>注意：此功能需要浏览器支持Web Speech API。安卓平板上的Edge浏览器通常支持此功能，但具体支持情况可能因设备而异。</div>
+        </div>
     </div>
     
-    <audio id="record-click-sound" src=""></audio>
-    <audio id="light-sound" src=""></audio>
-    <audio id="try-again-sound" src=""></audio>
-    <audio id="yes-sound" src=""></audio>
-    <audio id="win-sound" src=""></audio>
-    
+    <footer>
+        <p>Web Speech API 测试页面 | 兼容性测试 | 安卓平板 & Edge浏览器</p>
+    </footer>
+
     <script>
-        // Game state constants
-        const GAME_STATES = {
-            PRELOAD: 'preload',
-            IDLE: 'idle',
-            LISTENING_LIGHT_COLOR: 'listening_light_color',
-            LISTENING_DOG_ACTION: 'listening_dog_action',
-            FEEDBACK: 'feedback',
-            WIN: 'win'
-        };
-        
-        // Game configuration
-        const GAME_CONFIG = {
-            maxScore: 5,
-            lightColors: ['red', 'yellow', 'green'],
-            dogActions: ['stop', 'wait', 'go'],
-            colorKeywords: ['red', 'yellow', 'green'],
-            actionKeywords: ['stop', 'wait', 'go'],
-            feedbackKeywords: ['good job']
-        };
-        
-        // Resource URLs
-        const RESOURCES = {
-            images: {
-                background: './SDHG_Background10-16.png',
-                winBackground: './SDHG_Background_Win.png',
-                micIcon: './SDHG_MicrophoneIcon.png',
-                trafficLightGray: './SDHG_TrafficLight_gray2.png',
-                trafficLightRed: './SDHG_TrafficLight_red2.png',
-                trafficLightYellow: './SDHG_TrafficLight_yellow2.png',
-                trafficLightGreen: './SDHG_TrafficLight_green2.png',
-                tryAgain: './SDHG_TryAgain_2.png',
-                yes: './SDHG_YES.png'
-            },
-            videos: {
-                dogAttention: './SDHG_dog_attention_mov.webm',
-                dogGo: './SDHG_dog_go_2.webm',
-                dogStandby: './SDHG_dog_standby_2.webm',
-                dogStop: './SDHG_dog_stop_2.webm',
-                dogWait: './SDHG_dog_wait.webm'
-            },
-            audio: {
-                recordClick: './SDHG_sound_record_click.mp3',
-                light: './SDHG_sound_light.mp3',
-                tryAgain: './SDHG_sound_TryAgain.mp3',
-                yes: './SDHG_sound_yes.mp3',
-                win: './SDHG_sound_win.mp3'
-            }
-        };
-        
-        // Game state variables
-        let gameState = GAME_STATES.PRELOAD;
-        let currentScore = 0;
-        let currentLightColor = null;
-        let currentDogAction = null;
-        let targetDogAction = null;
-        let recognition = null;
-        let isRecording = false;
-        let listeningPhaseState = null;
-
-        // DOM element references
-        const dom = {
-            gameContainer: document.getElementById('game-container'),
-            preloader: document.getElementById('preloader'),
-            resetButton: document.getElementById('reset-button'),
-            scoreDisplay: document.getElementById('score-display'),
-            trafficLight: document.getElementById('traffic-light'),
-            dogVideo: document.getElementById('dog-video'),
-            recordButton: document.getElementById('record-button'),
-            micIcon: document.getElementById('mic-icon'),
-            feedbackModule: document.getElementById('feedback-module'),
-            feedbackImage: document.getElementById('feedback-image'),
-            winScreen: document.getElementById('win-screen-container'),
-            guideDogModule: document.getElementById('guide-dog-module'),
-            bottomControls: document.getElementById('bottom-controls'),
-            recordClickSound: document.getElementById('record-click-sound'),
-            lightSound: document.getElementById('light-sound'),
-            tryAgainSound: document.getElementById('try-again-sound'),
-            yesSound: document.getElementById('yes-sound'),
-            winSound: document.getElementById('win-sound')
-        };
-        
-        // Initialize the game
-        function initGame() {
-            document.body.style.backgroundImage = `url('${RESOURCES.images.background}')`;
-            resetGame();
-            requestMicrophonePermission();
-            initSpeechRecognition();
-            setupEventListeners();
-            dom.preloader.style.display = 'none';
-            dom.resetButton.classList.remove('hidden');
-            setGameState(GAME_STATES.IDLE);
-        }
-        
-        // Reset the game state
-        function resetGame() {
-            console.log("Resetting game...");
-            setGameState(GAME_STATES.IDLE);
-            currentScore = 0;
-            currentLightColor = null;
-            currentDogAction = null;
-            targetDogAction = null;
-            updateScoreDisplay();
-
-            dom.winScreen.style.display = 'none';
-            dom.preloader.style.display = 'none';
-
-            dom.trafficLight.style.display = 'block';
-            dom.guideDogModule.style.display = 'flex';
-            dom.bottomControls.style.display = 'flex';
-            dom.scoreDisplay.style.display = 'grid'; // Ensure it's grid as per CSS
-            dom.recordButton.style.display = 'flex';
-
-            dom.feedbackModule.style.opacity = '0';
-            dom.feedbackModule.style.visibility = 'hidden';
-
-            dom.trafficLight.src = RESOURCES.images.trafficLightGray;
-            dom.dogVideo.src = RESOURCES.videos.dogStandby;
-            dom.dogVideo.loop = true;
-            dom.dogVideo.play().catch(e => console.warn("Dog standby video play failed on reset:", e.message));
-        }
-
-        // Function to handle entering the win screen
-        function enterWinScreen() {
-            setGameState(GAME_STATES.WIN);
-            dom.winSound.currentTime = 0;
-            dom.winSound.play();
+        document.addEventListener('DOMContentLoaded', () => {
+            const micButton = document.getElementById('mic-button');
+            const micIcon = micButton.querySelector('.mic-icon');
+            const waves = document.querySelectorAll('.waves');
+            const status = document.getElementById('status');
+            const interimResult = document.getElementById('interim-result');
+            const finalResult = document.getElementById('final-result');
+            const historyList = document.getElementById('history-list');
             
-            dom.winScreen.style.backgroundImage = `url('${RESOURCES.images.winBackground}')`;
-            dom.winScreen.style.display = 'flex';
-            
-            dom.trafficLight.style.display = 'none';
-            dom.guideDogModule.style.display = 'none';
-            dom.bottomControls.style.display = 'none';
-            
-            dom.feedbackModule.style.opacity = '0';
-            dom.feedbackModule.style.visibility = 'hidden';
-        }
-
-        // Update score display
-        function updateScoreDisplay() {
-            dom.scoreDisplay.textContent = `${currentScore}/${GAME_CONFIG.maxScore}`;
-        }
-        
-        // Request microphone permission
-        function requestMicrophonePermission() {
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ audio: true })
-                    .then(function(stream) {
-                        console.log('Microphone access granted');
-                        stream.getTracks().forEach(track => track.stop());
-                    })
-                    .catch(function(err) {
-                        console.error('Microphone access error:', err);
-                        showMessageBox('Microphone access is required for this game. Please grant permission and refresh the page.');
-                    });
-            } else {
-                console.error('getUserMedia not supported');
-                showMessageBox('Your browser does not support speech recognition. Please try a different browser.');
-            }
-        }
-        
-        // Custom message box function
-        function showMessageBox(message) {
-            const messageBox = document.createElement('div');
-            messageBox.style.position = 'fixed';
-            messageBox.style.top = '50%';
-            messageBox.style.left = '50%';
-            messageBox.style.transform = 'translate(-50%, -50%)';
-            messageBox.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-            messageBox.style.color = 'white';
-            messageBox.style.padding = '20px';
-            messageBox.style.borderRadius = '10px';
-            messageBox.style.zIndex = '1000';
-            messageBox.style.textAlign = 'center';
-            messageBox.style.maxWidth = '80%';
-            messageBox.innerHTML = `
-                <p class="mb-4">${message}</p>
-                <button id="message-box-ok" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">OK</button>
-            `;
-            document.body.appendChild(messageBox);
-
-            document.getElementById('message-box-ok').addEventListener('click', () => {
-                document.body.removeChild(messageBox);
-            });
-        }
-
-        // Initialize speech recognition
-        function initSpeechRecognition() {
+            // 检查浏览器是否支持Web Speech API
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition;
+            let isListening = false;
             
-            if (!SpeechRecognition) {
-                console.error('Speech Recognition not supported');
-                showMessageBox('Your browser does not support speech recognition. Please try Chrome on Android.');
-                return;
-            }
-            
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
-            
-            recognition.onspeechend = function() {
-                console.log('Speech ended (silence detected). Auto-stopping recording. Updating UI immediately.');
-                if (isRecording) {
-                    recognition.stop();
-                    dom.recordButton.classList.remove('recording-animation');
-                    isRecording = false;
-                }
-            };
-
-            recognition.onresult = function(event) {
-                const result = event.results[0];
-                const transcript = result[0].transcript.toLowerCase();
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'zh-CN'; // 设置中文识别
                 
-                console.log('Speech recognized (interim or final):', transcript, 'Is Final:', result.isFinal);
-
-                if (!result.isFinal) {
-                    const allKeywords = [...GAME_CONFIG.colorKeywords, ...GAME_CONFIG.actionKeywords, ...GAME_CONFIG.feedbackKeywords];
+                recognition.onstart = () => {
+                    isListening = true;
+                    micButton.classList.add('listening');
+                    waves.forEach(wave => wave.classList.add('animate'));
+                    micIcon.classList.remove('fa-microphone-alt');
+                    micIcon.classList.add('fa-stop');
+                    status.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 正在聆听中...';
+                    status.classList.add('listening');
+                    status.classList.remove('error');
+                    interimResult.textContent = '';
+                    finalResult.textContent = '请开始说话...';
+                };
+                
+                recognition.onend = () => {
+                    isListening = false;
+                    micButton.classList.remove('listening');
+                    waves.forEach(wave => wave.classList.remove('animate'));
+                    micIcon.classList.remove('fa-stop');
+                    micIcon.classList.add('fa-microphone-alt');
+                    status.innerHTML = '<i class="fas fa-info-circle"></i> 点击麦克风按钮开始语音识别';
+                    status.classList.remove('listening');
+                };
+                
+                recognition.onresult = (event) => {
+                    let interimTranscript = '';
+                    let finalTranscript = '';
                     
-                    const keywordDetected = allKeywords.some(keyword => transcript.includes(keyword));
-
-                    if (keywordDetected && isRecording) {
-                        console.log(`Keyword detected ("${keywordDetected}") in interim result. Stopping recording immediately.`);
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript;
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+                    
+                    interimResult.textContent = interimTranscript;
+                    
+                    if (finalTranscript) {
+                        finalResult.textContent = finalTranscript;
+                        addToHistory(finalTranscript);
+                        interimResult.textContent = '';
+                    }
+                };
+                
+                recognition.onerror = (event) => {
+                    status.innerHTML = `<i class="fas fa-exclamation-circle"></i> 识别错误: ${event.error}`;
+                    status.classList.add('error');
+                };
+                
+                micButton.addEventListener('click', () => {
+                    if (isListening) {
                         recognition.stop();
-                        dom.recordButton.classList.remove('recording-animation');
-                        isRecording = false;
-                        return;
+                    } else {
+                        try {
+                            recognition.start();
+                        } catch (error) {
+                            status.innerHTML = `<i class="fas fa-exclamation-circle"></i> 错误: ${error.message}`;
+                            status.classList.add('error');
+                        }
                     }
-                } else {
-                    console.log('Final speech recognized:', transcript);
-                    switch (listeningPhaseState) {
-                        case GAME_STATES.LISTENING_LIGHT_COLOR:
-                            processLightColor(transcript);
-                            break;
-                        case GAME_STATES.LISTENING_DOG_ACTION:
-                            processDogAction(transcript);
-                            break;
-                        default:
-                            console.warn("Speech recognized but no active listening phase detected. State:", listeningPhaseState, "Current Game State:", gameState);
-                            setGameState(GAME_STATES.IDLE);
-                    }
-                }
-            };
-            
-            recognition.onerror = function(event) {
-                console.error('Speech recognition error:', event.error);
-                if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR ||
-                    gameState === GAME_STATES.LISTENING_DOG_ACTION) {
-                    showFeedback(false);
-                }
-                isRecording = false;
-                dom.recordButton.classList.remove('recording-animation');
-                listeningPhaseState = null;
-                setGameState(GAME_STATES.IDLE);
-            };
-            
-            recognition.onend = function() {
-                console.log('Speech recognition session ended.');
-                isRecording = false;
-                dom.recordButton.classList.remove('recording-animation');
-                
-                listeningPhaseState = null;
-                
-                if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR ||
-                    gameState === GAME_STATES.LISTENING_DOG_ACTION ||
-                    gameState === GAME_STATES.FEEDBACK) {
-                    setGameState(GAME_STATES.IDLE);
-                }
-            };
-        }
-        
-        // Set up event listeners
-        function setupEventListeners() {
-            dom.recordButton.addEventListener('click', function() {
-                dom.recordClickSound.currentTime = 0;
-                dom.recordClickSound.play();
-
-                if (isRecording) {
-                    console.log("Manual stop recording. Stopping animation immediately.");
-                    recognition.stop();
-                    dom.recordButton.classList.remove('recording-animation');
-                    isRecording = false;
-                } else if (gameState === GAME_STATES.IDLE) {
-                    console.log("Start recording.");
-                    startRecording();
-                }
-            });
-            
-            dom.resetButton.addEventListener('click', resetGame);
-            dom.winScreen.addEventListener('click', resetGame);
-            
-            dom.dogVideo.addEventListener('ended', function() {
-                if (gameState === GAME_STATES.LISTENING_DOG_ACTION) {
-                    dom.dogVideo.src = RESOURCES.videos.dogStandby;
-                    dom.dogVideo.loop = true;
-                    dom.dogVideo.play();
-                }
-            });
-
-            window.addEventListener('resize', () => {});
-        }
-        
-        // Start recording
-        function startRecording() {
-            if (!recognition) return;
-            
-            try {
-                let targetListeningState;
-                if (!currentLightColor) {
-                    targetListeningState = GAME_STATES.LISTENING_LIGHT_COLOR;
-                } else {
-                    targetListeningState = GAME_STATES.LISTENING_DOG_ACTION;
-                }
-
-                setGameState(targetListeningState);
-                listeningPhaseState = targetListeningState;
-                
-                recognition.start();
-                isRecording = true;
-                dom.recordButton.classList.add('recording-animation');
-                
-            } catch (error) {
-                console.error('Speech recognition start error:', error);
-                isRecording = false;
-                dom.recordButton.classList.remove('recording-animation');
-                listeningPhaseState = null;
-                setGameState(GAME_STATES.IDLE);
-            }
-        }
-        
-        // Process color recognition
-        function processLightColor(transcript) {
-            const detectedColor = GAME_CONFIG.colorKeywords.find(color => 
-                transcript.includes(color)
-            );
-            
-            if (detectedColor) {
-                currentLightColor = detectedColor;
-                dom.lightSound.currentTime = 0;
-                dom.lightSound.play();
-                
-                switch (detectedColor) {
-                    case 'red':
-                        dom.trafficLight.src = RESOURCES.images.trafficLightRed;
-                        targetDogAction = 'stop';
-                        break;
-                    case 'yellow':
-                        dom.trafficLight.src = RESOURCES.images.trafficLightYellow;
-                        targetDogAction = 'wait';
-                        break;
-                    case 'green':
-                        dom.trafficLight.src = RESOURCES.images.trafficLightGreen;
-                        targetDogAction = 'go';
-                        break;
-                }
-                
-                dom.dogVideo.src = RESOURCES.videos.dogAttention;
-                dom.dogVideo.loop = false;
-                dom.dogVideo.play();
-                
-                dom.dogVideo.onended = function() {
-                    const randomAction = GAME_CONFIG.dogActions[Math.floor(Math.random() * GAME_CONFIG.dogActions.length)];
-                    currentDogAction = randomAction;
-                    
-                    switch (randomAction) {
-                        case 'stop':
-                            dom.dogVideo.src = RESOURCES.videos.dogStop;
-                            break;
-                        case 'wait':
-                            dom.dogVideo.src = RESOURCES.videos.dogWait;
-                            break;
-                        case 'go':
-                            dom.dogVideo.src = RESOURCES.videos.dogGo;
-                            break;
-                    }
-                    
-                    dom.dogVideo.loop = true;
-                    dom.dogVideo.play();
-                    
-                    setGameState(GAME_STATES.IDLE);
-                };
+                });
             } else {
-                showFeedback(false);
-            }
-        }
-        
-        // Process guide dog action feedback
-        function processDogAction(transcript) {
-            const isGoodJobPhrase = transcript.includes('good job');
-            const wordsInTranscript = transcript.split(/[^a-z0-9]+/).filter(word => word.length > 0); 
-            let actionWordSpoken = null;
-            for (const word of wordsInTranscript) {
-                if (GAME_CONFIG.actionKeywords.includes(word)) {
-                    actionWordSpoken = word;
-                    break;
-                }
-            }
-
-            console.log('--- Processing Dog Action ---');
-            console.log('Raw Transcript:', transcript);
-            console.log('Words in transcript (sanitized):', wordsInTranscript);
-            console.log('Current Light Color (set by game):', currentLightColor);
-            console.log('Target Dog Action (expected from light):', targetDogAction);
-            console.log('Actual Dog Action (video played by game):', currentDogAction);
-            console.log('Is "good job" phrase detected:', isGoodJobPhrase);
-            console.log('Explicit action word spoken:', actionWordSpoken);
-
-            let isCorrect = false;
-
-            if (currentDogAction === targetDogAction) {
-                if (isGoodJobPhrase && actionWordSpoken === null) {
-                    isCorrect = true;
-                    console.log('Condition met: Dog action matches, AND ONLY "good job" detected.');
-                } else {
-                    isCorrect = false;
-                    console.log('Conditions for YES not met (Dog action matches, but feedback not ONLY "good job").');
-                }
-            } else {
-                if (actionWordSpoken === targetDogAction && !isGoodJobPhrase) {
-                    isCorrect = true;
-                    console.log('Condition met: Dog action MISMATCH, BUT ONLY student correctly identified target action.');
-                } else {
-                    isCorrect = false;
-                    console.log('Conditions for YES not met (Dog action MISMATCH, and feedback not ONLY target action).');
-                }
+                status.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 您的浏览器不支持Web Speech API';
+                status.classList.add('error');
+                micButton.disabled = true;
+                micButton.style.opacity = '0.6';
             }
             
-            console.log('Final isCorrect decision:', isCorrect);
-
-            if (isCorrect) {
-                currentScore++;
-                updateScoreDisplay();
-                dom.yesSound.currentTime = 0;
-                dom.yesSound.play();
-                dom.feedbackImage.src = RESOURCES.images.yes;
-                dom.feedbackModule.style.visibility = 'visible';
-                dom.feedbackModule.style.opacity = '1';
+            function addToHistory(text) {
+                if (!text.trim()) return;
                 
-                if (currentScore >= GAME_CONFIG.maxScore) {
-                    setTimeout(enterWinScreen, 2000);
-                } else {
-                    setTimeout(() => {
-                        dom.feedbackModule.style.opacity = '0';
-                        setTimeout(() => {
-                            dom.feedbackModule.style.visibility = 'hidden';
-                        }, 500);
-                        
-                        currentLightColor = null;
-                        currentDogAction = null;
-                        targetDogAction = null;
-                        dom.trafficLight.src = RESOURCES.images.trafficLightGray;
-                        dom.dogVideo.src = RESOURCES.videos.dogStandby;
-                        dom.dogVideo.loop = true;
-                        dom.dogVideo.play();
-                        setGameState(GAME_STATES.IDLE);
-                    }, 2000);
-                }
-            } else {
-                showFeedback(false);
-            }
-        }
-        
-        // Show feedback (true for YES, false for TRY AGAIN)
-        function showFeedback(isPositive) {
-            if (!isPositive) {
-                dom.feedbackImage.src = RESOURCES.images.tryAgain;
-                dom.tryAgainSound.currentTime = 0;
-                dom.tryAgainSound.play();
-            }
-            
-            dom.feedbackModule.style.visibility = 'visible';
-            dom.feedbackModule.style.opacity = '1';
-            
-            setTimeout(() => {
-                dom.feedbackModule.style.opacity = '0';
-                setTimeout(() => {
-                    dom.feedbackModule.style.visibility = 'hidden';
-                }, 500);
-
-                setGameState(GAME_STATES.IDLE);
-
-                if (currentDogAction && currentLightColor) {
-                    switch (currentDogAction) {
-                        case 'stop':
-                            dom.dogVideo.src = RESOURCES.videos.dogStop;
-                            break;
-                        case 'wait':
-                            dom.dogVideo.src = RESOURCES.videos.dogWait;
-                            break;
-                        case 'go':
-                            dom.dogVideo.src = RESOURCES.videos.dogGo;
-                            break;
-                    }
-                    dom.dogVideo.loop = true;
-                    dom.dogVideo.play();
-                } else {
-                    dom.dogVideo.src = RESOURCES.videos.dogStandby;
-                    dom.dogVideo.loop = true;
-                    dom.dogVideo.play();
-                }
-            }, 2000);
-        }
-        
-        // Set game state
-        function setGameState(newState) {
-            gameState = newState;
-            console.log('Game state changed to:', newState);
-        }
-        
-        // Preload all resources
-        function preloadResources() {
-            const imageUrls = Object.values(RESOURCES.images);
-            const uniqueVideoUrlsToPreload = new Set(Object.values(RESOURCES.videos));
-            const uniqueAudioUrlsToPreload = new Set(Object.values(RESOURCES.audio));
-
-            const allResourcesToLoad = [
-                ...imageUrls,
-                ...Array.from(uniqueVideoUrlsToPreload),
-                ...Array.from(uniqueAudioUrlsToPreload)
-            ];
-
-            let loadedCount = 0;
-            
-            function updateProgress() {
-                loadedCount++;
-                const progress = Math.round((loadedCount / allResourcesToLoad.length) * 100);
-                document.querySelector('#preloader h2').textContent = `Loading Game Resources... ${progress}%`;
+                const historyItem = document.createElement('div');
+                historyItem.classList.add('history-item');
                 
-                if (loadedCount === allResourcesToLoad.length) {
-                    console.log("All resources loaded. Initializing game.");
-                    initGame();
+                const date = new Date();
+                const timeString = date.toLocaleTimeString();
+                
+                historyItem.innerHTML = `
+                    <div style="font-size: 0.9rem; color: #aaa; margin-bottom: 5px;">
+                        <i class="far fa-clock"></i> ${timeString}
+                    </div>
+                    <div>${text}</div>
+                `;
+                
+                historyList.insertBefore(historyItem, historyList.firstChild);
+                
+                // 限制历史记录数量
+                if (historyList.children.length > 10) {
+                    historyList.removeChild(historyList.lastChild);
                 }
             }
-            
-            imageUrls.forEach(url => {
-                const img = new Image();
-                img.src = url;
-                img.onload = updateProgress;
-                img.onerror = updateProgress;
-            });
-            
-            uniqueVideoUrlsToPreload.forEach(url => {
-                const video = document.createElement('video');
-                video.src = url;
-                video.muted = true;
-                video.volume = 0;
-                video.preload = 'auto';
-
-                let loaded = false;
-                const handleLoaded = () => {
-                    if (!loaded) {
-                        loaded = true;
-                        updateProgress();
-                    }
-                };
-
-                video.addEventListener('canplaythrough', handleLoaded);
-                video.addEventListener('loadeddata', handleLoaded);
-                video.addEventListener('error', handleLoaded);
-
-                video.load();
-                video.play().catch(e => console.warn(`Video preload play failed for ${url}: ${e.message}`));
-            });
-            
-            uniqueAudioUrlsToPreload.forEach(url => {
-                const audio = new Audio();
-                audio.src = url;
-                audio.muted = true;
-                audio.volume = 0;
-                audio.preload = 'auto';
-
-                let loaded = false;
-                const handleLoaded = () => {
-                    if (!loaded) {
-                        loaded = true;
-                        updateProgress();
-                    }
-                };
-
-                audio.addEventListener('canplaythrough', handleLoaded);
-                audio.addEventListener('loadeddata', handleLoaded);
-                audio.addEventListener('error', handleLoaded);
-
-                audio.load();
-                audio.play().catch(e => console.warn(`Audio preload play failed for ${url}: ${e.message}`));
-            });
-        }
-        
-        // Assign resources
-        function assignResources() {
-            dom.trafficLight.src = RESOURCES.images.trafficLightGray;
-            dom.micIcon.src = RESOURCES.images.micIcon;
-            dom.dogVideo.src = RESOURCES.videos.dogStandby;
-            dom.recordClickSound.src = RESOURCES.audio.recordClick;
-            dom.lightSound.src = RESOURCES.audio.light;
-            dom.tryAgainSound.src = RESOURCES.audio.tryAgain;
-            dom.yesSound.src = RESOURCES.audio.yes;
-            dom.winSound.src = RESOURCES.audio.win;
-        }
-        
-        window.addEventListener('DOMContentLoaded', function() {
-            assignResources();
-            preloadResources();
         });
     </script>
 </body>
