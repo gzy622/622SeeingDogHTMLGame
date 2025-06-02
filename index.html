@@ -104,25 +104,27 @@
         position: relative; /* <<<< 关键：设置为相对定位，以便其子元素可以绝对定位 */
     }
 
-    /* 录制按钮 - 移除边框并放大高度 */
+    /* 录制按钮 - 移除遮罩并调整大小 */
     #record-button {
-        height: 20vh; /* <<<< 修改：高度变为原来的两倍 */
+        height: 20vh; 
         padding: 0.5rem 1rem; 
         font-size: max(1.2rem, 2.5vw); 
-        background: rgba(0, 0, 0, 0.5);
+        background: transparent; /* <<<< 修改：设置为透明背景，移除半透明黑色遮罩 */
         color: white;
-        border: none; /* <<<< 保持：确保没有边框 */
-        border-radius: 8px; /* 保持：轻微的圆角，使其不是尖锐的矩形 */
-        box-shadow: none; /* 保持：移除阴影，确保没有额外的视觉边框感 */
+        border: none; 
+        border-radius: 8px; 
+        box-shadow: none; 
         cursor: pointer;
         font-weight: bold;
         z-index: 5;
         transition: background 0.3s ease;
         
-        flex-grow: 1; 
-        max-width: 35%; 
-        margin-left: 1rem; 
-        margin-right: 1rem; 
+        flex-grow: 0; /* <<<< 修改：不再允许它扩展，防止占用过多横向空间 */
+        /* max-width: 35%; <<<< 移除，不再需要 */
+        /* margin-left: 1rem; <<<< 移除，不再需要 */
+        /* margin-right: 1rem; <<<< 移除，不再需要 */
+        
+        width: clamp(100px, 20vw, 180px); /* <<<< 新增：设置一个更小的响应式宽度，限制其横向大小 */
 
         display: flex; 
         align-items: center;
