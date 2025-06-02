@@ -6,75 +6,67 @@
     <title>Seeing Dog HTML Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
 <style>
-    /* Ensure html and body take full viewport height and width */
     html, body {
         height: 100%;
         margin: 0;
         padding: 0;
-        overflow: hidden; /* Prevent scrolling if content overflows */
+        overflow: hidden;
     }
 
-    /* Apply background to the body */
     body {
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        background-color: #1a202c; /* Fallback background color */
+        background-color: #1a202c;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        font-family: 'Inter', sans-serif; /* Use Inter font */
-        color: white; /* Default text color */
+        font-family: 'Inter', sans-serif;
+        color: white;
     }
 
-    /* Game container now fills the available space */
     .game-container {
         position: relative;
         width: 100%;
-        height: 100%; /* Take full height of the body */
-        margin: 0; /* Remove auto margin */
+        height: 100%;
+        margin: 0;
         overflow: hidden;
     }
 
-    /* 红绿灯模块 - 调整大小和定位 */
     #traffic-light-module {
         position: absolute;
-        top: 2%; 
+        top: 2%;
         left: 50%;
         transform: translateX(-50%);
-        
-        /* 让红绿灯宽度占据视口宽度的80%，从而在两边留下10%的空隙 */
-        width: 80vw; /* 调整此值以控制红绿灯的宽度和左右边距 */
-        height: auto; /* 高度根据内容自动调整 */
-        
-        display: flex; /* Use flex to center image inside */
+        width: 80vw;
+        height: auto;
+        display: flex;
         justify-content: center;
         align-items: center;
     }
     #traffic-light-module img {
-        width: 100%; /* 图片宽度填充父容器 */
-        height: auto; /* 图片高度自适应以保持宽高比 */
-        max-height: 40vh; /* 如果在极宽屏幕上图片过高，可以重新添加此行并调整值 */
-        border-radius: 0.5rem; 
+        width: 100%;
+        height: auto;
+        max-height: 40vh;
+        border-radius: 0.5rem;
     }
 
-    /* 导盲犬模块 */
     #guide-dog-module {
         position: absolute;
-        top: 50%; /* 屏幕中央 */
+        top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        height: 40vh; /* 高度为屏幕高度的40% */
-        width: 40vh; /* 假设视频是正方形，宽度也为40vh */
-        display: flex; /* Use flex to center video inside */
+        height: 40vh;
+        width: 40vh;
+        display: flex;
         justify-content: center;
         align-items: center;
     }
     .dog-video-container {
-        width: 100%; /* Fill parent module's width */
-        height: 100%; /* Fill parent module's height */
-        padding-bottom: 0; /* No padding-bottom trick needed if height is set */
+        width: 100%;
+        height: 100%;
+        padding-bottom: 0;
         position: relative;
         border-radius: 0.5rem;
         overflow: hidden;
@@ -85,56 +77,51 @@
         left: 0;
         width: 100%;
         height: 100%;
-        object-fit: contain; /* Ensure video fits within container */
+        object-fit: contain;
         border-radius: 0.5rem;
     }
 
-    /* 底部控制容器 - 调整宽度和间距 */
     #bottom-controls {
         position: absolute;
-        bottom: 2%; /* 固定在视口底部 2% 的位置 */
+        bottom: 2%;
         left: 50%;
-        transform: translateX(-50%); /* 水平居中 */
+        transform: translateX(-50%);
         display: flex;
-        align-items: center; 
+        align-items: center;
         justify-content: center;
-        gap: 2vw; /* 元素间距，使用视口宽度单位 */
-        width: 90%; /* 容器宽度为视口宽度的90% */
-        max-width: 900px; /* 可选：限制最大宽度 */
+        gap: 2vw;
+        width: 90%;
+        max-width: 900px;
     }
 
-    /* 录音按钮 - 样式应用于 #record-button */
-    /* 将原 #record-button-container 的尺寸和布局属性应用到此 */
-    #record-button { 
-        height: 20vh; /* 高度为屏幕高度的20% */
-        width: 20vh; /* 宽度也为20vh，使其保持正方形 */
-        flex-shrink: 0; /* 防止缩小 */
-        display: flex; 
+    #record-button {
+        height: 20vh;
+        width: 20vh;
+        flex-shrink: 0;
+        display: flex;
         justify-content: center;
         align-items: center;
-        /* 确保按钮背景透明，无边框，以便只显示图标样式 */
-        background: transparent; 
+        background: transparent;
         border: none;
-        color: transparent; /* 如果按钮内有文本，将其透明化 */
-        padding: 0; /* 移除按钮默认内边距 */
+        color: transparent;
+        padding: 0;
     }
-    #record-button img { /* 录制按钮内部的图片（麦克风图标）样式 */
-        height: 100%; /* 图片高度填充其父元素（录制按钮） */
-        width: auto; /* 宽度自适应，保持纵横比 */
-        border-radius: 50%; /* 使图片变为圆形 */
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
+    #record-button img {
+        height: 100%;
+        width: auto;
+        border-radius: 50%;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         transition: transform 0.2s ease-in-out;
-        object-fit: contain; /* 确保图片完整显示在容器内 */
+        object-fit: contain;
     }
     #record-button:active img {
-        transform: scale(0.95); /* 点击时图片缩小效果 */
+        transform: scale(0.95);
     }
 
-    /* 重置按钮 - 调整宽度和字体大小 */
     #reset-button {
-        height: 10vh; 
-        padding: 0.5rem 1rem; 
-        font-size: max(1.2rem, 2.5vw); /* 字体大小响应式调整 */
+        height: 10vh;
+        padding: 0.5rem 1rem;
+        font-size: max(1.2rem, 2.5vw);
         background: rgba(0, 0, 0, 0.5);
         color: white;
         border: none;
@@ -143,42 +130,36 @@
         font-weight: bold;
         z-index: 5;
         transition: background 0.3s ease;
-        flex-shrink: 0; 
-        display: flex; 
+        flex-shrink: 0;
+        display: flex;
         align-items: center;
         justify-content: center;
-        
-        flex-grow: 1; /* 在flex容器中填充可用空间 */
-        max-width: 35%; /* 允许其最大占据 35% 的空间 */
+        flex-grow: 1;
+        max-width: 35%;
     }
 
     #reset-button:hover {
         background: rgba(0, 0, 0, 0.7);
     }
 
-    /* 计分显示 - 调整数字大小和行高以完全适应边框 */
-    #score-display { 
-        height: 10vh; 
-        /* <<<< 修改此处：减小 vh 值，并添加 line-height */
-        font-size: max(3rem, 6vw, 6vh); /* 将 vh 值调整到 6.5vh，确保留出更多空间 */
-        overflow: hidden; /* 保持内容不溢出 */
-        line-height: 1; /* 强制行高为 1，消除额外垂直间距 */
-        
+    #score-display {
+        height: 10vh;
+        font-size: max(3rem, 6vw, 6vh);
+        overflow: hidden;
+        line-height: 1;
         font-weight: bold;
         color: white;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
         border-radius: 0.5rem;
-        padding: 0.5rem 1rem; 
+        padding: 0.5rem 1rem;
         background-color: rgba(0, 0, 0, 0.3);
-        flex-shrink: 0; 
-        
-        display: grid; 
-        place-items: center; 
-        
-        flex-grow: 1; 
-        max-width: 35%; 
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        flex-grow: 1;
+        max-width: 35%;
     }
-    /* 预加载遮罩 */
+
     #preloader {
         position: absolute;
         top: 0;
@@ -192,7 +173,7 @@
         align-items: center;
         z-index: 100;
         color: white;
-        border-radius: 0.5rem; 
+        border-radius: 0.5rem;
     }
 
     .loading-spinner {
@@ -203,6 +184,59 @@
         height: 40px;
         animation: spin 1s linear infinite;
         margin-top: 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    #feedback-module {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 10;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.5s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    #feedback-module img {
+        max-width: 60%;
+        max-height: 60%;
+        height: auto;
+        object-fit: contain;
+        border-radius: 1rem;
+    }
+
+    #win-screen-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        display: none;
+        z-index: 20;
+        border-radius: 0.5rem;
+    }
+
+    .recording-animation {
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
     }
 </style>
 </head>
@@ -226,10 +260,11 @@
         <div id="bottom-controls" class="flex justify-center items-center p-4 z-10">
             <button id="reset-button" class="hidden">Restart</button>
             <button id="record-button" class="bg-gray-700 hover:bg-gray-600 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-all duration-300 transform scale-100 active:scale-95 text-white font-bold py-3 px-6">
-                <img id="mic-icon" src="assets/mic-icon.png" alt="Record" style="object-fit: contain;">
+                <img id="mic-icon" src="./SDHG_MicrophoneIcon.png" alt="Record" style="object-fit: contain;">
             </button>
-            <div id="score-display"></div>
+            <div id="score-display">0/5</div>
         </div>
+        
         <div id="feedback-module">
             <img id="feedback-image" src="" alt="Feedback">
         </div>
@@ -300,9 +335,9 @@
         let currentDogAction = null;
         let targetDogAction = null;
         let recognition = null;
-        let isRecording = false; // Tracks if recording is currently active
-        let listeningPhaseState = null; // <<<< 新增：记录识别开始时的游戏阶段状态
-        // DOM element references
+        let isRecording = false;
+        let listeningPhaseState = null;
+
         // DOM element references
         const dom = {
             gameContainer: document.getElementById('game-container'),
@@ -316,95 +351,74 @@
             feedbackModule: document.getElementById('feedback-module'),
             feedbackImage: document.getElementById('feedback-image'),
             winScreen: document.getElementById('win-screen-container'),
-            
-            // <<<< 新增：获取导盲犬模块和底部控制模块的引用
-            guideDogModule: document.getElementById('guide-dog-module'), 
-            bottomControls: document.getElementById('bottom-controls'), 
-
+            guideDogModule: document.getElementById('guide-dog-module'),
+            bottomControls: document.getElementById('bottom-controls'),
             recordClickSound: document.getElementById('record-click-sound'),
             lightSound: document.getElementById('light-sound'),
             tryAgainSound: document.getElementById('try-again-sound'),
             yesSound: document.getElementById('yes-sound'),
             winSound: document.getElementById('win-sound')
         };
+        
         // Initialize the game
         function initGame() {
-            // Set background to body
             document.body.style.backgroundImage = `url('${RESOURCES.images.background}')`;
-            
-            // Set initial state
             resetGame();
-            
-            // Request microphone permission
             requestMicrophonePermission();
-            
-            // Initialize speech recognition
             initSpeechRecognition();
-            
-            // Set up event listeners
             setupEventListeners();
-            
-            // Hide preloader
             dom.preloader.style.display = 'none';
             dom.resetButton.classList.remove('hidden');
-            
-            // Enter idle state
             setGameState(GAME_STATES.IDLE);
         }
         
-        // Function to reset the game state
+        // Reset the game state
         function resetGame() {
             console.log("Resetting game...");
-            setGameState(GAME_STATES.IDLE); // 设置初始状态为 IDLE
-            currentScore = 0; // 重置分数
-            currentLightColor = null; // 重置当前红绿灯颜色
-            currentDogAction = null; // 重置导盲犬动作
-            targetDogAction = null; // 重置目标动作
-            updateScoreDisplay(); // 更新分数显示为 0
+            setGameState(GAME_STATES.IDLE);
+            currentScore = 0;
+            currentLightColor = null;
+            currentDogAction = null;
+            targetDogAction = null;
+            updateScoreDisplay();
 
-            // 隐藏胜利屏幕
             dom.winScreen.style.display = 'none';
-            // 确保预加载界面也是隐藏的
-            dom.preloader.style.display = 'none'; 
+            dom.preloader.style.display = 'none';
 
-            // <<<< 关键修复：确保所有主要游戏元素都可见
-            dom.trafficLight.style.display = 'block'; // 红绿灯显示
-            dom.guideDogModule.style.display = 'flex'; // 导盲犬模块显示 (假设是 flex 布局)
-            dom.bottomControls.style.display = 'flex'; // 底部控制模块显示 (假设是 flex 布局)
-            dom.scoreDisplay.style.display = 'block'; // 确保分数显示器可见
-            dom.recordButton.style.display = 'flex'; // 确保录制按钮可见 (假设是 flex 布局)
+            dom.trafficLight.style.display = 'block';
+            dom.guideDogModule.style.display = 'flex';
+            dom.bottomControls.style.display = 'flex';
+            dom.scoreDisplay.style.display = 'grid'; // Ensure it's grid as per CSS
+            dom.recordButton.style.display = 'flex';
 
-            dom.feedbackModule.style.opacity = '0'; // 确保反馈模块隐藏
+            dom.feedbackModule.style.opacity = '0';
             dom.feedbackModule.style.visibility = 'hidden';
 
-            // 重置红绿灯和导盲犬视频到初始状态
             dom.trafficLight.src = RESOURCES.images.trafficLightGray;
             dom.dogVideo.src = RESOURCES.videos.dogStandby;
-            dom.dogVideo.loop = true; // 确保待机视频循环播放
+            dom.dogVideo.loop = true;
             dom.dogVideo.play().catch(e => console.warn("Dog standby video play failed on reset:", e.message));
         }
+
         // Function to handle entering the win screen
         function enterWinScreen() {
-            setGameState(GAME_STATES.WIN); // 设置游戏状态为胜利
-            dom.winSound.currentTime = 0; // 播放胜利音效
+            setGameState(GAME_STATES.WIN);
+            dom.winSound.currentTime = 0;
             dom.winSound.play();
             
-            // 设置胜利画面的背景图片
             dom.winScreen.style.backgroundImage = `url('${RESOURCES.images.winBackground}')`;
-            // 让胜利画面显示，并使用 flex 布局以便居中内容（如果后续有内容的话）
-            dom.winScreen.style.display = 'flex'; 
+            dom.winScreen.style.display = 'flex';
             
-            // 隐藏其他游戏元素，让胜利画面成为主导
             dom.trafficLight.style.display = 'none';
-            dom.guideDogModule.style.display = 'none'; // 隐藏导盲犬模块
-            dom.bottomControls.style.display = 'none'; // 隐藏底部控制模块
+            dom.guideDogModule.style.display = 'none';
+            dom.bottomControls.style.display = 'none';
             
-            // 确保反馈模块是隐藏的
             dom.feedbackModule.style.opacity = '0';
             dom.feedbackModule.style.visibility = 'hidden';
         }
+
         // Update score display
-        function updateScore() {
+        function updateScoreDisplay() {
             dom.scoreDisplay.textContent = `${currentScore}/${GAME_CONFIG.maxScore}`;
         }
         
@@ -414,18 +428,15 @@
                 navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(function(stream) {
                         console.log('Microphone access granted');
-                        // Stop all tracks to release resources
                         stream.getTracks().forEach(track => track.stop());
                     })
                     .catch(function(err) {
                         console.error('Microphone access error:', err);
-                        // Using a custom message box instead of alert
                         showMessageBox('Microphone access is required for this game. Please grant permission and refresh the page.');
                     });
             } else {
                 console.error('getUserMedia not supported');
-                // Using a custom message box instead of alert
-                showMessageBox('Your browser does not support microphone access. Please try a different browser.');
+                showMessageBox('Your browser does not support speech recognition. Please try a different browser.');
             }
         }
         
@@ -465,17 +476,16 @@
             }
             
             recognition = new SpeechRecognition();
-            recognition.continuous = false; 
-            recognition.interimResults = true; // 启用中间结果
+            recognition.continuous = false;
+            recognition.interimResults = true;
             recognition.lang = 'en-US';
             
-            // Auto-stop when speech ends (user stops talking)
             recognition.onspeechend = function() {
                 console.log('Speech ended (silence detected). Auto-stopping recording. Updating UI immediately.');
-                if (isRecording) { // 只有在正在录制时才停止
-                    recognition.stop(); 
-                    dom.recordButton.classList.remove('recording-animation'); // <<<< 新增：立即停止动画
-                    isRecording = false; // <<<< 新增：立即更新状态
+                if (isRecording) {
+                    recognition.stop();
+                    dom.recordButton.classList.remove('recording-animation');
+                    isRecording = false;
                 }
             };
 
@@ -492,14 +502,14 @@
 
                     if (keywordDetected && isRecording) {
                         console.log(`Keyword detected ("${keywordDetected}") in interim result. Stopping recording immediately.`);
-                        recognition.stop(); 
-                        dom.recordButton.classList.remove('recording-animation'); // <<<< 新增：立即停止动画
-                        isRecording = false; // <<<< 新增：立即更新状态
-                        return; 
+                        recognition.stop();
+                        dom.recordButton.classList.remove('recording-animation');
+                        isRecording = false;
+                        return;
                     }
                 } else {
                     console.log('Final speech recognized:', transcript);
-                    switch (listeningPhaseState) { 
+                    switch (listeningPhaseState) {
                         case GAME_STATES.LISTENING_LIGHT_COLOR:
                             processLightColor(transcript);
                             break;
@@ -508,65 +518,58 @@
                             break;
                         default:
                             console.warn("Speech recognized but no active listening phase detected. State:", listeningPhaseState, "Current Game State:", gameState);
-                            setGameState(GAME_STATES.IDLE); 
+                            setGameState(GAME_STATES.IDLE);
                     }
                 }
             };
             
             recognition.onerror = function(event) {
                 console.error('Speech recognition error:', event.error);
-                if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR || 
+                if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR ||
                     gameState === GAME_STATES.LISTENING_DOG_ACTION) {
-                    showFeedback(false); 
+                    showFeedback(false);
                 }
                 isRecording = false;
                 dom.recordButton.classList.remove('recording-animation');
-                listeningPhaseState = null; 
-                setGameState(GAME_STATES.IDLE); 
+                listeningPhaseState = null;
+                setGameState(GAME_STATES.IDLE);
             };
             
             recognition.onend = function() {
                 console.log('Speech recognition session ended.');
-                // onend 是最终的清理点，确保 isRecording 和动画最终状态正确
-                isRecording = false; // 确保最终状态为 false
-                dom.recordButton.classList.remove('recording-animation'); // 确保动画最终移除
+                isRecording = false;
+                dom.recordButton.classList.remove('recording-animation');
                 
-                listeningPhaseState = null; 
+                listeningPhaseState = null;
                 
-                if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR || 
+                if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR ||
                     gameState === GAME_STATES.LISTENING_DOG_ACTION ||
                     gameState === GAME_STATES.FEEDBACK) {
                     setGameState(GAME_STATES.IDLE);
                 }
             };
         }
+        
         // Set up event listeners
         function setupEventListeners() {
-            // Record button click event - Now handles both start and stop
             dom.recordButton.addEventListener('click', function() {
-                dom.recordClickSound.currentTime = 0; 
+                dom.recordClickSound.currentTime = 0;
                 dom.recordClickSound.play();
 
                 if (isRecording) {
-                    // 如果已经在录制，则手动停止它
                     console.log("Manual stop recording. Stopping animation immediately.");
-                    recognition.stop(); 
-                    dom.recordButton.classList.remove('recording-animation'); // <<<< 新增：立即停止动画
-                    isRecording = false; // <<<< 新增：立即更新状态
+                    recognition.stop();
+                    dom.recordButton.classList.remove('recording-animation');
+                    isRecording = false;
                 } else if (gameState === GAME_STATES.IDLE) {
-                    // 如果不在录制且处于 IDLE 状态，则开始录制
                     console.log("Start recording.");
                     startRecording();
                 }
             });
             
-            // Reset button click event
             dom.resetButton.addEventListener('click', resetGame);
-            
-            // Win screen click event
             dom.winScreen.addEventListener('click', resetGame);
             
-            // Guide dog video end event
             dom.dogVideo.addEventListener('ended', function() {
                 if (gameState === GAME_STATES.LISTENING_DOG_ACTION) {
                     dom.dogVideo.src = RESOURCES.videos.dogStandby;
@@ -575,28 +578,23 @@
                 }
             });
 
-            window.addEventListener('resize', () => {
-                // No specific action needed here
-            });
+            window.addEventListener('resize', () => {});
         }
+        
         // Start recording
         function startRecording() {
             if (!recognition) return;
             
             try {
-                // 1. 首先确定目标监听状态
                 let targetListeningState;
-                if (!currentLightColor) { // 阶段1: 监听红绿灯颜色
+                if (!currentLightColor) {
                     targetListeningState = GAME_STATES.LISTENING_LIGHT_COLOR;
-                } else { // 阶段2: 监听导盲犬动作反馈
+                } else {
                     targetListeningState = GAME_STATES.LISTENING_DOG_ACTION;
                 }
 
-                // 2. 更新实际的游戏状态
-                setGameState(targetListeningState); 
-                
-                // 3. 将捕获的监听阶段状态设置为目标状态
-                listeningPhaseState = targetListeningState; // <<<< 修改：确保捕获的是正确的监听状态
+                setGameState(targetListeningState);
+                listeningPhaseState = targetListeningState;
                 
                 recognition.start();
                 isRecording = true;
@@ -606,26 +604,22 @@
                 console.error('Speech recognition start error:', error);
                 isRecording = false;
                 dom.recordButton.classList.remove('recording-animation');
-                listeningPhaseState = null; // 错误时重置捕获状态
+                listeningPhaseState = null;
                 setGameState(GAME_STATES.IDLE);
             }
         }
+        
         // Process color recognition
         function processLightColor(transcript) {
-            // Check if color keyword is included
             const detectedColor = GAME_CONFIG.colorKeywords.find(color => 
                 transcript.includes(color)
             );
             
             if (detectedColor) {
-                // Recognition successful
                 currentLightColor = detectedColor;
-                
-                // Play light sound
                 dom.lightSound.currentTime = 0;
                 dom.lightSound.play();
                 
-                // Update traffic light image
                 switch (detectedColor) {
                     case 'red':
                         dom.trafficLight.src = RESOURCES.images.trafficLightRed;
@@ -641,18 +635,14 @@
                         break;
                 }
                 
-                // Play guide dog attention animation
                 dom.dogVideo.src = RESOURCES.videos.dogAttention;
                 dom.dogVideo.loop = false;
                 dom.dogVideo.play();
                 
-                // Set event after guide dog action completes
                 dom.dogVideo.onended = function() {
-                    // Randomly select an action
                     const randomAction = GAME_CONFIG.dogActions[Math.floor(Math.random() * GAME_CONFIG.dogActions.length)];
                     currentDogAction = randomAction;
                     
-                    // Play random action
                     switch (randomAction) {
                         case 'stop':
                             dom.dogVideo.src = RESOURCES.videos.dogStop;
@@ -668,11 +658,9 @@
                     dom.dogVideo.loop = true;
                     dom.dogVideo.play();
                     
-                    // Enter phase 2
                     setGameState(GAME_STATES.IDLE);
                 };
             } else {
-                // Recognition failed
                 showFeedback(false);
             }
         }
@@ -680,17 +668,15 @@
         // Process guide dog action feedback
         function processDogAction(transcript) {
             const isGoodJobPhrase = transcript.includes('good job');
-            
             const wordsInTranscript = transcript.split(/[^a-z0-9]+/).filter(word => word.length > 0); 
             let actionWordSpoken = null;
             for (const word of wordsInTranscript) {
                 if (GAME_CONFIG.actionKeywords.includes(word)) {
                     actionWordSpoken = word;
-                    break; 
+                    break;
                 }
             }
 
-            // --- 日志输出 ---
             console.log('--- Processing Dog Action ---');
             console.log('Raw Transcript:', transcript);
             console.log('Words in transcript (sanitized):', wordsInTranscript);
@@ -698,30 +684,24 @@
             console.log('Target Dog Action (expected from light):', targetDogAction);
             console.log('Actual Dog Action (video played by game):', currentDogAction);
             console.log('Is "good job" phrase detected:', isGoodJobPhrase);
-            console.log('Explicit action word spoken:', actionWordSpoken); 
-            // --- 日志输出结束 ---
+            console.log('Explicit action word spoken:', actionWordSpoken);
 
             let isCorrect = false;
 
-            // 情况1：小狗动作与红绿灯预期一致
             if (currentDogAction === targetDogAction) {
-                // 如果学生语音只包含 "good job"，则正确
                 if (isGoodJobPhrase && actionWordSpoken === null) {
                     isCorrect = true;
                     console.log('Condition met: Dog action matches, AND ONLY "good job" detected.');
                 } else {
-                    isCorrect = false; // 否则不正确
+                    isCorrect = false;
                     console.log('Conditions for YES not met (Dog action matches, but feedback not ONLY "good job").');
                 }
-            } 
-            // 情况2：小狗动作与红绿灯预期不一致
-            else { // currentDogAction !== targetDogAction
-                // 如果学生语音只包含对应灯的动作指令，则正确
-                if (actionWordSpoken === targetDogAction && !isGoodJobPhrase) { // 确保没有同时说good job
+            } else {
+                if (actionWordSpoken === targetDogAction && !isGoodJobPhrase) {
                     isCorrect = true;
                     console.log('Condition met: Dog action MISMATCH, BUT ONLY student correctly identified target action.');
                 } else {
-                    isCorrect = false; // 否则不正确
+                    isCorrect = false;
                     console.log('Conditions for YES not met (Dog action MISMATCH, and feedback not ONLY target action).');
                 }
             }
@@ -729,84 +709,57 @@
             console.log('Final isCorrect decision:', isCorrect);
 
             if (isCorrect) {
-                // Correct feedback
                 currentScore++;
-                updateScore();
-                
-                // Play correct sound
+                updateScoreDisplay();
                 dom.yesSound.currentTime = 0;
                 dom.yesSound.play();
-                
-                // Show correct feedback
                 dom.feedbackImage.src = RESOURCES.images.yes;
-                // 渐入反馈模块
                 dom.feedbackModule.style.visibility = 'visible';
                 dom.feedbackModule.style.opacity = '1';
                 
-                // Check if won
                 if (currentScore >= GAME_CONFIG.maxScore) {
                     setTimeout(enterWinScreen, 2000);
                 } else {
-                    // 进入下一轮
                     setTimeout(() => {
-                        // 渐出反馈模块
                         dom.feedbackModule.style.opacity = '0';
                         setTimeout(() => {
                             dom.feedbackModule.style.visibility = 'hidden';
-                        }, 500); // 确保与 CSS transition 持续时间一致
+                        }, 500);
                         
-                        // Reset current state for next round
                         currentLightColor = null;
                         currentDogAction = null;
                         targetDogAction = null;
-                        
-                        // Reset traffic light to gray
                         dom.trafficLight.src = RESOURCES.images.trafficLightGray;
-                        
-                        // Reset guide dog to standby
                         dom.dogVideo.src = RESOURCES.videos.dogStandby;
                         dom.dogVideo.loop = true;
                         dom.dogVideo.play();
-                        
-                        // Return to phase 1 (listening for light color)
                         setGameState(GAME_STATES.IDLE);
                     }, 2000);
                 }
             } else {
-                // Incorrect feedback
                 showFeedback(false);
             }
         }
         
         // Show feedback (true for YES, false for TRY AGAIN)
-        // This function is now only called for "Try Again" feedback
         function showFeedback(isPositive) {
-            // It should always be false here given the processDogAction structure
-            if (!isPositive) { // Sanity check, though it should always be negative feedback now
+            if (!isPositive) {
                 dom.feedbackImage.src = RESOURCES.images.tryAgain;
                 dom.tryAgainSound.currentTime = 0;
                 dom.tryAgainSound.play();
             }
             
-            // 渐入反馈模块
             dom.feedbackModule.style.visibility = 'visible';
             dom.feedbackModule.style.opacity = '1';
             
-            // Hide feedback and return to appropriate state after a delay
             setTimeout(() => {
-                // 渐出反馈模块
                 dom.feedbackModule.style.opacity = '0';
                 setTimeout(() => {
                     dom.feedbackModule.style.visibility = 'hidden';
-                }, 500); // 确保与 CSS transition 持续时间一致
+                }, 500);
 
-                // After feedback, always return to IDLE so player can click to restart or try again.
-                // The actual game state transition happens within processDogAction or processLightColor.
-                // Here, we just ensure the button is re-enabled and state is IDLE.
                 setGameState(GAME_STATES.IDLE);
 
-                // If we were in LISTENING_DOG_ACTION, re-display current dog action for context
-                // This part ensures the dog video is correct for retrying the same round
                 if (currentDogAction && currentLightColor) {
                     switch (currentDogAction) {
                         case 'stop':
@@ -822,47 +775,22 @@
                     dom.dogVideo.loop = true;
                     dom.dogVideo.play();
                 } else {
-                    // If no currentDogAction, reset to standby
                     dom.dogVideo.src = RESOURCES.videos.dogStandby;
                     dom.dogVideo.loop = true;
                     dom.dogVideo.play();
                 }
-            }, 2000); // 此延迟时间是反馈图片显示的时间
+            }, 2000);
         }
         
         // Set game state
         function setGameState(newState) {
             gameState = newState;
             console.log('Game state changed to:', newState);
-            
-            // 按钮的启用/禁用状态将由点击事件和识别生命周期自行管理
-            // 因此，从这里移除直接的按钮禁用逻辑
-            /*
-            switch (newState) {
-                case GAME_STATES.IDLE:
-                    dom.recordButton.disabled = false; // Enable when idle
-                    break;
-                case GAME_STATES.LISTENING_LIGHT_COLOR:
-                case GAME_STATES.LISTENING_DOG_ACTION:
-                    dom.recordButton.disabled = true; // Disable when listening
-                    break;
-                case GAME_STATES.WIN:
-                    dom.recordButton.disabled = true; // Disable when game won
-                    break;
-                case GAME_STATES.FEEDBACK: // Feedback state might temporarily disable button
-                    dom.recordButton.disabled = true;
-                    break;
-            }
-            */
         }
-        // Function to update the score display
-        function updateScoreDisplay() {
-            dom.scoreDisplay.textContent = `${currentScore}/${GAME_CONFIG.maxScore}`;
-        }
+        
         // Preload all resources
         function preloadResources() {
             const imageUrls = Object.values(RESOURCES.images);
-            // 收集所有独特的视频和音频URL，确保所有文件都被处理
             const uniqueVideoUrlsToPreload = new Set(Object.values(RESOURCES.videos));
             const uniqueAudioUrlsToPreload = new Set(Object.values(RESOURCES.audio));
 
@@ -881,27 +809,25 @@
                 
                 if (loadedCount === allResourcesToLoad.length) {
                     console.log("All resources loaded. Initializing game.");
-                    initGame(); // 只有当所有资源都加载完成后才初始化游戏
+                    initGame();
                 }
             }
             
-            // 预加载图片
             imageUrls.forEach(url => {
                 const img = new Image();
                 img.src = url;
                 img.onload = updateProgress;
-                img.onerror = updateProgress; // 错误时也计入进度，防止卡住
+                img.onerror = updateProgress;
             });
             
-            // 预加载视频 - 使用 oncanplaythrough 确保可播放，并尝试静默播放一次以强制缓存
             uniqueVideoUrlsToPreload.forEach(url => {
                 const video = document.createElement('video');
                 video.src = url;
-                video.muted = true; // 静音播放
-                video.volume = 0; // 确保音量为0
-                video.preload = 'auto'; // 提示浏览器完全预加载
+                video.muted = true;
+                video.volume = 0;
+                video.preload = 'auto';
 
-                let loaded = false; // 标志，确保每个资源只计数一次
+                let loaded = false;
                 const handleLoaded = () => {
                     if (!loaded) {
                         loaded = true;
@@ -909,26 +835,22 @@
                     }
                 };
 
-                // 优先使用 oncanplaythrough，表示可以不中断地播放完整媒体
                 video.addEventListener('canplaythrough', handleLoaded);
-                // 作为备用，使用 onloadeddata，表示媒体的元数据和当前帧已加载
-                video.addEventListener('loadeddata', handleLoaded); 
-                video.addEventListener('error', handleLoaded); // 错误时也计入进度
+                video.addEventListener('loadeddata', handleLoaded);
+                video.addEventListener('error', handleLoaded);
 
-                // 尝试加载和播放，以强制下载并缓存
-                video.load(); // 触发加载
-                video.play().catch(e => console.warn(`Video preload play failed for ${url}: ${e.message}`)); // 捕获并记录播放错误
+                video.load();
+                video.play().catch(e => console.warn(`Video preload play failed for ${url}: ${e.message}`));
             });
             
-            // 预加载音频 - 使用 oncanplaythrough 确保可播放，并尝试静默播放一次以强制缓存
             uniqueAudioUrlsToPreload.forEach(url => {
                 const audio = new Audio();
                 audio.src = url;
-                audio.muted = true; // 静音播放
-                audio.volume = 0; // 确保音量为0
-                audio.preload = 'auto'; // 提示浏览器完全预加载
+                audio.muted = true;
+                audio.volume = 0;
+                audio.preload = 'auto';
 
-                let loaded = false; // 标志，确保每个资源只计数一次
+                let loaded = false;
                 const handleLoaded = () => {
                     if (!loaded) {
                         loaded = true;
@@ -936,30 +858,20 @@
                     }
                 };
 
-                // 优先使用 oncanplaythrough
                 audio.addEventListener('canplaythrough', handleLoaded);
-                // 作为备用，使用 onloadeddata
                 audio.addEventListener('loadeddata', handleLoaded);
-                audio.addEventListener('error', handleLoaded); // 错误时也计入进度
+                audio.addEventListener('error', handleLoaded);
 
-                // 尝试加载和播放，以强制下载并缓存
-                audio.load(); // 触发加载
-                audio.play().catch(e => console.warn(`Audio preload play failed for ${url}: ${e.message}`)); // 捕获并记录播放错误
+                audio.load();
+                audio.play().catch(e => console.warn(`Audio preload play failed for ${url}: ${e.message}`));
             });
-
-            // 移除固定的 setTimeout，现在 initGame 会在所有资源加载完成后被调用
-            // setTimeout(initGame, 3000); 
         }
+        
         // Assign resources
         function assignResources() {
-            // Set initial images
             dom.trafficLight.src = RESOURCES.images.trafficLightGray;
             dom.micIcon.src = RESOURCES.images.micIcon;
-            
-            // Set initial video
             dom.dogVideo.src = RESOURCES.videos.dogStandby;
-            
-            // Set audio
             dom.recordClickSound.src = RESOURCES.audio.recordClick;
             dom.lightSound.src = RESOURCES.audio.light;
             dom.tryAgainSound.src = RESOURCES.audio.tryAgain;
@@ -967,7 +879,6 @@
             dom.winSound.src = RESOURCES.audio.win;
         }
         
-        // Initialize after page loads
         window.addEventListener('DOMContentLoaded', function() {
             assignResources();
             preloadResources();
