@@ -414,32 +414,36 @@
             setGameState(GAME_STATES.IDLE);
         }
         
-        // Reset the game
+        // Function to reset the game state
         function resetGame() {
-            currentScore = 0;
-            updateScore();
-            
-            // Reset traffic light
-            dom.trafficLight.src = RESOURCES.images.trafficLightGray;
-            currentLightColor = null;
-            
-            // Reset guide dog
-            dom.dogVideo.src = RESOURCES.videos.dogStandby;
-            dom.dogVideo.load();
-            dom.dogVideo.play();
-            dom.dogVideo.loop = true; // Ensure standby video loops
-            currentDogAction = null;
-            targetDogAction = null;
-            
-            // Hide win screen
+            console.log("Resetting game...");
+            setGameState(GAME_STATES.IDLE); // 设置初始状态为 IDLE
+            currentScore = 0; // 重置分数
+            currentLightColor = null; // 重置当前红绿灯颜色
+            currentDogAction = null; // 重置导盲犬动作
+            targetDogAction = null; // 重置目标动作
+            updateScoreDisplay(); // 更新分数显示为 0
+
+            // 隐藏胜利屏幕
             dom.winScreen.style.display = 'none';
-            
-            // Hide feedback - FIX: Use opacity and visibility for transitions
-            dom.feedbackModule.style.opacity = '0';
+            // 确保预加载界面也是隐藏的
+            dom.preloader.style.display = 'none'; 
+
+            // <<<< 关键修复：确保所有主要游戏元素都可见
+            dom.trafficLight.style.display = 'block'; // 红绿灯显示
+            dom.guideDogModule.style.display = 'flex'; // 导盲犬模块显示 (假设是 flex 布局)
+            dom.bottomControls.style.display = 'flex'; // 底部控制模块显示 (假设是 flex 布局)
+            dom.scoreDisplay.style.display = 'block'; // 确保分数显示器可见
+            dom.recordButton.style.display = 'flex'; // 确保录制按钮可见 (假设是 flex 布局)
+
+            dom.feedbackModule.style.opacity = '0'; // 确保反馈模块隐藏
             dom.feedbackModule.style.visibility = 'hidden';
-            
-            // Activate record button
-            // Button's enabled/disabled state is now managed by click handler and recognition lifecycle
+
+            // 重置红绿灯和导盲犬视频到初始状态
+            dom.trafficLight.src = RESOURCES.images.trafficLightGray;
+            dom.dogVideo.src = RESOURCES.videos.dogStandby;
+            dom.dogVideo.loop = true; // 确保待机视频循环播放
+            dom.dogVideo.play().catch(e => console.warn("Dog standby video play failed on reset:", e.message));
         }
         // Function to handle entering the win screen
         function enterWinScreen() {
@@ -523,42 +527,40 @@
             }
             
             recognition = new SpeechRecognition();
-            recognition.continuous = false; // We want single utterances
-            recognition.interimResults = true; // <<<< 修改：启用中间结果，以便实时检测关键词
+            recognition.continuous = false; 
+            recognition.interimResults = true; // 启用中间结果
             recognition.lang = 'en-US';
             
-            // New: Auto-stop when speech ends (user stops talking)
+            // Auto-stop when speech ends (user stops talking)
             recognition.onspeechend = function() {
-                console.log('Speech ended (silence detected). Auto-stopping recording.');
-                if (isRecording) { // Only stop if it's currently recording
+                console.log('Speech ended (silence detected). Auto-stopping recording. Updating UI immediately.');
+                if (isRecording) { // 只有在正在录制时才停止
                     recognition.stop(); 
+                    dom.recordButton.classList.remove('recording-animation'); // <<<< 新增：立即停止动画
+                    isRecording = false; // <<<< 新增：立即更新状态
                 }
             };
 
             recognition.onresult = function(event) {
-                // 获取最新的识别结果（通常是第一个结果）
                 const result = event.results[0];
                 const transcript = result[0].transcript.toLowerCase();
                 
                 console.log('Speech recognized (interim or final):', transcript, 'Is Final:', result.isFinal);
 
-                // 如果是中间结果，检查是否包含关键词并提前停止录音
                 if (!result.isFinal) {
                     const allKeywords = [...GAME_CONFIG.colorKeywords, ...GAME_CONFIG.actionKeywords, ...GAME_CONFIG.feedbackKeywords];
                     
-                    // 检查当前中间结果是否包含任何关键词
                     const keywordDetected = allKeywords.some(keyword => transcript.includes(keyword));
 
                     if (keywordDetected && isRecording) {
                         console.log(`Keyword detected ("${keywordDetected}") in interim result. Stopping recording immediately.`);
-                        recognition.stop(); // 立即停止录音
-                        // 不需要在这里处理游戏逻辑，等待 final 结果
-                        return; // 停止处理当前中间结果，等待 onend 或 final onresult
+                        recognition.stop(); 
+                        dom.recordButton.classList.remove('recording-animation'); // <<<< 新增：立即停止动画
+                        isRecording = false; // <<<< 新增：立即更新状态
+                        return; 
                     }
                 } else {
-                    // 如果是最终结果，则执行游戏逻辑
                     console.log('Final speech recognized:', transcript);
-                    // 使用捕获的监听阶段状态来处理结果
                     switch (listeningPhaseState) { 
                         case GAME_STATES.LISTENING_LIGHT_COLOR:
                             processLightColor(transcript);
@@ -567,11 +569,8 @@
                             processDogAction(transcript);
                             break;
                         default:
-                            // 如果捕获的状态不是预期的监听状态，说明发生了意外或时序问题
                             console.warn("Speech recognized but no active listening phase detected. State:", listeningPhaseState, "Current Game State:", gameState);
-                            // 此时可以根据需要选择性地显示“Try Again”反馈或直接回到 IDLE
-                            // showFeedback(false); // 如果想对意外识别也给出反馈
-                            setGameState(GAME_STATES.IDLE); // 确保回到 IDLE 状态
+                            setGameState(GAME_STATES.IDLE); 
                     }
                 }
             };
@@ -590,47 +589,37 @@
             
             recognition.onend = function() {
                 console.log('Speech recognition session ended.');
-                isRecording = false;
-                dom.recordButton.classList.remove('recording-animation');
+                // onend 是最终的清理点，确保 isRecording 和动画最终状态正确
+                isRecording = false; // 确保最终状态为 false
+                dom.recordButton.classList.remove('recording-animation'); // 确保动画最终移除
                 
                 listeningPhaseState = null; 
                 
-                // If game state is still listening, transition back to idle after recognition
                 if (gameState === GAME_STATES.LISTENING_LIGHT_COLOR || 
                     gameState === GAME_STATES.LISTENING_DOG_ACTION ||
                     gameState === GAME_STATES.FEEDBACK) {
                     setGameState(GAME_STATES.IDLE);
                 }
             };
-
-            // Optional: for debugging audio start/end
-            // recognition.onaudiostart = () => console.log('Audio capture started.');
-            // recognition.onaudioend = () => console.log('Audio capture ended.');
-            // recognition.onsoundstart = () => console.log('Sound detected.');
-            // recognition.onsoundend = () => console.log('Sound ended.');
-            // recognition.onstart = () => console.log('Speech recognition started.');
-        }        
+        }
         // Set up event listeners
         function setupEventListeners() {
             // Record button click event - Now handles both start and stop
             dom.recordButton.addEventListener('click', function() {
-                dom.recordClickSound.currentTime = 0; // Play click sound always
+                dom.recordClickSound.currentTime = 0; 
                 dom.recordClickSound.play();
 
                 if (isRecording) {
                     // 如果已经在录制，则手动停止它
-                    console.log("Manual stop recording. Awaiting recognition.onend for full cleanup and result processing.");
+                    console.log("Manual stop recording. Stopping animation immediately.");
                     recognition.stop(); 
-                    // 移除将 gameState 立即设置为 IDLE 的代码
-                    // dom.recordButton.classList.remove('recording-animation'); // 此行已在上次修复中移除
-                    // isRecording = false; // 此行已在上次修复中移除
-                    // setGameState(GAME_STATES.IDLE); // <<<< 移除此行！让 recognition.onend 处理状态重置
+                    dom.recordButton.classList.remove('recording-animation'); // <<<< 新增：立即停止动画
+                    isRecording = false; // <<<< 新增：立即更新状态
                 } else if (gameState === GAME_STATES.IDLE) {
                     // 如果不在录制且处于 IDLE 状态，则开始录制
                     console.log("Start recording.");
                     startRecording();
                 }
-                // 如果不在 IDLE 状态且不在录制（例如，在反馈期间），则不执行任何操作。
             });
             
             // Reset button click event
@@ -642,18 +631,14 @@
             // Guide dog video end event
             dom.dogVideo.addEventListener('ended', function() {
                 if (gameState === GAME_STATES.LISTENING_DOG_ACTION) {
-                    // If guide dog action video ends, enter standby state
                     dom.dogVideo.src = RESOURCES.videos.dogStandby;
                     dom.dogVideo.loop = true;
                     dom.dogVideo.play();
                 }
             });
 
-            // Handle window resize to adjust game container if needed (though with 100% width/height, it should adapt)
             window.addEventListener('resize', () => {
-                // No specific action needed here as width/height are 100%
-                // If a specific aspect ratio was desired for the game content
-                // while filling the screen, more complex logic would be needed.
+                // No specific action needed here
             });
         }
         // Start recording
