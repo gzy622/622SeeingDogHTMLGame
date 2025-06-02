@@ -365,6 +365,7 @@
         let isRecording = false; // Tracks if recording is currently active
         let listeningPhaseState = null; // <<<< 新增：记录识别开始时的游戏阶段状态
         // DOM element references
+        // DOM element references
         const dom = {
             gameContainer: document.getElementById('game-container'),
             preloader: document.getElementById('preloader'),
@@ -377,13 +378,17 @@
             feedbackModule: document.getElementById('feedback-module'),
             feedbackImage: document.getElementById('feedback-image'),
             winScreen: document.getElementById('win-screen-container'),
+            
+            // <<<< 新增：获取导盲犬模块和底部控制模块的引用
+            guideDogModule: document.getElementById('guide-dog-module'), 
+            bottomControls: document.getElementById('bottom-controls'), 
+
             recordClickSound: document.getElementById('record-click-sound'),
             lightSound: document.getElementById('light-sound'),
             tryAgainSound: document.getElementById('try-again-sound'),
             yesSound: document.getElementById('yes-sound'),
             winSound: document.getElementById('win-sound')
         };
-        
         // Initialize the game
         function initGame() {
             // Set background to body
@@ -436,7 +441,26 @@
             // Activate record button
             // Button's enabled/disabled state is now managed by click handler and recognition lifecycle
         }
-        
+        // Function to handle entering the win screen
+        function enterWinScreen() {
+            setGameState(GAME_STATES.WIN); // 设置游戏状态为胜利
+            dom.winSound.currentTime = 0; // 播放胜利音效
+            dom.winSound.play();
+            
+            // 设置胜利画面的背景图片
+            dom.winScreen.style.backgroundImage = `url('${RESOURCES.images.winBackground}')`;
+            // 让胜利画面显示，并使用 flex 布局以便居中内容（如果后续有内容的话）
+            dom.winScreen.style.display = 'flex'; 
+            
+            // 隐藏其他游戏元素，让胜利画面成为主导
+            dom.trafficLight.style.display = 'none';
+            dom.guideDogModule.style.display = 'none'; // 隐藏导盲犬模块
+            dom.bottomControls.style.display = 'none'; // 隐藏底部控制模块
+            
+            // 确保反馈模块是隐藏的
+            dom.feedbackModule.style.opacity = '0';
+            dom.feedbackModule.style.visibility = 'hidden';
+        }
         // Update score display
         function updateScore() {
             dom.scoreDisplay.textContent = `${currentScore}/${GAME_CONFIG.maxScore}`;
