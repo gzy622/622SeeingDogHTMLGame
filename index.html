@@ -624,25 +624,29 @@
             if (!recognition) return;
             
             try {
-                // 捕获当前的监听阶段状态，以便在 onresult 中使用
-                listeningPhaseState = gameState; // <<<< 修改：在识别开始前捕获状态
+                // 1. 首先确定目标监听状态
+                let targetListeningState;
+                if (!currentLightColor) { // 阶段1: 监听红绿灯颜色
+                    targetListeningState = GAME_STATES.LISTENING_LIGHT_COLOR;
+                } else { // 阶段2: 监听导盲犬动作反馈
+                    targetListeningState = GAME_STATES.LISTENING_DOG_ACTION;
+                }
+
+                // 2. 更新实际的游戏状态
+                setGameState(targetListeningState); 
+                
+                // 3. 将捕获的监听阶段状态设置为目标状态
+                listeningPhaseState = targetListeningState; // <<<< 修改：确保捕获的是正确的监听状态
                 
                 recognition.start();
                 isRecording = true;
                 dom.recordButton.classList.add('recording-animation');
-
-                // Set state based on current game phase
-                // 这里只是更新游戏状态，实际处理逻辑在 onresult 中根据 listeningPhaseState 决定
-                if (!currentLightColor) { // Phase 1: Listening for light color
-                    setGameState(GAME_STATES.LISTENING_LIGHT_COLOR);
-                } else { // Phase 2: Listening for dog action feedback
-                    setGameState(GAME_STATES.LISTENING_DOG_ACTION);
-                }
+                
             } catch (error) {
                 console.error('Speech recognition start error:', error);
                 isRecording = false;
                 dom.recordButton.classList.remove('recording-animation');
-                listeningPhaseState = null; // <<<< 修改：错误时重置捕获状态
+                listeningPhaseState = null; // 错误时重置捕获状态
                 setGameState(GAME_STATES.IDLE);
             }
         }
