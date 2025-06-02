@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,242 +5,240 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seeing Dog HTML Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
-<style>
-    html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-    }
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
 
-    body {
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-color: #1a202c;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-family: 'Inter', sans-serif;
-        color: white;
-    }
+        body {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: #1a202c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            color: white;
+        }
 
-    .game-container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        overflow: hidden;
-    }
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
 
-    #traffic-light-module {
-        position: absolute;
-        top: 2%;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 80vw;
-        height: auto;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    #traffic-light-module img {
-        width: 100%;
-        height: auto;
-        max-height: 40vh;
-        border-radius: 0.5rem;
-    }
+        #traffic-light-module {
+            position: absolute;
+            top: 2%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80vw;
+            height: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #traffic-light-module img {
+            width: 100%;
+            height: auto;
+            max-height: 40vh;
+            border-radius: 0.5rem;
+        }
 
-    #guide-dog-module {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        height: 40vh;
-        width: 40vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    .dog-video-container {
-        width: 100%;
-        height: 100%;
-        padding-bottom: 0;
-        position: relative;
-        border-radius: 0.5rem;
-        overflow: hidden;
-    }
-    .dog-video-container video {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        border-radius: 0.5rem;
-    }
+        #guide-dog-module {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            height: 40vh;
+            width: 40vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .dog-video-container {
+            width: 100%;
+            height: 100%;
+            padding-bottom: 0;
+            position: relative;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .dog-video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 0.5rem;
+        }
 
-    #bottom-controls {
-        position: absolute;
-        bottom: 2%;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 2vw;
-        width: 90%;
-        max-width: 900px;
-    }
+        #bottom-controls {
+            position: absolute;
+            bottom: 2%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2vw;
+            width: 90%;
+            max-width: 900px;
+        }
 
-    #record-button {
-        height: 20vh;
-        width: 20vh;
-        flex-shrink: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: transparent;
-        border: none;
-        color: transparent;
-        padding: 0;
-    }
-    #record-button img {
-        height: 100%;
-        width: auto;
-        border-radius: 50%;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s ease-in-out;
-        object-fit: contain;
-    }
-    #record-button:active img {
-        transform: scale(0.95);
-    }
+        #record-button {
+            height: 20vh;
+            width: 20vh;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: transparent;
+            border: none;
+            color: transparent;
+            padding: 0;
+        }
+        #record-button img {
+            height: 100%;
+            width: auto;
+            border-radius: 50%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease-in-out;
+            object-fit: contain;
+        }
+        #record-button:active img {
+            transform: scale(0.95);
+        }
 
-    #reset-button {
-        height: 10vh;
-        padding: 0.5rem 1rem;
-        font-size: max(1.2rem, 2.5vw);
-        background: rgba(0, 0, 0, 0.5);
-        color: white;
-        border: none;
-        border-radius: 20px;
-        cursor: pointer;
-        font-weight: bold;
-        z-index: 5;
-        transition: background 0.3s ease;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-grow: 1;
-        max-width: 35%;
-    }
+        #reset-button {
+            height: 10vh;
+            padding: 0.5rem 1rem;
+            font-size: max(1.2rem, 2.5vw);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 5;
+            transition: background 0.3s ease;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            max-width: 35%;
+        }
 
-    #reset-button:hover {
-        background: rgba(0, 0, 0, 0.7);
-    }
+        #reset-button:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
 
-    #score-display {
-        height: 10vh;
-        font-size: max(3rem, 6vw, 6vh);
-        overflow: hidden;
-        line-height: 1;
-        font-weight: bold;
-        color: white;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-        border-radius: 0.5rem;
-        padding: 0.5rem 1rem;
-        background-color: rgba(0, 0, 0, 0.3);
-        flex-shrink: 0;
-        display: grid;
-        place-items: center;
-        flex-grow: 1;
-        max-width: 35%;
-    }
+        #score-display {
+            height: 10vh;
+            font-size: max(3rem, 6vw, 6vh);
+            overflow: hidden;
+            line-height: 1;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            background-color: rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+            display: grid;
+            place-items: center;
+            flex-grow: 1;
+            max-width: 35%;
+        }
 
-    #preloader {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 100;
-        color: white;
-        border-radius: 0.5rem;
-    }
+        #preloader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: white;
+            border-radius: 0.5rem;
+        }
 
-    .loading-spinner {
-        border: 4px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        border-top: 4px solid #fff;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin-top: 20px;
-    }
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-top: 20px;
+        }
 
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-    #feedback-module {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: auto;
-        height: auto;
-        background-color: rgba(0, 0, 0, 0.7);
-        z-index: 10;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.5s ease;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
+        #feedback-module {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 10;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #feedback-module img {
+            max-width: 60%;
+            max-height: 60%;
+            height: auto;
+            object-fit: contain;
+            border-radius: 1rem;
+        }
 
-    #feedback-module img {
-        max-width: 60%;
-        max-height: 60%;
-        height: auto;
-        object-fit: contain;
-        border-radius: 1rem;
-    }
+        #win-screen-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: none;
+            z-index: 20;
+            border-radius: 0.5rem;
+        }
 
-    #win-screen-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        display: none;
-        z-index: 20;
-        border-radius: 0.5rem;
-    }
+        .recording-animation {
+            animation: pulse 1.5s infinite;
+        }
 
-    .recording-animation {
-        animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-    }
-</style>
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
 </head>
 <body>
     <div id="game-container" class="game-container">
@@ -249,9 +246,17 @@
             <h2 class="text-2xl font-bold mb-4">Loading Game Resources...</h2>
             <div class="loading-spinner"></div>
         </div>
-
-        <!-- (Your other content remains unchanged) -->
-
+        
+        <div id="traffic-light-module">
+            <img id="traffic-light" src="" alt="Traffic Light">
+        </div>
+        
+        <div id="guide-dog-module">
+            <div class="dog-video-container">
+                <video id="dog-video" autoplay muted loop></video>
+            </div>
+        </div>
+        
         <div id="bottom-controls" class="flex justify-center items-center p-4 z-10">
             <button id="reset-button" class="hidden">Restart</button>
             <button id="record-button" class="bg-gray-700 hover:bg-gray-600 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-all duration-300 transform scale-100 active:scale-95 text-white font-bold py-3 px-6" onclick="startSpeechRecognition()">
@@ -259,40 +264,489 @@
             </button>
             <div id="score-display">0/5</div>
         </div>
-
+        
         <div id="feedback-module">
             <img id="feedback-image" src="" alt="Feedback">
         </div>
-
+        
         <div id="win-screen-container"></div>
     </div>
-
+    
     <audio id="record-click-sound" src=""></audio>
     <audio id="light-sound" src=""></audio>
     <audio id="try-again-sound" src=""></audio>
     <audio id="yes-sound" src=""></audio>
     <audio id="win-sound" src=""></audio>
-
+    
     <script>
-        // Game state constants and game configurations
+        // Game state constants
+        const GAME_STATES = {
+            PRELOAD: 'preload',
+            IDLE: 'idle',
+            LISTENING_LIGHT_COLOR: 'listening_light_color',
+            LISTENING_DOG_ACTION: 'listening_dog_action',
+            FEEDBACK: 'feedback',
+            WIN: 'win'
+        };
+        
+        // Game configuration
+        const GAME_CONFIG = {
+            maxScore: 5,
+            lightColors: ['red', 'yellow', 'green'],
+            dogActions: ['stop', 'wait', 'go'],
+            colorKeywords: ['red', 'yellow', 'green'],
+            actionKeywords: ['stop', 'wait', 'go'],
+            feedbackKeywords: ['good job']
+        };
+        
+        // Resource URLs
+        const RESOURCES = {
+            images: {
+                background: './SDHG_Background10-16.png',
+                winBackground: './SDHG_Background_Win.png',
+                micIcon: './SDHG_MicrophoneIcon.png',
+                trafficLightGray: './SDHG_TrafficLight_gray2.png',
+                trafficLightRed: './SDHG_TrafficLight_red2.png',
+                trafficLightYellow: './SDHG_TrafficLight_yellow2.png',
+                trafficLightGreen: './SDHG_TrafficLight_green2.png',
+                tryAgain: './SDHG_TryAgain_2.png',
+                yes: './SDHG_YES.png'
+            },
+            videos: {
+                dogAttention: './SDHG_dog_attention_mov.webm',
+                dogGo: './SDHG_dog_go_2.webm',
+                dogStandby: './SDHG_dog_standby_2.webm',
+                dogStop: './SDHG_dog_stop_2.webm',
+                dogWait: './SDHG_dog_wait.webm'
+            },
+            audio: {
+                recordClick: './SDHG_sound_record_click.mp3',
+                light: './SDHG_sound_light.mp3',
+                tryAgain: './SDHG_sound_TryAgain.mp3',
+                yes: './SDHG_sound_yes.mp3',
+                win: './SDHG_sound_win.mp3'
+            }
+        };
+        
+        // Game state variables
+        let gameState = GAME_STATES.PRELOAD;
+        let currentScore = 0;
+        let currentLightColor = null;
+        let currentDogAction = null;
+        let targetDogAction = null;
+        let isRecording = false;
+        let listeningPhaseState = null;
 
+        // DOM element references
+        const dom = {
+            gameContainer: document.getElementById('game-container'),
+            preloader: document.getElementById('preloader'),
+            resetButton: document.getElementById('reset-button'),
+            scoreDisplay: document.getElementById('score-display'),
+            trafficLight: document.getElementById('traffic-light'),
+            dogVideo: document.getElementById('dog-video'),
+            recordButton: document.getElementById('record-button'),
+            micIcon: document.getElementById('mic-icon'),
+            feedbackModule: document.getElementById('feedback-module'),
+            feedbackImage: document.getElementById('feedback-image'),
+            winScreen: document.getElementById('win-screen-container'),
+            guideDogModule: document.getElementById('guide-dog-module'),
+            bottomControls: document.getElementById('bottom-controls'),
+            recordClickSound: document.getElementById('record-click-sound'),
+            lightSound: document.getElementById('light-sound'),
+            tryAgainSound: document.getElementById('try-again-sound'),
+            yesSound: document.getElementById('yes-sound'),
+            winSound: document.getElementById('win-sound')
+        };
+        
+        // Initialize the game
+        function initGame() {
+            document.body.style.backgroundImage = `url('${RESOURCES.images.background}')`;
+            resetGame();
+            setupEventListeners();
+            dom.preloader.style.display = 'none';
+            dom.resetButton.classList.remove('hidden');
+            setGameState(GAME_STATES.IDLE);
+        }
+        
+        // Reset the game state
+        function resetGame() {
+            console.log("Resetting game...");
+            setGameState(GAME_STATES.IDLE);
+            currentScore = 0;
+            currentLightColor = null;
+            currentDogAction = null;
+            targetDogAction = null;
+            updateScoreDisplay();
+
+            dom.winScreen.style.display = 'none';
+            dom.preloader.style.display = 'none';
+
+            dom.trafficLight.style.display = 'block';
+            dom.guideDogModule.style.display = 'flex';
+            dom.bottomControls.style.display = 'flex';
+            dom.scoreDisplay.style.display = 'grid';
+            dom.recordButton.style.display = 'flex';
+
+            dom.feedbackModule.style.opacity = '0';
+            dom.feedbackModule.style.visibility = 'hidden';
+
+            dom.trafficLight.src = RESOURCES.images.trafficLightGray;
+            dom.dogVideo.src = RESOURCES.videos.dogStandby;
+            dom.dogVideo.loop = true;
+            dom.dogVideo.play().catch(e => console.warn("Dog standby video play failed on reset:", e.message));
+        }
+
+        // Function to handle entering the win screen
+        function enterWinScreen() {
+            setGameState(GAME_STATES.WIN);
+            dom.winSound.currentTime = 0;
+            dom.winSound.play();
+            
+            dom.winScreen.style.backgroundImage = `url('${RESOURCES.images.winBackground}')`;
+            dom.winScreen.style.display = 'flex';
+            
+            dom.trafficLight.style.display = 'none';
+            dom.guideDogModule.style.display = 'none';
+            dom.bottomControls.style.display = 'none';
+            
+            dom.feedbackModule.style.opacity = '0';
+            dom.feedbackModule.style.visibility = 'hidden';
+        }
+
+        // Update score display
+        function updateScoreDisplay() {
+            dom.scoreDisplay.textContent = `${currentScore}/${GAME_CONFIG.maxScore}`;
+        }
+        
+        // This function is called by the HTML button to trigger Android speech recognition
         function startSpeechRecognition() {
-            if (typeof Android !== "undefined") {
-                Android.startSpeechRecognition();  // Trigger Android's speech recognition
+            if (typeof Android !== "undefined" && Android.startSpeechRecognition) {
+                Android.startSpeechRecognition();
+                
+                isRecording = true;
+                dom.recordButton.classList.add('recording-animation');
+
+                if (!currentLightColor) {
+                    listeningPhaseState = GAME_STATES.LISTENING_LIGHT_COLOR;
+                } else {
+                    listeningPhaseState = GAME_STATES.LISTENING_DOG_ACTION;
+                }
+                setGameState(listeningPhaseState);
+                dom.recordClickSound.currentTime = 0;
+                dom.recordClickSound.play();
             } else {
-                alert("Speech recognition is not supported on this device.");
+                console.warn("Android object or startSpeechRecognition method not found. Speech recognition will not work.");
+                showMessageBox("Speech recognition feature requires the Android app to function correctly. Please ensure you are running this in the compiled Android app.");
+                setGameState(GAME_STATES.IDLE);
             }
         }
 
-        // Process speech result from Android
+        // This function will be called by the Android app after speech recognition is done
         function processSpeechResult(result) {
-            console.log("Speech result:", result);
-            // You can now process the speech result in your game logic here
-            // For example, update the game based on the recognized words
+            console.log("Speech result from Android:", result);
+            
+            isRecording = false;
+            dom.recordButton.classList.remove('recording-animation');
+
+            const transcript = result.toLowerCase();
+
+            switch (listeningPhaseState) {
+                case GAME_STATES.LISTENING_LIGHT_COLOR:
+                    processLightColor(transcript);
+                    break;
+                case GAME_STATES.LISTENING_DOG_ACTION:
+                    processDogAction(transcript);
+                    break;
+                default:
+                    console.warn("Speech recognized but no active listening phase detected. State:", listeningPhaseState, "Current Game State:", gameState);
+                    setGameState(GAME_STATES.IDLE);
+            }
+            listeningPhaseState = null;
         }
 
-        // Initialize the game and all other logic
+        // Setup only non-speech-related event listeners
+        function setupEventListeners() {
+            dom.resetButton.addEventListener('click', resetGame);
+            dom.winScreen.addEventListener('click', resetGame);
+            
+            dom.dogVideo.addEventListener('ended', function() {
+                if (gameState === GAME_STATES.LISTENING_DOG_ACTION) {
+                    dom.dogVideo.src = RESOURCES.videos.dogStandby;
+                    dom.dogVideo.loop = true;
+                    dom.dogVideo.play();
+                }
+            });
 
+            window.addEventListener('resize', () => {});
+        }
+        
+        function processLightColor(transcript) {
+            const detectedColor = GAME_CONFIG.colorKeywords.find(color =>
+                transcript.includes(color)
+            );
+            
+            if (detectedColor) {
+                currentLightColor = detectedColor;
+                dom.lightSound.currentTime = 0;
+                dom.lightSound.play();
+                
+                switch (detectedColor) {
+                    case 'red':
+                        dom.trafficLight.src = RESOURCES.images.trafficLightRed;
+                        targetDogAction = 'stop';
+                        break;
+                    case 'yellow':
+                        dom.trafficLight.src = RESOURCES.images.trafficLightYellow;
+                        targetDogAction = 'wait';
+                        break;
+                    case 'green':
+                        dom.trafficLight.src = RESOURCES.images.trafficLightGreen;
+                        targetDogAction = 'go';
+                        break;
+                }
+                
+                dom.dogVideo.src = RESOURCES.videos.dogAttention;
+                dom.dogVideo.loop = false;
+                dom.dogVideo.play();
+                
+                dom.dogVideo.onended = function() {
+                    const randomAction = GAME_CONFIG.dogActions[Math.floor(Math.random() * GAME_CONFIG.dogActions.length)];
+                    currentDogAction = randomAction;
+                    
+                    switch (randomAction) {
+                        case 'stop':
+                            dom.dogVideo.src = RESOURCES.videos.dogStop;
+                            break;
+                        case 'wait':
+                            dom.dogVideo.src = RESOURCES.videos.dogWait;
+                            break;
+                        case 'go':
+                            dom.dogVideo.src = RESOURCES.videos.dogGo;
+                            break;
+                    }
+                    
+                    dom.dogVideo.loop = true;
+                    dom.dogVideo.play();
+                    
+                    setGameState(GAME_STATES.IDLE);
+                };
+            } else {
+                showFeedback(false);
+            }
+        }
+        
+        function processDogAction(transcript) {
+            const isGoodJobPhrase = transcript.includes('good job');
+            const wordsInTranscript = transcript.split(/[^a-z0-9]+/).filter(word => word.length > 0);
+            let actionWordSpoken = null;
+            for (const word of wordsInTranscript) {
+                if (GAME_CONFIG.actionKeywords.includes(word)) {
+                    actionWordSpoken = word;
+                    break;
+                }
+            }
+
+            console.log('--- Processing Dog Action ---');
+            console.log('Raw Transcript:', transcript);
+            console.log('Words in transcript (sanitized):', wordsInTranscript);
+            console.log('Current Light Color (set by game):', currentLightColor);
+            console.log('Target Dog Action (expected from light):', targetDogAction);
+            console.log('Actual Dog Action (video played by game):', currentDogAction);
+            console.log('Is "good job" phrase detected:', isGoodJobPhrase);
+            console.log('Explicit action word spoken:', actionWordSpoken);
+
+            let isCorrect = false;
+
+            if (currentDogAction === targetDogAction) {
+                if (isGoodJobPhrase && actionWordSpoken === null) {
+                    isCorrect = true;
+                    console.log('Condition met: Dog action matches, AND ONLY "good job" detected.');
+                } else {
+                    isCorrect = false;
+                    console.log('Conditions for YES not met (Dog action matches, but feedback not ONLY "good job").');
+                }
+            } else {
+                if (actionWordSpoken === targetDogAction && !isGoodJobPhrase) {
+                    isCorrect = true;
+                    console.log('Condition met: Dog action MISMATCH, BUT ONLY student correctly identified target action.');
+                } else {
+                    isCorrect = false;
+                    console.log('Conditions for YES not met (Dog action MISMATCH, and feedback not ONLY target action).');
+                }
+            }
+            
+            console.log('Final isCorrect decision:', isCorrect);
+
+            if (isCorrect) {
+                currentScore++;
+                updateScoreDisplay();
+                dom.yesSound.currentTime = 0;
+                dom.yesSound.play();
+                dom.feedbackImage.src = RESOURCES.images.yes;
+                dom.feedbackModule.style.visibility = 'visible';
+                dom.feedbackModule.style.opacity = '1';
+                
+                if (currentScore >= GAME_CONFIG.maxScore) {
+                    setTimeout(enterWinScreen, 2000);
+                } else {
+                    setTimeout(() => {
+                        dom.feedbackModule.style.opacity = '0';
+                        setTimeout(() => {
+                            dom.feedbackModule.style.visibility = 'hidden';
+                        }, 500);
+                        
+                        currentLightColor = null;
+                        currentDogAction = null;
+                        targetDogAction = null;
+                        dom.trafficLight.src = RESOURCES.images.trafficLightGray;
+                        dom.dogVideo.src = RESOURCES.videos.dogStandby;
+                        dom.dogVideo.loop = true;
+                        dom.dogVideo.play();
+                        setGameState(GAME_STATES.IDLE);
+                    }, 2000);
+                }
+            } else {
+                showFeedback(false);
+            }
+        }
+        
+        function showFeedback(isPositive) {
+            if (!isPositive) {
+                dom.feedbackImage.src = RESOURCES.images.tryAgain;
+                dom.tryAgainSound.currentTime = 0;
+                dom.tryAgainSound.play();
+            }
+            
+            dom.feedbackModule.style.visibility = 'visible';
+            dom.feedbackModule.style.opacity = '1';
+            
+            setTimeout(() => {
+                dom.feedbackModule.style.opacity = '0';
+                setTimeout(() => {
+                    dom.feedbackModule.style.visibility = 'hidden';
+                }, 500);
+
+                setGameState(GAME_STATES.IDLE);
+
+                if (currentDogAction && currentLightColor) {
+                    switch (currentDogAction) {
+                        case 'stop':
+                            dom.dogVideo.src = RESOURCES.videos.dogStop;
+                            break;
+                        case 'wait':
+                            dom.dogVideo.src = RESOURCES.videos.dogWait;
+                            break;
+                        case 'go':
+                            dom.dogVideo.src = RESOURCES.videos.dogGo;
+                            break;
+                    }
+                    dom.dogVideo.loop = true;
+                    dom.dogVideo.play();
+                } else {
+                    dom.dogVideo.src = RESOURCES.videos.dogStandby;
+                    dom.dogVideo.loop = true;
+                    dom.dogVideo.play();
+                }
+            }, 2000);
+        }
+        
+        function setGameState(newState) {
+            gameState = newState;
+            console.log('Game state changed to:', newState);
+        }
+        
+        // Preload all resources
+        function preloadResources() {
+            const imageUrls = Object.values(RESOURCES.images);
+            const uniqueVideoUrlsToPreload = new Set(Object.values(RESOURCES.videos));
+            const uniqueAudioUrlsToPreload = new Set(Object.values(RESOURCES.audio));
+
+            const allResourcesToLoad = [
+                ...imageUrls,
+                ...Array.from(uniqueVideoUrlsToPreload),
+                ...Array.from(uniqueAudioUrlsToPreload)
+            ];
+
+            let loadedCount = 0;
+            
+            function updateProgress() {
+                loadedCount++;
+                const progress = Math.round((loadedCount / allResourcesToLoad.length) * 100);
+                document.querySelector('#preloader h2').textContent = `Loading Game Resources... ${progress}%`;
+                
+                if (loadedCount === allResourcesToLoad.length) {
+                    console.log("All resources loaded. Initializing game.");
+                    initGame();
+                }
+            }
+            
+            imageUrls.forEach(url => {
+                const img = new Image();
+                img.src = url;
+                img.onload = updateProgress;
+                img.onerror = updateProgress;
+            });
+            
+            uniqueVideoUrlsToPreload.forEach(url => {
+                const video = document.createElement('video');
+                video.src = url;
+                video.muted = true;
+                video.volume = 0;
+                video.preload = 'auto';
+
+                let loaded = false;
+                const handleLoaded = () => {
+                    if (!loaded) {
+                        loaded = true;
+                        updateProgress();
+                    }
+                };
+
+                video.addEventListener('canplaythrough', handleLoaded);
+                video.addEventListener('loadeddata', handleLoaded);
+                video.addEventListener('error', handleLoaded);
+
+                video.load();
+                video.play().catch(e => console.warn(`Video preload play failed for ${url}: ${e.message}`));
+            });
+            
+            uniqueAudioUrlsToPreload.forEach(url => {
+                const audio = new Audio();
+                audio.src = url;
+                audio.muted = true;
+                audio.volume = 0;
+                audio.preload = 'auto';
+
+                let loaded = false;
+                const handleLoaded = () => {
+                    if (!loaded) {
+                        loaded = true;
+                        updateProgress();
+                    }
+                };
+
+                audio.addEventListener('canplaythrough', handleLoaded);
+                audio.addEventListener('loadeddata', handleLoaded);
+                audio.addEventListener('error', handleLoaded);
+
+                audio.load();
+                audio.play().catch(e => console.warn(`Audio preload play failed for ${url}: ${e.message}`));
+            });
+        }
+        
+        // Assign resources
+        function assignResources() {
+            dom.trafficLight.src = RESOURCES.images.trafficLightGray;
+            dom.micIcon.src = RESOURCES.images.micIcon;
+            dom.dogVideo.src = RESOURCES.videos.dogStandby;
+            dom.recordClickSound.src = RESOURCES.audio.recordClick;
+            dom.lightSound.src = RESOURCES.audio.light;
+            dom.tryAgainSound.src = RESOURCES.audio.tryAgain;
+            dom.yesSound.src = RESOURCES.audio.yes;
+            dom.winSound.src = RESOURCES.audio.win;
+        }
+        
         window.addEventListener('DOMContentLoaded', function() {
             assignResources();
             preloadResources();
