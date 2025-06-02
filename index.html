@@ -156,11 +156,13 @@
         background: rgba(0, 0, 0, 0.7);
     }
 
-    /* 计分显示 - 调整数字大小以填满计分框 */
+    /* 计分显示 - 调整数字大小以适应计分框，避免溢出 */
     #score-display { 
         height: 10vh; 
-        /* <<<< 修改此处：调整字体大小以填满框 */
-        font-size: max(3rem, 6vw, 8vh); /* 选取最大值：最小 3rem，或 6% 视口宽度，或 8% 视口高度 */
+        /* <<<< 修改此处：减小 vh 值，并添加 overflow: hidden */
+        font-size: max(3rem, 6vw, 7vh); /* 调整 vh 值至 7vh，并保持其他响应式调整 */
+        overflow: hidden; /* 确保内容不会溢出边框 */
+        
         font-weight: bold;
         color: white;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
@@ -169,8 +171,8 @@
         background-color: rgba(0, 0, 0, 0.3);
         flex-shrink: 0; 
         
-        display: grid; /* 保持 grid 布局 */
-        place-items: center; /* 保持内容居中 */
+        display: grid; 
+        place-items: center; 
         
         flex-grow: 1; 
         max-width: 35%; 
