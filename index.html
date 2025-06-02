@@ -156,7 +156,7 @@
         background: rgba(0, 0, 0, 0.7);
     }
 
-    /* 计分显示 - 调整宽度和字体大小 */
+    /* 计分显示 - 调整数字位置为垂直居中 */
     #score-display { 
         height: 10vh; 
         font-size: max(1.5rem, 3vw); /* 字体大小响应式调整 */
@@ -167,14 +167,15 @@
         padding: 0.5rem 1rem; 
         background-color: rgba(0, 0, 0, 0.3);
         flex-shrink: 0; 
-        display: flex; 
-        align-items: center;
-        justify-content: center;
+        
+        /* <<<< 修改此处：改为 grid 布局，并使用 place-items 居中 */
+        display: grid; /* 使用 grid 布局 */
+        place-items: center; /* 同时在水平和垂直方向上居中内容 */
+        /* 移除之前的 display: flex; align-items: center; justify-content: center; */
         
         flex-grow: 1; /* 在flex容器中填充可用空间 */
         max-width: 35%; /* 允许其最大占据 35% 的空间 */
     }
-
     /* 预加载遮罩 */
     #preloader {
         position: absolute;
