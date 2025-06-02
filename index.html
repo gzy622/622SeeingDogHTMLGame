@@ -88,19 +88,53 @@
         object-fit: contain; /* Ensure video fits within container */
         border-radius: 0.5rem;
     }
-    
-    /* 底部控制模块 - 使用 justify-between 实现两端对齐，中间元素居中 */
+    /* 底部控制模块 - 作为相对定位的容器，并居中显示录制按钮 */
     #bottom-controls {
         /* 保持现有内联样式中的 position, bottom, width, box-sizing */
-        /* Tailwind CSS 类: flex justify-between items-center p-4 z-10 */
-        gap: 1rem; /* 为子元素之间添加一些间距 */
+        /* Tailwind CSS 类: flex justify-center items-center p-4 z-10 */
+        position: absolute; /* 确保它相对于父容器进行绝对定位 */
+        bottom: 0;
+        width: 100%;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center; /* <<<< 恢复：使录制按钮居中 */
+        align-items: center;
+        padding: 1rem; /* 根据 Tailwind 的 p-4 类，默认是 1rem */
+        z-index: 10;
+        position: relative; /* <<<< 关键：设置为相对定位，以便其子元素可以绝对定位 */
     }
 
-    /* 重置按钮 - 调整尺寸和布局行为 */
+    /* 录制按钮 - 样式和位置回到修改之前 */
+    #record-button {
+        height: 10vh; /* 保持原有的高度设置 */
+        padding: 0.5rem 1rem; /* 保持原有的内边距 */
+        font-size: max(1.2rem, 2.5vw); /* 保持原有字体大小 */
+        background: rgba(0, 0, 0, 0.5); /* 保持原有背景 */
+        color: white; /* 保持原有文字颜色 */
+        border: none; /* <<<< 确保没有边框 */
+        border-radius: 8px; /* <<<< 调整为更接近原始的方正圆角，而非圆形 */
+        box-shadow: none; /* <<<< 移除阴影，如果它被认为是“边框”的一部分 */
+        cursor: pointer;
+        font-weight: bold;
+        z-index: 5;
+        transition: background 0.3s ease;
+        
+        /* 恢复 flex 属性，让它在底部控制栏中占据中间位置并具有弹性 */
+        flex-grow: 1; /* <<<< 恢复 */
+        max-width: 35%; /* <<<< 恢复 */
+        margin-left: 1rem; /* <<<< 恢复 */
+        margin-right: 1rem; /* <<<< 恢复 */
+
+        display: flex; /* 保持 flex 用于图标居中 */
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 重置按钮 - 自适应调整位置 */
     #reset-button {
         height: 10vh; 
-        padding: 0.5rem 1rem; 
-        font-size: max(1.2rem, 2.5vw); 
+        padding: 0.5rem 1rem;
+        font-size: max(1.2rem, 2.5vw);
         background: rgba(0, 0, 0, 0.5);
         color: white;
         border: none;
@@ -110,54 +144,38 @@
         z-index: 5;
         transition: background 0.3s ease;
         flex-shrink: 0; /* 防止缩放 */
-        display: flex; 
+        display: flex;
         align-items: center;
         justify-content: center;
+
+        /* <<<< 新增：绝对定位，使其在底部控制栏的左侧 */
+        position: absolute;
+        left: 1rem; /* 距离左边缘 1rem (p-4 的默认 padding) */
+        top: 50%; /* 垂直居中 */
+        transform: translateY(-50%); /* 向上偏移自身高度的一半，实现精确居中 */
         
-        /* <<<< 调整尺寸：使用 clamp 实现响应式宽度，确保最小和最大尺寸 */
-        width: clamp(80px, 15vw, 150px); 
+        width: clamp(80px, 15vw, 150px); /* 保持响应式宽度 */
     }
 
-    /* 录制按钮 - 调整尺寸和布局行为，不再进行 flex-grow */
-    #record-button {
-        height: 10vh; 
-        padding: 0.5rem 1rem; 
-        font-size: max(1.2rem, 2.5vw); 
-        background: rgba(0, 0, 0, 0.5);
-        color: white;
-        border: none;
-        border-radius: 20px;
-        cursor: pointer;
-        font-weight: bold;
-        z-index: 5;
-        transition: background 0.3s ease;
-        flex-shrink: 0; /* 防止缩放 */
-        display: flex; 
-        align-items: center;
-        justify-content: center;
-        
-        /* <<<< 调整尺寸：使用 clamp 实现响应式宽度，使其在不同屏幕尺寸下保持合适大小 */
-        width: clamp(150px, 30vw, 250px); 
-    }
-
-    /* 计分区模块 - 移入底部控制栏后调整定位和样式 */
+    /* 计分区模块 - 自适应调整位置 */
     #score-display {
-        /* <<<< 移除绝对定位，使其参与 flex 布局 */
-        position: static; 
-        top: auto; /* 重置旧的 top 属性 */
-        right: auto; /* 重置旧的 right 属性 */
-
         background: rgba(0, 0, 0, 0.5);
         color: white;
         padding: 0.8rem 1.5rem;
         border-radius: 20px;
         font-size: max(1.5rem, 3vw);
         font-weight: bold;
-        z-index: 10; 
+        z-index: 10;
         min-width: 90px;
         text-align: center;
         box-sizing: border-box;
         flex-shrink: 0; /* 防止缩放 */
+
+        /* <<<< 新增：绝对定位，使其在底部控制栏的右侧 */
+        position: absolute;
+        right: 1rem; /* 距离右边缘 1rem (p-4 的默认 padding) */
+        top: 50%; /* 垂直居中 */
+        transform: translateY(-50%); /* 向上偏移自身高度的一半，实现精确居中 */
     }
         /* 预加载遮罩 */
         #preloader {
@@ -267,16 +285,15 @@
             </div>
         </div>
         
-        <div id="bottom-controls" class="flex justify-between items-center p-4 z-10" style="position: absolute; bottom: 0; width: 100%; box-sizing: border-box;">
-            <button id="reset-button" class="hidden">Restart</button>
-            
-            <button id="record-button" class="bg-gray-700 hover:bg-gray-600 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-all duration-300 transform scale-100 active:scale-95 text-white font-bold py-3 px-6 rounded-full shadow-lg flex items-center justify-center">
+        <div id="bottom-controls" class="flex justify-center items-center p-4 z-10" style="position: absolute; bottom: 0; width: 100%; box-sizing: border-box;">
+            <button id="record-button" class="flex-grow max-w-[35%] ml-4 mr-4 bg-gray-700 hover:bg-gray-600 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-all duration-300 transform scale-100 active:scale-95 text-white font-bold py-3 px-6 flex items-center justify-center">
                 <img id="mic-icon" src="assets/mic-icon.png" alt="Record" style="height: 100%; object-fit: contain;">
             </button>
             
+            <button id="reset-button" class="hidden">Restart</button>
+            
             <div id="score-display"></div>
         </div>
-        
         <div id="feedback-module">
             <img id="feedback-image" src="" alt="Feedback">
         </div>
