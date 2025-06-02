@@ -156,10 +156,11 @@
         background: rgba(0, 0, 0, 0.7);
     }
 
-    /* 计分显示 - 调整数字位置为垂直居中 */
+    /* 计分显示 - 调整数字大小以填满计分框 */
     #score-display { 
         height: 10vh; 
-        font-size: max(1.5rem, 3vw); /* 字体大小响应式调整 */
+        /* <<<< 修改此处：调整字体大小以填满框 */
+        font-size: max(3rem, 6vw, 8vh); /* 选取最大值：最小 3rem，或 6% 视口宽度，或 8% 视口高度 */
         font-weight: bold;
         color: white;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
@@ -168,13 +169,11 @@
         background-color: rgba(0, 0, 0, 0.3);
         flex-shrink: 0; 
         
-        /* <<<< 修改此处：改为 grid 布局，并使用 place-items 居中 */
-        display: grid; /* 使用 grid 布局 */
-        place-items: center; /* 同时在水平和垂直方向上居中内容 */
-        /* 移除之前的 display: flex; align-items: center; justify-content: center; */
+        display: grid; /* 保持 grid 布局 */
+        place-items: center; /* 保持内容居中 */
         
-        flex-grow: 1; /* 在flex容器中填充可用空间 */
-        max-width: 35%; /* 允许其最大占据 35% 的空间 */
+        flex-grow: 1; 
+        max-width: 35%; 
     }
     /* 预加载遮罩 */
     #preloader {
