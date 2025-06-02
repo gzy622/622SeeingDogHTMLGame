@@ -104,32 +104,30 @@
         position: relative; /* <<<< 关键：设置为相对定位，以便其子元素可以绝对定位 */
     }
 
-    /* 录制按钮 - 样式和位置回到修改之前 */
+    /* 录制按钮 - 移除边框并放大高度 */
     #record-button {
-        height: 10vh; /* 保持原有的高度设置 */
-        padding: 0.5rem 1rem; /* 保持原有的内边距 */
-        font-size: max(1.2rem, 2.5vw); /* 保持原有字体大小 */
-        background: rgba(0, 0, 0, 0.5); /* 保持原有背景 */
-        color: white; /* 保持原有文字颜色 */
-        border: none; /* <<<< 确保没有边框 */
-        border-radius: 8px; /* <<<< 调整为更接近原始的方正圆角，而非圆形 */
-        box-shadow: none; /* <<<< 移除阴影，如果它被认为是“边框”的一部分 */
+        height: 20vh; /* <<<< 修改：高度变为原来的两倍 */
+        padding: 0.5rem 1rem; 
+        font-size: max(1.2rem, 2.5vw); 
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none; /* <<<< 保持：确保没有边框 */
+        border-radius: 8px; /* 保持：轻微的圆角，使其不是尖锐的矩形 */
+        box-shadow: none; /* 保持：移除阴影，确保没有额外的视觉边框感 */
         cursor: pointer;
         font-weight: bold;
         z-index: 5;
         transition: background 0.3s ease;
         
-        /* 恢复 flex 属性，让它在底部控制栏中占据中间位置并具有弹性 */
-        flex-grow: 1; /* <<<< 恢复 */
-        max-width: 35%; /* <<<< 恢复 */
-        margin-left: 1rem; /* <<<< 恢复 */
-        margin-right: 1rem; /* <<<< 恢复 */
+        flex-grow: 1; 
+        max-width: 35%; 
+        margin-left: 1rem; 
+        margin-right: 1rem; 
 
-        display: flex; /* 保持 flex 用于图标居中 */
+        display: flex; 
         align-items: center;
         justify-content: center;
     }
-
     /* 重置按钮 - 自适应调整位置 */
     #reset-button {
         height: 10vh; 
