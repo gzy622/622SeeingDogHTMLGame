@@ -104,79 +104,98 @@
         position: relative; /* <<<< 关键：设置为相对定位，以便其子元素可以绝对定位 */
     }
 
-    /* 录制按钮 - 移除遮罩并调整大小 */
-    #record-button {
-        height: 20vh; 
-        padding: 0.5rem 1rem; 
-        font-size: max(1.2rem, 2.5vw); 
-        background: transparent; /* <<<< 修改：设置为透明背景，移除半透明黑色遮罩 */
-        color: white;
-        border: none; 
-        border-radius: 8px; 
-        box-shadow: none; 
-        cursor: pointer;
-        font-weight: bold;
-        z-index: 5;
-        transition: background 0.3s ease;
-        
-        flex-grow: 0; /* <<<< 修改：不再允许它扩展，防止占用过多横向空间 */
-        /* max-width: 35%; <<<< 移除，不再需要 */
-        /* margin-left: 1rem; <<<< 移除，不再需要 */
-        /* margin-right: 1rem; <<<< 移除，不再需要 */
-        
-        width: clamp(100px, 20vw, 180px); /* <<<< 新增：设置一个更小的响应式宽度，限制其横向大小 */
+        /* 底部控制模块 - 作为相对定位的容器 */
+        #bottom-controls {
+            /* 保持现有内联样式中的 position, bottom, width, box-sizing */
+            /* Tailwind CSS 类: flex justify-center items-center p-4 z-10 */
+            position: absolute; /* 确保它相对于父容器进行绝对定位 */
+            bottom: 0; /* 确保底部边缘固定在视口底部 */
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center; /* 使录制按钮居中 */
+            align-items: center; /* 垂直居中按钮内容 */
+            padding: 1rem; /* 根据 Tailwind 的 p-4 类，默认是 1rem */
+            z-index: 10;
+            position: relative; /* 关键：设置为相对定位，以便其子元素可以绝对定位 */
+        }
 
-        display: flex; 
-        align-items: center;
-        justify-content: center;
-    }
-    /* 重置按钮 - 自适应调整位置 */
-    #reset-button {
-        height: 10vh; 
-        padding: 0.5rem 1rem;
-        font-size: max(1.2rem, 2.5vw);
-        background: rgba(0, 0, 0, 0.5);
-        color: white;
-        border: none;
-        border-radius: 20px;
-        cursor: pointer;
-        font-weight: bold;
-        z-index: 5;
-        transition: background 0.3s ease;
-        flex-shrink: 0; /* 防止缩放 */
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        /* 录制按钮 - 调整大小，中点不变 */
+        #record-button {
+            height: 40vh; /* <<<< 修改：高度调整为 40vh */
+            width: clamp(100px, 40vw, 180px); /* <<<< 修改：宽度调整为 clamp(100px, 40vw, 180px) */
+            
+            background: transparent; /* 保持：透明背景 */
+            color: white;
+            border: none; 
+            border-radius: 8px; 
+            box-shadow: none; 
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 5;
+            transition: background 0.3s ease;
+            
+            flex-grow: 0; /* <<<< 保持：不再允许它扩展，防止占用过多横向空间 */
+            /* 移除之前可能存在的 margin-left/right，因为现在是绝对定位的元素 */
+            
+            display: flex; 
+            align-items: center;
+            justify-content: center;
 
-        /* <<<< 新增：绝对定位，使其在底部控制栏的左侧 */
-        position: absolute;
-        left: 1rem; /* 距离左边缘 1rem (p-4 的默认 padding) */
-        top: 50%; /* 垂直居中 */
-        transform: translateY(-50%); /* 向上偏移自身高度的一半，实现精确居中 */
-        
-        width: clamp(80px, 15vw, 150px); /* 保持响应式宽度 */
-    }
+            /* <<<< 新增：将按钮的垂直中点固定在底部控制栏的某个位置 */
+            /* 假设我们希望按钮的视觉中点距离 bottom-controls 底部边缘 1rem + 10vh (原始按钮中心位置) */
+            /* 那么按钮的 bottom 边缘应该在： (1rem + 10vh) - (当前按钮高度 / 2) */
+            bottom: calc(1rem + 10vh - (40vh / 2)); /* 1rem (bottom-controls padding) + 10vh (原始按钮中心点) - 20vh (新按钮一半高) */
+            position: absolute; /* 确保它相对于 #bottom-controls 进行绝对定位 */
+            left: 50%; /* 水平居中 */
+            transform: translateX(-50%); /* 微调水平居中 */
+        }
 
-    /* 计分区模块 - 自适应调整位置 */
-    #score-display {
-        background: rgba(0, 0, 0, 0.5);
-        color: white;
-        padding: 0.8rem 1.5rem;
-        border-radius: 20px;
-        font-size: max(1.5rem, 3vw);
-        font-weight: bold;
-        z-index: 10;
-        min-width: 90px;
-        text-align: center;
-        box-sizing: border-box;
-        flex-shrink: 0; /* 防止缩放 */
+        /* 重置按钮 - 自适应调整位置，固定在底部 */
+        #reset-button {
+            height: 10vh; 
+            padding: 0.5rem 1rem;
+            font-size: max(1.2rem, 2.5vw);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 5;
+            transition: background 0.3s ease;
+            flex-shrink: 0; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-        /* <<<< 新增：绝对定位，使其在底部控制栏的右侧 */
-        position: absolute;
-        right: 1rem; /* 距离右边缘 1rem (p-4 的默认 padding) */
-        top: 50%; /* 垂直居中 */
-        transform: translateY(-50%); /* 向上偏移自身高度的一半，实现精确居中 */
-    }
+            /* <<<< 修改：绝对定位，固定在 #bottom-controls 的左下角 */
+            position: absolute;
+            left: 1rem; /* 距离左边缘 1rem */
+            bottom: 1rem; /* <<<< 关键：固定在底部边缘 1rem */
+            /* 移除 top: 50% 和 transform: translateY(-50%) */
+        }
+
+        /* 计分区模块 - 自适应调整位置，固定在底部 */
+        #score-display {
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 20px;
+            font-size: max(1.5rem, 3vw);
+            font-weight: bold;
+            z-index: 10;
+            min-width: 90px;
+            text-align: center;
+            box-sizing: border-box;
+            flex-shrink: 0; 
+
+            /* <<<< 修改：绝对定位，固定在 #bottom-controls 的右下角 */
+            position: absolute;
+            right: 1rem; /* 距离右边缘 1rem */
+            bottom: 1rem; /* <<<< 关键：固定在底部边缘 1rem */
+            /* 移除 top: 50% 和 transform: translateY(-50%) */
+        }
         /* 预加载遮罩 */
         #preloader {
             position: absolute;
