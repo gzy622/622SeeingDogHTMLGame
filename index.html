@@ -886,46 +886,94 @@
         // Preload all resources
         function preloadResources() {
             const imageUrls = Object.values(RESOURCES.images);
-            const videoUrls = Object.values(RESOURCES.videos);
-            const audioUrls = Object.values(RESOURCES.audio);
-            
-            const allResources = [...imageUrls, ...videoUrls, ...audioUrls];
+            // 收集所有独特的视频和音频URL，确保所有文件都被处理
+            const uniqueVideoUrlsToPreload = new Set(Object.values(RESOURCES.videos));
+            const uniqueAudioUrlsToPreload = new Set(Object.values(RESOURCES.audio));
+
+            const allResourcesToLoad = [
+                ...imageUrls,
+                ...Array.from(uniqueVideoUrlsToPreload),
+                ...Array.from(uniqueAudioUrlsToPreload)
+            ];
+
             let loadedCount = 0;
             
             function updateProgress() {
                 loadedCount++;
-                const progress = Math.round((loadedCount / allResources.length) * 100);
+                const progress = Math.round((loadedCount / allResourcesToLoad.length) * 100);
                 document.querySelector('#preloader h2').textContent = `Loading Game Resources... ${progress}%`;
+                
+                if (loadedCount === allResourcesToLoad.length) {
+                    console.log("All resources loaded. Initializing game.");
+                    initGame(); // 只有当所有资源都加载完成后才初始化游戏
+                }
             }
             
-            // Preload images
+            // 预加载图片
             imageUrls.forEach(url => {
                 const img = new Image();
                 img.src = url;
                 img.onload = updateProgress;
-                img.onerror = updateProgress;
+                img.onerror = updateProgress; // 错误时也计入进度，防止卡住
             });
             
-            // Preload videos
-            videoUrls.forEach(url => {
+            // 预加载视频 - 使用 oncanplaythrough 确保可播放，并尝试静默播放一次以强制缓存
+            uniqueVideoUrlsToPreload.forEach(url => {
                 const video = document.createElement('video');
                 video.src = url;
-                video.onloadeddata = updateProgress;
-                video.onerror = updateProgress;
+                video.muted = true; // 静音播放
+                video.volume = 0; // 确保音量为0
+                video.preload = 'auto'; // 提示浏览器完全预加载
+
+                let loaded = false; // 标志，确保每个资源只计数一次
+                const handleLoaded = () => {
+                    if (!loaded) {
+                        loaded = true;
+                        updateProgress();
+                    }
+                };
+
+                // 优先使用 oncanplaythrough，表示可以不中断地播放完整媒体
+                video.addEventListener('canplaythrough', handleLoaded);
+                // 作为备用，使用 onloadeddata，表示媒体的元数据和当前帧已加载
+                video.addEventListener('loadeddata', handleLoaded); 
+                video.addEventListener('error', handleLoaded); // 错误时也计入进度
+
+                // 尝试加载和播放，以强制下载并缓存
+                video.load(); // 触发加载
+                video.play().catch(e => console.warn(`Video preload play failed for ${url}: ${e.message}`)); // 捕获并记录播放错误
             });
             
-            // Preload audio
-            audioUrls.forEach(url => {
+            // 预加载音频 - 使用 oncanplaythrough 确保可播放，并尝试静默播放一次以强制缓存
+            uniqueAudioUrlsToPreload.forEach(url => {
                 const audio = new Audio();
                 audio.src = url;
-                audio.onloadeddata = updateProgress;
-                audio.onerror = updateProgress;
+                audio.muted = true; // 静音播放
+                audio.volume = 0; // 确保音量为0
+                audio.preload = 'auto'; // 提示浏览器完全预加载
+
+                let loaded = false; // 标志，确保每个资源只计数一次
+                const handleLoaded = () => {
+                    if (!loaded) {
+                        loaded = true;
+                        updateProgress();
+                    }
+                };
+
+                // 优先使用 oncanplaythrough
+                audio.addEventListener('canplaythrough', handleLoaded);
+                // 作为备用，使用 onloadeddata
+                audio.addEventListener('loadeddata', handleLoaded);
+                audio.addEventListener('error', handleLoaded); // 错误时也计入进度
+
+                // 尝试加载和播放，以强制下载并缓存
+                audio.load(); // 触发加载
+                audio.play().catch(e => console.warn(`Audio preload play failed for ${url}: ${e.message}`)); // 捕获并记录播放错误
             });
-            
-            // Set timeout to ensure game starts
-            setTimeout(initGame, 3000);
+
+            // 移除固定的 setTimeout，现在 initGame 会在所有资源加载完成后被调用
+            // setTimeout(initGame, 3000); 
         }
-        
         // Assign resources
         function assignResources() {
             // Set initial images
