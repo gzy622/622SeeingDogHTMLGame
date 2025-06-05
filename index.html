@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>百度智能云语音识别</title>
+    <!-- 引入 Tailwind CSS CDN，用于美化界面 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 设置全局字体为 Inter，确保美观 */
+        body {
+            font-family: 'Inter', sans-serif;
+            @apply bg-gray-100 flex items-center justify-center min-h-screen p-4;
+        }
+        /* 自定义滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg text-center border-b-4 border-blue-500">
+        <h1 class="text-3xl font-extrabold mb-6 text-gray-800 tracking-tight">🎙️ 百度智能云语音识别</h1>
+        <p class="text-gray-600 mb-6 leading-relaxed">点击下面的按钮开始录音，再次点击停止录音并发送给百度智能云识别。</p>
+
+        <!-- 重要的 API Key 和 Secret Key 配置提醒 -->
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4 rounded-md mb-6 text-left" role="alert">
+            <p class="font-bold">重要提示：</p>
+            <p class="text-sm">请在下方输入您的百度智能云 **API Key** 和 **Secret Key**。在生产环境中，密钥不应直接暴露在前端代码中，请通过后端服务获取 Access Token 和进行语音识别请求。</p>
+            <p class="text-sm mt-2">如何获取 API Key 和 Secret Key，请参考下方的说明。</p>
+        </div>
+
+        <!-- 密钥输入区域 -->
+        <div class="mb-6 space-y-4 text-left">
+            <div>
+                <label for="apiKeyInput" class="block text-gray-700 text-sm font-bold mb-2">
+                    百度 API Key:
+                </label>
+                <input type="text" id="apiKeyInput" placeholder="请输入您的 API Key"
+                       class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200">
+            </div>
+            <div>
+                <label for="secretKeyInput" class="block text-gray-700 text-sm font-bold mb-2">
+                    百度 Secret Key:
+                </label>
+                <input type="text" id="secretKeyInput" placeholder="请输入您的 Secret Key"
+                       class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200">
+            </div>
+        </div>
+
+        <button id="startStopBtn"
+                class="px-8 py-4 bg-blue-600 text-white font-bold rounded-full shadow-lg hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
+            开始录音
+        </button>
+
+        <div class="mt-8">
+            <p id="status" class="text-lg text-gray-700 font-medium mb-4">准备就绪...</p>
+            <div id="result" class="bg-gray-50 p-6 rounded-lg border border-gray-200 text-gray-800 text-left min-h-[120px] max-h-60 overflow-y-auto leading-relaxed shadow-inner">
+                <span class="text-gray-400">录音结束后，识别结果将显示在这里...</span>
+            </div>
+        </div>
+
+        <!-- 模态框用于显示提示信息，替代 alert() -->
+        <div id="messageModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full text-center">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800" id="modalTitle">提示</h3>
+                <p class="text-gray-700 mb-6" id="modalContent">这是一个提示消息。</p>
+                <button id="closeModalBtn" class="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition duration-300">
+                    确定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取页面元素
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const secretKeyInput = document.getElementById('secretKeyInput');
+        const startStopBtn = document.getElementById('startStopBtn');
+        const statusDisplay = document.getElementById('status');
+        const resultDisplay = document.getElementById('result');
+        const messageModal = document.getElementById('messageModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalContent = document.getElementById('modalContent');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+
+        // 从 localStorage 加载保存的密钥（如果存在）
+        window.onload = () => {
+            const savedApiKey = localStorage.getItem('baidu_api_key');
+            const savedSecretKey = localStorage.getItem('baidu_secret_key');
+            if (savedApiKey) {
+                apiKeyInput.value = savedApiKey;
+            }
+            if (savedSecretKey) {
+                secretKeyInput.value = savedSecretKey;
+            }
+        };
+
+        let mediaRecorder; // MediaRecorder 对象
+        let audioChunks = []; // 用于存储音频数据块
+        let audioStream; // 用于存储 MediaStream 对象，以便在停止时关闭麦克风轨道
+        let isRecording = false; // 标记当前是否正在录音
+        let baiduAccessToken = ''; // 存储百度 Access Token
+
+        // 显示模态框
+        function showModal(title, content) {
+            modalTitle.textContent = title;
+            modalContent.textContent = content;
+            messageModal.classList.remove('hidden');
+        }
+
+        // 关闭模态框
+        closeModalBtn.addEventListener('click', () => {
+            messageModal.classList.add('hidden');
+        });
+
+        // 获取百度 Access Token
+        async function getBaiduAccessToken(BAIDU_API_KEY, BAIDU_SECRET_KEY) {
+            if (!BAIDU_API_KEY || !BAIDU_SECRET_KEY) {
+                showModal('配置错误', '请填写您的百度 API Key 和 Secret Key。');
+                return false;
+            }
+
+            const BAIDU_TOKEN_URL = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${BAIDU_API_KEY}&client_secret=${BAIDU_SECRET_KEY}`;
+
+            try {
+                statusDisplay.textContent = '正在获取认证令牌...';
+                const response = await fetch(BAIDU_TOKEN_URL, { method: 'POST', mode: 'cors' });
+                const data = await response.json();
+
+                if (response.ok && data.access_token) {
+                    baiduAccessToken = data.access_token;
+                    statusDisplay.textContent = '认证成功！';
+                    // 成功获取token后，将密钥保存到 localStorage
+                    localStorage.setItem('baidu_api_key', BAIDU_API_KEY);
+                    localStorage.setItem('baidu_secret_key', BAIDU_SECRET_KEY);
+                    return true;
+                } else {
+                    showModal('认证失败', `获取 Access Token 失败: ${data.error_description || '未知错误'}`);
+                    console.error('Failed to get Baidu Access Token:', data);
+                    return false;
+                }
+            } catch (error) {
+                showModal('网络或跨域错误', `获取 Access Token 时网络出错或被浏览器安全策略阻止: ${error.message}。\n\n请确保您的网络连接正常，并检查当前运行环境是否允许跨域请求（例如，直接打开本地HTML文件可能会遇到此问题）。`);
+                console.error('Error fetching Baidu Access Token:', error);
+                return false;
+            }
+        }
+
+        // 开始录音
+        async function startRecording() {
+            const BAIDU_API_KEY = apiKeyInput.value.trim();
+            const BAIDU_SECRET_KEY = secretKeyInput.value.trim();
+
+            if (!BAIDU_API_KEY || !BAIDU_SECRET_KEY) {
+                showModal('密钥缺失', '请在开始录音前填写您的百度 API Key 和 Secret Key。');
+                return;
+            }
+
+            // 在开始录音前先获取 Access Token
+            // 每次启动录音都尝试获取新的 Access Token，或者检查现有 Token 是否有效
+            // 为了简化，这里每次都尝试重新获取，更优解是判断 Token 是否过期
+            const tokenSuccess = await getBaiduAccessToken(BAIDU_API_KEY, BAIDU_SECRET_KEY);
+            if (!tokenSuccess) {
+                // 如果获取 Access Token 失败，则不继续录音
+                statusDisplay.textContent = '准备就绪...';
+                return;
+            }
+
+            try {
+                statusDisplay.textContent = '请求麦克风权限...';
+                audioStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        sampleRate: 16000 // 百度语音识别推荐的采样率
+                    }
+                });
+
+                // 创建 MediaRecorder 实例
+                // 百度语音识别支持 Opus 编码的 WebM 格式
+                mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm; codecs=opus' });
+                audioChunks = []; // 清空之前的音频数据
+
+                // 当 MediaRecorder 有可用数据时触发
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                // 当 MediaRecorder 停止时触发
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm; codecs=opus' });
+                    sendAudioToBaidu(audioBlob); // 发送音频到百度智能云 API
+                    // 关闭麦克风轨道，释放资源
+                    audioStream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start(); // 开始录音
+                isRecording = true;
+                statusDisplay.textContent = '正在录音... 请开始说话...';
+                startStopBtn.textContent = '停止录音并识别';
+                startStopBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                startStopBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                resultDisplay.innerHTML = '<span class="text-gray-400">录音结束后，识别结果将显示在这里...</span>'; // 清空结果显示区域
+
+            } catch (err) {
+                // 处理获取麦克风权限或启动录音的错误
+                isRecording = false;
+                startStopBtn.textContent = '开始录音';
+                startStopBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                startStopBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                statusDisplay.textContent = '准备就绪...';
+
+                let errorMessage = '';
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    errorMessage = '麦克风权限被拒绝。请允许本网站访问麦克风。';
+                } else if (err.name === 'NotFoundError') {
+                    errorMessage = '未找到麦克风设备。请检查您的设备是否有麦克风。';
+                } else {
+                    errorMessage = `无法启动录音: ${err.message || err.name}。请检查您的麦克风设置。`;
+                }
+                showModal('麦克风错误', errorMessage);
+                console.error('Error starting recording:', err);
+            }
+        }
+
+        // 停止录音
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                isRecording = false;
+                statusDisplay.textContent = '录音停止，正在发送音频进行识别...';
+            }
+        }
+
+        // 将录制的音频发送到 百度智能云语音识别 API
+        async function sendAudioToBaidu(audioBlob) {
+            if (!baiduAccessToken) {
+                showModal('错误', 'Access Token 未获取或已失效，请重新尝试。');
+                statusDisplay.textContent = '识别失败。';
+                resetButtonState();
+                return;
+            }
+
+            // 使用 FileReader 将 Blob 转换为 Base64 字符串
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = async () => {
+                const base64Audio = reader.result.split(',')[1]; // 移除数据 URL 的前缀
+
+                // 百度 API 的 CUID (Client User ID) 可以是随机生成的唯一字符串
+                const cuid = 'web_user_' + Date.now();
+
+                // 百度语音识别短音频接口的参数
+                const payload = {
+                    format: 'opus', // 音频格式，与 MediaRecorder 的 mimeType 对应
+                    rate: 16000, // 采样率，与 getUserMedia 中的设置一致
+                    channel: 1, // 声道数，默认为单声道
+                    cuid: cuid, // 客户端用户 ID
+                    token: baiduAccessToken, // 访问令牌
+                    dev_pid: 1537, // 常用普通话识别模型ID (1537 或 80001)
+                    speech: base64Audio, // Base64 编码的音频数据
+                    len: audioBlob.size, // 音频长度 (字节数)
+                };
+
+                try {
+                    resultDisplay.textContent = '正在识别中，请稍候...';
+                    const response = await fetch(BAIDU_ASR_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.err_no === 0) { // err_no 为 0 表示成功
+                        if (data.result && data.result.length > 0) {
+                            resultDisplay.textContent = data.result[0]; // 百度识别结果通常在 result 数组的第一个元素
+                            statusDisplay.textContent = '识别成功！';
+                        } else {
+                            resultDisplay.textContent = '未能识别出任何内容。请重新尝试。';
+                            statusDisplay.textContent = '识别完成。';
+                        }
+                    } else {
+                        // API 返回错误（例如：Token 无效、参数错误等）
+                        statusDisplay.textContent = '识别失败。';
+                        showModal('百度 API 错误', `识别失败：${data.err_msg || '未知错误'}\n错误码: ${data.err_no || 'N/A'}`);
+                        console.error('Baidu API Error:', data);
+                        // 如果是 Token 错误，可以尝试清空 Token 强制重新获取
+                        if (data.err_no === 3302 || data.err_no === 3301) { // 3302: Token失效，3301: Token无效
+                            baiduAccessToken = '';
+                        }
+                    }
+                } catch (error) {
+                    // 网络请求本身的错误（例如：断网）
+                    statusDisplay.textContent = '识别失败。';
+                    showModal('网络请求错误', `发送请求时发生错误: ${error.message}。请检查您的网络连接。`);
+                    console.error('Fetch error:', error);
+                } finally {
+                    resetButtonState();
+                }
+            };
+        }
+
+        // 重置按钮状态
+        function resetButtonState() {
+            startStopBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+            startStopBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            startStopBtn.textContent = '开始录音';
+        }
+
+        // 按钮点击事件处理
+        startStopBtn.addEventListener('click', () => {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+    </script>
+</body>
+</html>
