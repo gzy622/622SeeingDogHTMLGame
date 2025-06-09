@@ -1,333 +1,1026 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>百度智能云语音识别</title>
-    <!-- 引入 Tailwind CSS CDN，用于美化界面 -->
+    <title>Seeing Dog HTML Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* 设置全局字体为 Inter，确保美观 */
-        body {
-            font-family: 'Inter', sans-serif;
-            @apply bg-gray-100 flex items-center justify-center min-h-screen p-4;
-        }
-        /* 自定义滚动条样式 */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-    </style>
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    body {
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: #1a202c;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Inter', sans-serif;
+        color: white;
+    }
+
+    .game-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+    }
+
+    #traffic-light-module {
+        position: absolute;
+        top: 2%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80vw;
+        height: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    #traffic-light-module img {
+        width: 100%;
+        height: auto;
+        max-height: 40vh;
+        border-radius: 0.5rem;
+    }
+
+    #guide-dog-module {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        height: 40vh;
+        width: 40vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .dog-video-container {
+        width: 100%;
+        height: 100%;
+        padding-bottom: 0;
+        position: relative;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        background-color: transparent;
+    }
+    .dog-video-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        border-radius: 0.5rem;
+        background-color: transparent;
+        transition: opacity 0.6s ease-in-out;
+    }
+    
+    .dog-video-container video:not(.loaded) {
+        opacity: 0;
+    }
+    
+    .dog-video-container video.loaded {
+        opacity: 1;
+    }
+
+    #bottom-controls {
+        position: absolute;
+        bottom: 2%;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2vw;
+        width: 90%;
+        max-width: 900px;
+    }
+
+    #record-button {
+        height: 20vh;
+        width: 20vh;
+        flex-shrink: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: transparent !important;
+        border: none !important;
+        color: transparent;
+        padding: 0;
+        cursor: pointer;
+        outline: none !important;
+        box-shadow: none !important;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    
+    #record-button:focus,
+    #record-button:active,
+    #record-button:hover {
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+    
+    #record-button:focus-visible {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    
+    #record-button img {
+        height: 100%;
+        width: auto;
+        border-radius: 50%;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease-in-out;
+        object-fit: contain;
+        pointer-events: none;
+    }
+    
+    #record-button:active img,
+    #record-button.active img {
+        transform: scale(0.95);
+    }
+    
+    #record-button.recording-animation img {
+        animation: pulse 1.5s infinite;
+    }
+
+    #reset-button {
+        height: 10vh;
+        padding: 0.5rem 1rem;
+        font-size: max(1.2rem, 2.5vw);
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+        z-index: 5;
+        transition: background 0.3s ease;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-grow: 1;
+        max-width: 35%;
+    }
+
+    #reset-button:hover {
+        background: rgba(0, 0, 0, 0.7);
+    }
+
+    #score-display {
+        height: 10vh;
+        font-size: max(3rem, 6vw, 6vh);
+        overflow: hidden;
+        line-height: 1;
+        font-weight: bold;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        border-radius: 0.5rem;
+        padding: 0.5rem 1rem;
+        background-color: rgba(0, 0, 0, 0.3);
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        flex-grow: 1;
+        max-width: 35%;
+    }
+
+    #preloader {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        color: white;
+        border-radius: 0.5rem;
+    }
+
+    .loading-spinner {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 4px solid #fff;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-top: 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    #feedback-module {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 10;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.5s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+		
+	#feedback-module img {
+		width: 80vw;
+		max-width: 80vw;
+		height: auto;
+		max-height: 60vh;
+		object-fit: contain;
+		border-radius: 1rem;
+		border: none;
+	}
+
+    #win-screen-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        display: none;
+        z-index: 20;
+        border-radius: 0.5rem;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+</style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg text-center border-b-4 border-blue-500">
-        <h1 class="text-3xl font-extrabold mb-6 text-gray-800 tracking-tight">🎙️ 百度智能云语音识别</h1>
-        <p class="text-gray-600 mb-6 leading-relaxed">点击下面的按钮开始录音，再次点击停止录音并发送给百度智能云识别。</p>
-
-        <!-- 重要的 API Key 和 Secret Key 配置提醒 -->
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4 rounded-md mb-6 text-left" role="alert">
-            <p class="font-bold">重要提示：</p>
-            <p class="text-sm">请在下方输入您的百度智能云 **API Key** 和 **Secret Key**。在生产环境中，密钥不应直接暴露在前端代码中，请通过后端服务获取 Access Token 和进行语音识别请求。</p>
-            <p class="text-sm mt-2">如何获取 API Key 和 Secret Key，请参考下方的说明。</p>
+<body>
+    <div id="game-container" class="game-container">
+        <div id="preloader">
+            <h2 class="text-2xl font-bold mb-4">Loading Game Resources...</h2>
+            <div class="loading-spinner"></div>
         </div>
-
-        <!-- 密钥输入区域 -->
-        <div class="mb-6 space-y-4 text-left">
-            <div>
-                <label for="apiKeyInput" class="block text-gray-700 text-sm font-bold mb-2">
-                    百度 API Key:
-                </label>
-                <input type="text" id="apiKeyInput" placeholder="请输入您的 API Key"
-                       class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200">
-            </div>
-            <div>
-                <label for="secretKeyInput" class="block text-gray-700 text-sm font-bold mb-2">
-                    百度 Secret Key:
-                </label>
-                <input type="text" id="secretKeyInput" placeholder="请输入您的 Secret Key"
-                       class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200">
+        
+        <div id="traffic-light-module">
+            <img id="traffic-light" src="" alt="Traffic Light">
+        </div>
+        
+        <div id="guide-dog-module">
+            <div class="dog-video-container">
+                <video id="dog-video" autoplay muted loop></video>
             </div>
         </div>
-
-        <button id="startStopBtn"
-                class="px-8 py-4 bg-blue-600 text-white font-bold rounded-full shadow-lg hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
-            开始录音
-        </button>
-
-        <div class="mt-8">
-            <p id="status" class="text-lg text-gray-700 font-medium mb-4">准备就绪...</p>
-            <div id="result" class="bg-gray-50 p-6 rounded-lg border border-gray-200 text-gray-800 text-left min-h-[120px] max-h-60 overflow-y-auto leading-relaxed shadow-inner">
-                <span class="text-gray-400">录音结束后，识别结果将显示在这里...</span>
-            </div>
+        
+        <div id="bottom-controls" class="flex justify-center items-center p-4 z-10">
+            <button id="reset-button" class="hidden">Restart</button>
+            <button id="record-button">
+                <img id="mic-icon" src="https://github.com/gzy622/622SeeingDogHTMLGame/raw/refs/heads/main/SDHG_MicrophoneIcon.png" alt="Record" style="object-fit: contain;">
+            </button>
+            <div id="score-display">0/5</div>
         </div>
-
-        <!-- 模态框用于显示提示信息，替代 alert() -->
-        <div id="messageModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full text-center">
-                <h3 class="text-xl font-semibold mb-4 text-gray-800" id="modalTitle">提示</h3>
-                <p class="text-gray-700 mb-6" id="modalContent">这是一个提示消息。</p>
-                <button id="closeModalBtn" class="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition duration-300">
-                    确定
-                </button>
-            </div>
+        
+        <div id="feedback-module">
+            <img id="feedback-image" src="" alt="Feedback">
         </div>
+        
+        <div id="win-screen-container"></div>
     </div>
-
+    
+    <audio id="record-click-sound" src=""></audio>
+    <audio id="light-sound" src=""></audio>
+    <audio id="try-again-sound" src=""></audio>
+    <audio id="yes-sound" src=""></audio>
+    <audio id="win-sound" src=""></audio>
+    
     <script>
-        // 获取页面元素
-        const apiKeyInput = document.getElementById('apiKeyInput');
-        const secretKeyInput = document.getElementById('secretKeyInput');
-        const startStopBtn = document.getElementById('startStopBtn');
-        const statusDisplay = document.getElementById('status');
-        const resultDisplay = document.getElementById('result');
-        const messageModal = document.getElementById('messageModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalContent = document.getElementById('modalContent');
-        const closeModalBtn = document.getElementById('closeModalBtn');
-
-        // 从 localStorage 加载保存的密钥（如果存在）
-        window.onload = () => {
-            const savedApiKey = localStorage.getItem('baidu_api_key');
-            const savedSecretKey = localStorage.getItem('baidu_secret_key');
-            if (savedApiKey) {
-                apiKeyInput.value = savedApiKey;
-            }
-            if (savedSecretKey) {
-                secretKeyInput.value = savedSecretKey;
+        const GAME_STATES = {
+            PRELOAD: 'preload',
+            IDLE: 'idle',
+            LISTENING_LIGHT_COLOR: 'listening_light_color',
+            LISTENING_DOG_ACTION: 'listening_dog_action',
+            FEEDBACK: 'feedback',
+            WIN: 'win'
+        };
+        
+        const GAME_CONFIG = {
+            maxScore: 5,
+            lightColors: ['red', 'yellow', 'green'],
+            dogActions: ['stop', 'wait', 'go'],
+            colorKeywords: ['red', 'yellow', 'green'],
+            actionKeywords: ['stop', 'wait', 'go'],
+            feedbackKeywords: ['good']
+        };
+        
+        const RESOURCES = {
+            images: {
+                background: './SDHG_Background10-16.png',
+                winBackground: './SDHG_Background_Win.png',
+                micIcon: './SDHG_MicrophoneIcon.png',
+                trafficLightGray: './SDHG_TrafficLight_gray2.png',
+                trafficLightRed: './SDHG_TrafficLight_red2.png',
+                trafficLightYellow: './SDHG_TrafficLight_yellow2.png',
+                trafficLightGreen: './SDHG_TrafficLight_green2.png',
+                tryAgain: './SDHG_TryAgain_2.png',
+                yes: './SDHG_YES.png'
+            },
+            videos: {
+                dogAttention: './SDHG_dog_attention_mov.webm',
+                dogGo: './SDHG_dog_go_2.webm',
+                dogStandby: './SDHG_dog_standby_2.webm',
+                dogStop: './SDHG_dog_stop_2.webm',
+                dogWait: './SDHG_dog_wait.webm'
+            },
+            audio: {
+                recordClick: './SDHG_sound_record_click.mp3',
+                light: './SDHG_sound_light.mp3',
+                tryAgain: './SDHG_sound_TryAgain.mp3',
+                yes: './SDHG_sound_yes.mp3',
+                win: './SDHG_sound_win.mp3'
             }
         };
+        
+        let gameState = GAME_STATES.PRELOAD;
+        let currentScore = 0;
+        let currentLightColor = null;
+        let currentDogAction = null;
+        let targetDogAction = null;
+        let isRecording = false;
+        let listeningPhaseState = null;
+        let lastRecognizedText = '';
+        let progressInterval = null;
+        let silenceTimer = null;
+        let volumeCheckTimeout = null;
+        const SILENCE_THRESHOLD = 5;
+        const VOLUME_CHECK_DELAY_MS = 5000; 
+        const SILENCE_DURATION_TO_STOP_MS = 5000; 
+        let recordingStartedAt = 0;
+        let isVolumeDetectionActive = false;
 
-        let mediaRecorder; // MediaRecorder 对象
-        let audioChunks = []; // 用于存储音频数据块
-        let audioStream; // 用于存储 MediaStream 对象，以便在停止时关闭麦克风轨道
-        let isRecording = false; // 标记当前是否正在录音
-        let baiduAccessToken = ''; // 存储百度 Access Token
+        const dom = {
+            gameContainer: document.getElementById('game-container'),
+            preloader: document.getElementById('preloader'),
+            resetButton: document.getElementById('reset-button'),
+            scoreDisplay: document.getElementById('score-display'),
+            trafficLight: document.getElementById('traffic-light'),
+            dogVideo: document.getElementById('dog-video'),
+            recordButton: document.getElementById('record-button'),
+            micIcon: document.getElementById('mic-icon'),
+            feedbackModule: document.getElementById('feedback-module'),
+            feedbackImage: document.getElementById('feedback-image'),
+            winScreen: document.getElementById('win-screen-container'),
+            guideDogModule: document.getElementById('guide-dog-module'),
+            bottomControls: document.getElementById('bottom-controls'),
+            recordClickSound: document.getElementById('record-click-sound'),
+            lightSound: document.getElementById('light-sound'),
+            tryAgainSound: document.getElementById('try-again-sound'),
+            yesSound: document.getElementById('yes-sound'),
+            winSound: document.getElementById('win-sound'),
+            apiResponse: document.createElement('div')
+        };
 
-        // 显示模态框
-        function showModal(title, content) {
-            modalTitle.textContent = title;
-            modalContent.textContent = content;
-            messageModal.classList.remove('hidden');
+        const debugInfoCard = document.createElement('div');
+        debugInfoCard.className = 'card';
+        debugInfoCard.style.cssText = 'position: absolute; top: 10px; right: 10px; max-width: 300px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; z-index: 10;';
+        
+        debugInfoCard.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" id="debug-info-header">
+                <h3 id="debug-info-title" style="color: #fdbb2d; margin: 0;">Recognition Info</h3>
+                <button id="toggle-debug-info" style="background: none; border: 1px solid #fdbb2d; color: #fdbb2d; border-radius: 5px; padding: 2px 8px; font-size: 0.7rem; cursor: pointer;">Hide</button>
+            </div>
+            <div id="debug-info-content" style="margin-top: 5px;">
+                <label for="api-response-display" style="font-size: 0.8rem;">API Response / Status:</label>
+                <div id="api-response-display" style="width: 100%; height: 80px; background: rgba(255,255,255,0.1); border: 1px solid #2196F3; border-radius: 5px; color: white; font-size: 0.8rem; padding: 5px; overflow-y: auto; white-space: pre-wrap;">等待请求发送...</div>
+            </div>
+        `;
+
+        dom.gameContainer.appendChild(debugInfoCard);
+        dom.apiResponse = document.getElementById('api-response-display');
+
+        const toggleButton = document.getElementById('toggle-debug-info');
+        const debugContent = document.getElementById('debug-info-content');
+        const debugHeader = document.getElementById('debug-info-header');
+        const debugTitle = document.getElementById('debug-info-title');
+
+        const toggleDebugVisibility = () => {
+            const isVisible = debugContent.style.display !== 'none';
+            debugContent.style.display = isVisible ? 'none' : 'block';
+            debugTitle.style.display = isVisible ? 'none' : 'block';
+            toggleButton.textContent = isVisible ? 'Show' : 'Hide';
+        };
+        
+        debugHeader.addEventListener('click', toggleDebugVisibility);
+
+        function setVideoSource(videoElement, src) {
+            return new Promise((resolve) => {
+                videoElement.classList.remove('loaded');
+                videoElement.poster = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+                const onLoadedData = () => {
+                    videoElement.classList.add('loaded');
+                    videoElement.poster = "";
+                    videoElement.removeEventListener('loadeddata', onLoadedData);
+                    videoElement.removeEventListener('canplay', onLoadedData);
+                    resolve();
+                };
+                
+                videoElement.addEventListener('loadeddata', onLoadedData);
+                videoElement.addEventListener('canplay', onLoadedData);
+                
+                videoElement.src = src;
+                videoElement.load();
+            });
         }
 
-        // 关闭模态框
-        closeModalBtn.addEventListener('click', () => {
-            messageModal.classList.add('hidden');
-        });
+        function initGame() {
+            document.body.style.backgroundImage = `url('${RESOURCES.images.background}')`;
+            resetGame();
+            setupEventListeners();
+            dom.preloader.style.display = 'none';
+            dom.resetButton.classList.remove('hidden');
+            setGameState(GAME_STATES.IDLE);
+        }
+        
+        function resetGame() {
+            setGameState(GAME_STATES.IDLE);
+            currentScore = 0;
+            currentLightColor = null;
+            currentDogAction = null;
+            targetDogAction = null;
+            lastRecognizedText = '';
+            dom.apiResponse.textContent = '等待请求发送...';
+            updateScoreDisplay();
 
-        // 获取百度 Access Token
-        async function getBaiduAccessToken(BAIDU_API_KEY, BAIDU_SECRET_KEY) {
-            if (!BAIDU_API_KEY || !BAIDU_SECRET_KEY) {
-                showModal('配置错误', '请填写您的百度 API Key 和 Secret Key。');
-                return false;
+            dom.winScreen.style.display = 'none';
+            dom.preloader.style.display = 'none';
+            dom.trafficLight.style.display = 'block';
+            dom.guideDogModule.style.display = 'flex';
+            dom.dogVideo.style.display = 'block';
+            dom.bottomControls.style.display = 'flex';
+            dom.scoreDisplay.style.display = 'grid';
+            dom.recordButton.style.display = 'flex';
+            dom.feedbackModule.style.opacity = '0';
+            dom.feedbackModule.style.visibility = 'hidden';
+
+            dom.trafficLight.src = RESOURCES.images.trafficLightGray;
+            setVideoSource(dom.dogVideo, RESOURCES.videos.dogStandby).then(() => {
+                dom.dogVideo.loop = true;
+                dom.dogVideo.play().catch(e => console.warn("Dog standby video play failed on reset:", e.message));
+            });
+            clearAllTimers();
+        }
+
+        function enterWinScreen() {
+            setGameState(GAME_STATES.WIN);
+            dom.winSound.currentTime = 0;
+            dom.winSound.play();
+            
+            dom.winScreen.style.backgroundImage = `url('${RESOURCES.images.winBackground}')`;
+            dom.winScreen.style.display = 'flex';
+            
+            dom.trafficLight.style.display = 'none';
+            dom.dogVideo.style.display = 'none';
+            dom.bottomControls.style.display = 'none';
+            
+            dom.feedbackModule.style.opacity = '0';
+            dom.feedbackModule.style.visibility = 'hidden';
+            clearAllTimers();
+        }
+
+        function updateScoreDisplay() {
+            dom.scoreDisplay.textContent = `${currentScore}/${GAME_CONFIG.maxScore}`;
+        }
+        
+        function showToast(message) {
+            if (typeof plus !== 'undefined' && plus.nativeUI) {
+                plus.nativeUI.toast(message);
+            } else {
+                console.warn("plus.nativeUI is not available. Message:", message);
+            }
+        }
+        
+        function setupSpeechEventListeners() {
+            if (typeof plus === 'undefined' || !plus.speech) {
+                console.error("plus.speech is not available. Cannot set up speech event listeners.");
+                showToast("Speech recognition module is not available. Please run in HBuilderX with Speech module configured.");
+                return;
             }
 
-            const BAIDU_TOKEN_URL = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${BAIDU_API_KEY}&client_secret=${BAIDU_SECRET_KEY}`;
+            plus.speech.addEventListener('start', onRecognitionStart, false);
+            plus.speech.addEventListener('volumeChange', onVolumeChange, false);
+            plus.speech.addEventListener('recognizing', onRecognizing, false);
+            plus.speech.addEventListener('recognition', onRecognitionFinal, false);
+            plus.speech.addEventListener('end', onRecognitionEnd, false);
+            plus.speech.addEventListener('error', onRecognitionError, false);
+        }
 
-            try {
-                statusDisplay.textContent = '正在获取认证令牌...';
-                const response = await fetch(BAIDU_TOKEN_URL, { method: 'POST', mode: 'cors' });
-                const data = await response.json();
-
-                if (response.ok && data.access_token) {
-                    baiduAccessToken = data.access_token;
-                    statusDisplay.textContent = '认证成功！';
-                    // 成功获取token后，将密钥保存到 localStorage
-                    localStorage.setItem('baidu_api_key', BAIDU_API_KEY);
-                    localStorage.setItem('baidu_secret_key', BAIDU_SECRET_KEY);
-                    return true;
+        function setupEventListeners() {
+            dom.recordButton.addEventListener('click', () => {
+                if (!isRecording) {
+                    dom.recordClickSound.currentTime = 0;
+                    dom.recordClickSound.play();
+                    startRecording();
                 } else {
-                    showModal('认证失败', `获取 Access Token 失败: ${data.error_description || '未知错误'}`);
-                    console.error('Failed to get Baidu Access Token:', data);
-                    return false;
+                    plus.speech.stopRecognize();
                 }
+            });
+            
+            dom.resetButton.addEventListener('click', resetGame);
+            dom.winScreen.addEventListener('click', resetGame);
+            
+            dom.dogVideo.addEventListener('ended', function() {
+                if (gameState === GAME_STATES.LISTENING_DOG_ACTION && !dom.dogVideo.loop) {
+                    setVideoSource(dom.dogVideo, RESOURCES.videos.dogStandby).then(() => {
+                        dom.dogVideo.loop = true;
+                        dom.dogVideo.play();
+                    });
+                }
+            });
+
+            window.addEventListener('resize', () => {});
+        }
+        
+        function startRecording() {
+            if (typeof plus === 'undefined' || !plus.speech) {
+                showToast("Speech recognition is not available.");
+                return;
+            }
+            
+            try {
+                let targetListeningState;
+                if (currentLightColor === null) {
+                    targetListeningState = GAME_STATES.LISTENING_LIGHT_COLOR;
+                } else {
+                    targetListeningState = GAME_STATES.LISTENING_DOG_ACTION;
+                }
+
+                setGameState(targetListeningState);
+                listeningPhaseState = targetListeningState;
+                lastRecognizedText = '';
+                dom.apiResponse.textContent = 'Listening...';
+
+                clearAllTimers();
+                recordingStartedAt = Date.now();
+                isVolumeDetectionActive = false; 
+
+                volumeCheckTimeout = setTimeout(() => {
+                    isVolumeDetectionActive = true;
+                }, VOLUME_CHECK_DELAY_MS);
+
+                const options = {
+                    engine: 'baidu',
+                    lang: 'en-us',
+                    userInterface: false,
+                    continue: true,
+                    punctuation: false
+                };
+                
+                plus.speech.startRecognize(options, 
+                    function(s) {},
+                    function(e) {
+                        console.error("plus.speech.startRecognize error:", e);
+                        if (e.code !== 6 && e.code !== 7) { 
+                            showToast(`Speech recognition start error: ${e.message} (Code: ${e.code})`);
+                            onRecognitionError(e);
+                        }
+                    }
+                );
+                
+                isRecording = true;
+                dom.recordButton.classList.add('recording-animation');
+                dom.recordButton.classList.add('active');
+                
             } catch (error) {
-                showModal('网络或跨域错误', `获取 Access Token 时网络出错或被浏览器安全策略阻止: ${error.message}。\n\n请确保您的网络连接正常，并检查当前运行环境是否允许跨域请求（例如，直接打开本地HTML文件可能会遇到此问题）。`);
-                console.error('Error fetching Baidu Access Token:', error);
-                return false;
+                console.error('Failed to start speech recognition:', error);
+                showToast(`Failed to start speech recognition: ${error.message}`);
+                isRecording = false;
+                dom.recordButton.classList.remove('recording-animation');
+                dom.recordButton.classList.remove('active');
+                listeningPhaseState = null;
+                setGameState(GAME_STATES.IDLE);
+                clearAllTimers();
             }
         }
 
-        // 开始录音
-        async function startRecording() {
-            const BAIDU_API_KEY = apiKeyInput.value.trim();
-            const BAIDU_SECRET_KEY = secretKeyInput.value.trim();
+        function onRecognitionStart() {
+            dom.apiResponse.textContent = "Listening...";
+            let progress = 0;
+            if (progressInterval) clearInterval(progressInterval);
+            progressInterval = setInterval(() => {
+                if (!isRecording) {
+                    clearInterval(progressInterval);
+                    dom.recordButton.classList.remove('recording-animation');
+                    return;
+                }
+                progress = (progress + 5) % 100;
+            }, 100);
+        }
 
-            if (!BAIDU_API_KEY || !BAIDU_SECRET_KEY) {
-                showModal('密钥缺失', '请在开始录音前填写您的百度 API Key 和 Secret Key。');
-                return;
+        function onVolumeChange(e) {
+            if (!isRecording || !isVolumeDetectionActive) return;
+
+            if (e.volume < SILENCE_THRESHOLD) {
+                if (!silenceTimer) {
+                    silenceTimer = setTimeout(() => {
+                        plus.speech.stopRecognize();
+                    }, SILENCE_DURATION_TO_STOP_MS);
+                }
+            } else {
+                if (silenceTimer) {
+                    clearTimeout(silenceTimer);
+                    silenceTimer = null;
+                }
+            }
+        }
+
+        function onRecognizing(e) {
+            if (e.partialResult) {
+                lastRecognizedText = e.partialResult.toLowerCase();
+                dom.apiResponse.textContent = `Interim: ${lastRecognizedText}`; 
+                checkForKeywordsAndStop(lastRecognizedText);
+            }
+        }
+
+        function onRecognitionFinal(e) {
+            if (e.result) {
+                lastRecognizedText = e.result.toLowerCase();
+            }
+            dom.apiResponse.textContent = `Final Recognized: ${lastRecognizedText || "(No content)"}`;
+
+            if (isRecording) {
+                plus.speech.stopRecognize();
+            }
+        }
+
+        function checkForKeywordsAndStop(transcript) {
+            let keywordDetected = false;
+            let keywordsToCheck = [];
+
+            if (listeningPhaseState === GAME_STATES.LISTENING_LIGHT_COLOR) {
+                keywordsToCheck = GAME_CONFIG.colorKeywords;
+            } else if (listeningPhaseState === GAME_STATES.LISTENING_DOG_ACTION) {
+                keywordsToCheck = [...GAME_CONFIG.actionKeywords, ...GAME_CONFIG.feedbackKeywords];
             }
 
-            // 在开始录音前先获取 Access Token
-            // 每次启动录音都尝试获取新的 Access Token，或者检查现有 Token 是否有效
-            // 为了简化，这里每次都尝试重新获取，更优解是判断 Token 是否过期
-            const tokenSuccess = await getBaiduAccessToken(BAIDU_API_KEY, BAIDU_SECRET_KEY);
-            if (!tokenSuccess) {
-                // 如果获取 Access Token 失败，则不继续录音
-                statusDisplay.textContent = '准备就绪...';
-                return;
+            for (const keyword of keywordsToCheck) {
+                if (transcript.includes(keyword)) {
+                    keywordDetected = true;
+                    break;
+                }
             }
 
-            try {
-                statusDisplay.textContent = '请求麦克风权限...';
-                audioStream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        sampleRate: 16000 // 百度语音识别推荐的采样率
-                    }
+            if (keywordDetected && isRecording) {
+                plus.speech.stopRecognize();
+            }
+        }
+
+        function onRecognitionEnd() {
+            isRecording = false;
+            dom.recordButton.classList.remove('recording-animation');
+            dom.recordButton.classList.remove('active');
+            clearAllTimers();
+
+            setTimeout(() => {
+                const recognizedTextForProcessing = lastRecognizedText.trim();
+
+                if (recognizedTextForProcessing === "") {
+                    showToast("No speech recognized. Please try again.");
+                    handleFeedback(false);
+                    return;
+                }
+
+                switch (listeningPhaseState) {
+                    case GAME_STATES.LISTENING_LIGHT_COLOR:
+                        processLightColor(recognizedTextForProcessing);
+                        break;
+                    case GAME_STATES.LISTENING_DOG_ACTION:
+                        processDogAction(recognizedTextForProcessing);
+                        break;
+                    default:
+                        setGameState(GAME_STATES.IDLE);
+                        dom.trafficLight.src = RESOURCES.images.trafficLightGray;
+                        setVideoSource(dom.dogVideo, RESOURCES.videos.dogStandby).then(() => {
+                            dom.dogVideo.loop = true;
+                            dom.dogVideo.play().catch(e => console.warn("Dog standby video play failed on unexpected end:", e.message));
+                        });
+                        currentLightColor = null; 
+                        currentDogAction = null;
+                        targetDogAction = null;
+                }
+                listeningPhaseState = null;
+                lastRecognizedText = '';
+            }, 100);
+        }
+
+        function onRecognitionError(e) {
+            console.error("Event: Speech recognition error:", e.code, e.message);
+            isRecording = false;
+            dom.recordButton.classList.remove('recording-animation');
+            dom.recordButton.classList.remove('active');
+            clearAllTimers();
+            lastRecognizedText = '';
+            dom.apiResponse.textContent = `Error: ${e.message} (Code: ${e.code})`;
+
+            if (e.code !== 6 && e.code !== 7) { 
+                showToast(`Speech recognition error: ${e.message} (Code: ${e.code})`);
+            }
+            
+            handleFeedback(false);
+            listeningPhaseState = null;
+        }
+
+        function clearAllTimers() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+            if (silenceTimer) {
+                clearTimeout(silenceTimer);
+                silenceTimer = null;
+            }
+            if (volumeCheckTimeout) {
+                clearTimeout(volumeCheckTimeout);
+                volumeCheckTimeout = null;
+            }
+            isVolumeDetectionActive = false;
+        }
+
+        function processLightColor(transcript) {
+            const detectedColor = GAME_CONFIG.colorKeywords.find(color => 
+                transcript.includes(color)
+            );
+            
+            if (detectedColor) {
+                currentLightColor = detectedColor;
+                dom.lightSound.currentTime = 0;
+                dom.lightSound.play();
+                
+                switch (detectedColor) {
+                    case 'red':
+                        dom.trafficLight.src = RESOURCES.images.trafficLightRed;
+                        targetDogAction = 'stop';
+                        break;
+                    case 'yellow':
+                        dom.trafficLight.src = RESOURCES.images.trafficLightYellow;
+                        targetDogAction = 'wait';
+                        break;
+                    case 'green':
+                        dom.trafficLight.src = RESOURCES.images.trafficLightGreen;
+                        targetDogAction = 'go';
+                        break;
+                }
+                
+                setVideoSource(dom.dogVideo, RESOURCES.videos.dogAttention).then(() => {
+                    dom.dogVideo.loop = false;
+                    dom.dogVideo.play().catch(e => console.warn("Dog attention video play failed:", e.message));
+                    
+                    dom.dogVideo.removeEventListener('ended', handleDogAttentionVideoEnd);
+                    dom.dogVideo.addEventListener('ended', handleDogAttentionVideoEnd, { once: true });
                 });
 
-                // 创建 MediaRecorder 实例
-                // 百度语音识别支持 Opus 编码的 WebM 格式
-                mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm; codecs=opus' });
-                audioChunks = []; // 清空之前的音频数据
-
-                // 当 MediaRecorder 有可用数据时触发
-                mediaRecorder.ondataavailable = event => {
-                    audioChunks.push(event.data);
-                };
-
-                // 当 MediaRecorder 停止时触发
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm; codecs=opus' });
-                    sendAudioToBaidu(audioBlob); // 发送音频到百度智能云 API
-                    // 关闭麦克风轨道，释放资源
-                    audioStream.getTracks().forEach(track => track.stop());
-                };
-
-                mediaRecorder.start(); // 开始录音
-                isRecording = true;
-                statusDisplay.textContent = '正在录音... 请开始说话...';
-                startStopBtn.textContent = '停止录音并识别';
-                startStopBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                startStopBtn.classList.add('bg-red-600', 'hover:bg-red-700');
-                resultDisplay.innerHTML = '<span class="text-gray-400">录音结束后，识别结果将显示在这里...</span>'; // 清空结果显示区域
-
-            } catch (err) {
-                // 处理获取麦克风权限或启动录音的错误
-                isRecording = false;
-                startStopBtn.textContent = '开始录音';
-                startStopBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-                startStopBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                statusDisplay.textContent = '准备就绪...';
-
-                let errorMessage = '';
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    errorMessage = '麦克风权限被拒绝。请允许本网站访问麦克风。';
-                } else if (err.name === 'NotFoundError') {
-                    errorMessage = '未找到麦克风设备。请检查您的设备是否有麦克风。';
-                } else {
-                    errorMessage = `无法启动录音: ${err.message || err.name}。请检查您的麦克风设置。`;
-                }
-                showModal('麦克风错误', errorMessage);
-                console.error('Error starting recording:', err);
-            }
-        }
-
-        // 停止录音
-        function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-                mediaRecorder.stop();
-                isRecording = false;
-                statusDisplay.textContent = '录音停止，正在发送音频进行识别...';
-            }
-        }
-
-        // 将录制的音频发送到 百度智能云语音识别 API
-        async function sendAudioToBaidu(audioBlob) {
-            if (!baiduAccessToken) {
-                showModal('错误', 'Access Token 未获取或已失效，请重新尝试。');
-                statusDisplay.textContent = '识别失败。';
-                resetButtonState();
-                return;
-            }
-
-            // 使用 FileReader 将 Blob 转换为 Base64 字符串
-            const reader = new FileReader();
-            reader.readAsDataURL(audioBlob);
-            reader.onloadend = async () => {
-                const base64Audio = reader.result.split(',')[1]; // 移除数据 URL 的前缀
-
-                // 百度 API 的 CUID (Client User ID) 可以是随机生成的唯一字符串
-                const cuid = 'web_user_' + Date.now();
-
-                // 百度语音识别短音频接口的参数
-                const payload = {
-                    format: 'opus', // 音频格式，与 MediaRecorder 的 mimeType 对应
-                    rate: 16000, // 采样率，与 getUserMedia 中的设置一致
-                    channel: 1, // 声道数，默认为单声道
-                    cuid: cuid, // 客户端用户 ID
-                    token: baiduAccessToken, // 访问令牌
-                    dev_pid: 1537, // 常用普通话识别模型ID (1537 或 80001)
-                    speech: base64Audio, // Base64 编码的音频数据
-                    len: audioBlob.size, // 音频长度 (字节数)
-                };
-
-                try {
-                    resultDisplay.textContent = '正在识别中，请稍候...';
-                    const response = await fetch(BAIDU_ASR_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify(payload),
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok && data.err_no === 0) { // err_no 为 0 表示成功
-                        if (data.result && data.result.length > 0) {
-                            resultDisplay.textContent = data.result[0]; // 百度识别结果通常在 result 数组的第一个元素
-                            statusDisplay.textContent = '识别成功！';
-                        } else {
-                            resultDisplay.textContent = '未能识别出任何内容。请重新尝试。';
-                            statusDisplay.textContent = '识别完成。';
-                        }
-                    } else {
-                        // API 返回错误（例如：Token 无效、参数错误等）
-                        statusDisplay.textContent = '识别失败。';
-                        showModal('百度 API 错误', `识别失败：${data.err_msg || '未知错误'}\n错误码: ${data.err_no || 'N/A'}`);
-                        console.error('Baidu API Error:', data);
-                        // 如果是 Token 错误，可以尝试清空 Token 强制重新获取
-                        if (data.err_no === 3302 || data.err_no === 3301) { // 3302: Token失效，3301: Token无效
-                            baiduAccessToken = '';
-                        }
-                    }
-                } catch (error) {
-                    // 网络请求本身的错误（例如：断网）
-                    statusDisplay.textContent = '识别失败。';
-                    showModal('网络请求错误', `发送请求时发生错误: ${error.message}。请检查您的网络连接。`);
-                    console.error('Fetch error:', error);
-                } finally {
-                    resetButtonState();
-                }
-            };
-        }
-
-        // 重置按钮状态
-        function resetButtonState() {
-            startStopBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-            startStopBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            startStopBtn.textContent = '开始录音';
-        }
-
-        // 按钮点击事件处理
-        startStopBtn.addEventListener('click', () => {
-            if (isRecording) {
-                stopRecording();
             } else {
-                startRecording();
+                handleFeedback(false);
             }
+        }
+
+        function handleDogAttentionVideoEnd() {
+            const randomAction = GAME_CONFIG.dogActions[Math.floor(Math.random() * GAME_CONFIG.dogActions.length)];
+            currentDogAction = randomAction;
+            
+            let videoSrc;
+            switch (randomAction) {
+                case 'stop':
+                    videoSrc = RESOURCES.videos.dogStop;
+                    break;
+                case 'wait':
+                    videoSrc = RESOURCES.videos.dogWait;
+                    break;
+                case 'go':
+                    videoSrc = RESOURCES.videos.dogGo;
+                    break;
+            }
+            
+            setVideoSource(dom.dogVideo, videoSrc).then(() => {
+                dom.dogVideo.loop = true;
+                dom.dogVideo.play().catch(e => console.warn("Dog action video play failed:", e.message));
+            });
+            
+            setGameState(GAME_STATES.IDLE);
+        }
+        
+        function processDogAction(transcript) {
+            const isGoodPhrase = transcript.includes('good');
+            const wordsInTranscript = transcript.split(/[^a-z0-9]+/).filter(word => word.length > 0); 
+            let actionWordSpoken = null;
+            for (const word of wordsInTranscript) {
+                if (GAME_CONFIG.actionKeywords.includes(word)) {
+                    actionWordSpoken = word;
+                    break;
+                }
+            }
+
+            let isCorrect = false;
+
+            if (currentDogAction === targetDogAction) {
+                if (isGoodPhrase) {
+                    if (actionWordSpoken === null || actionWordSpoken === targetDogAction) {
+                        isCorrect = true;
+                    } else {
+                        isCorrect = false;
+                    }
+                } else {
+                    if (actionWordSpoken === targetDogAction) {
+                        isCorrect = true;
+                    } else {
+                        isCorrect = false;
+                    }
+                }
+            }
+            else { 
+                if (actionWordSpoken === targetDogAction && !isGoodPhrase) {
+                    isCorrect = true;
+                } else {
+                    isCorrect = false;
+                }
+            }
+            
+            if (isCorrect) {
+                currentScore++;
+                updateScoreDisplay();
+                handleFeedback(true);
+            } else {
+                handleFeedback(false);
+            }
+        }
+        
+        function handleFeedback(isCorrect) {
+            if (isCorrect) {
+                dom.feedbackImage.src = RESOURCES.images.yes;
+                dom.yesSound.currentTime = 0;
+                dom.yesSound.play();
+            } else {
+                dom.feedbackImage.src = RESOURCES.images.tryAgain;
+                dom.tryAgainSound.currentTime = 0;
+                dom.tryAgainSound.play();
+            }
+            
+            dom.feedbackModule.style.visibility = 'visible';
+            dom.feedbackModule.style.opacity = '1';
+            
+            setTimeout(() => {
+                dom.feedbackModule.style.opacity = '0';
+                setTimeout(() => {
+                    dom.feedbackModule.style.visibility = 'hidden';
+                }, 500);
+
+                if (isCorrect || (listeningPhaseState === GAME_STATES.LISTENING_LIGHT_COLOR && !isCorrect)) {
+                    currentLightColor = null; 
+                    currentDogAction = null;
+                    targetDogAction = null;
+                    dom.trafficLight.src = RESOURCES.images.trafficLightGray;
+                    setVideoSource(dom.dogVideo, RESOURCES.videos.dogStandby).then(() => {
+                        dom.dogVideo.loop = true;
+                        dom.dogVideo.play().catch(e => console.warn("Dog standby video play failed after correct feedback/light error:", e.message));
+                    });
+                }
+                setGameState(GAME_STATES.IDLE);
+            }, 2000);
+
+            if (isCorrect && currentScore >= GAME_CONFIG.maxScore) {
+                setTimeout(enterWinScreen, 2000);
+            }
+        }
+        
+        function setGameState(newState) {
+            gameState = newState;
+        }
+        
+        function preloadResources() {
+            const imageUrls = Object.values(RESOURCES.images);
+            const uniqueVideoUrlsToPreload = new Set(Object.values(RESOURCES.videos));
+            const uniqueAudioUrlsToPreload = new Set(Object.values(RESOURCES.audio));
+
+            const allResourcesToLoad = [
+                ...imageUrls,
+                ...Array.from(uniqueVideoUrlsToPreload),
+                ...Array.from(uniqueAudioUrlsToPreload)
+            ];
+
+            let loadedCount = 0;
+            
+            function updateProgress() {
+                loadedCount++;
+                const progress = Math.round((loadedCount / allResourcesToLoad.length) * 100);
+                document.querySelector('#preloader h2').textContent = `Loading Game Resources... ${progress}%`;
+                
+                if (loadedCount === allResourcesToLoad.length) {
+                    dom.preloader.style.display = 'none';
+                }
+            }
+            
+            imageUrls.forEach(url => {
+                const img = new Image();
+                img.src = url;
+                img.onload = updateProgress;
+                img.onerror = updateProgress;
+            });
+            
+            uniqueVideoUrlsToPreload.forEach(url => {
+                const video = document.createElement('video');
+                video.src = url;
+                video.muted = true;
+                video.volume = 0;
+                video.preload = 'auto';
+
+                let loaded = false;
+                const handleLoaded = () => {
+                    if (!loaded) {
+                        loaded = true;
+                        updateProgress();
+                    }
+                };
+
+                video.addEventListener('canplaythrough', handleLoaded);
+                video.addEventListener('loadeddata', handleLoaded);
+                video.addEventListener('error', handleLoaded);
+
+                video.load();
+                video.play().catch(e => console.warn(`Video preload play failed for ${url}: ${e.message}`));
+            });
+            
+            uniqueAudioUrlsToPreload.forEach(url => {
+                const audio = new Audio();
+                audio.src = url;
+                audio.muted = true;
+                audio.volume = 0;
+                audio.preload = 'auto';
+
+                let loaded = false;
+                const handleLoaded = () => {
+                    if (!loaded) {
+                        loaded = true;
+                        updateProgress();
+                    }
+                };
+
+                audio.addEventListener('canplaythrough', handleLoaded);
+                audio.addEventListener('loadeddata', handleLoaded);
+                audio.addEventListener('error', handleLoaded);
+
+                audio.load();
+                audio.play().catch(e => console.warn(`Audio preload play failed for ${url}: ${e.message}`));
+            });
+        }
+        
+        function assignResources() {
+            dom.trafficLight.src = RESOURCES.images.trafficLightGray;
+            dom.micIcon.src = RESOURCES.images.micIcon;
+            setVideoSource(dom.dogVideo, RESOURCES.videos.dogStandby);
+            dom.recordClickSound.src = RESOURCES.audio.recordClick;
+            dom.lightSound.src = RESOURCES.audio.light;
+            dom.tryAgainSound.src = RESOURCES.audio.tryAgain;
+            dom.yesSound.src = RESOURCES.audio.yes;
+            dom.winSound.src = RESOURCES.audio.win;
+        }
+        
+        window.addEventListener('DOMContentLoaded', function() {
+            assignResources();
+            preloadResources();
+            
+            document.addEventListener('plusready', function() {
+                initGame();
+                setupSpeechEventListeners();
+            }, false);
         });
     </script>
 </body>
